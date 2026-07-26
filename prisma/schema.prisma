@@ -1,0 +1,432 @@
+// ============================================================================
+// ÖZCAN MOBİLYA - VERİ TABANI ŞEMASI (v2)
+// Next.js (App Router) + Prisma + Supabase (PostgreSQL)
+//
+// v2 değişiklikleri (gerçek site analizi sonrası):
+//  - Room modeli eklendi (Kategori ile ayrı bir taksonomi; Odalara Göre menüsü)
+//  - Product: compareAtPrice, ölçü alanları (W/H/D + ayak yüksekliği), features
+//  - ProductVariation: ölçü override alanları (ayak tipi gibi varyasyonlar için)
+//  - Coupon / Promotion modeli eklendi (FLAŞ20 tarzı kampanya kodları)
+//  - Order: uygulanan kupon ve indirim tutarı takibi
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")     // Supabase pooled connection (runtime için)
+  directUrl = env("DIRECT_URL")       // Supabase direct connection (migration için)
+}
+
+// ============================================================================
+// ENUM TANIMLARI
+// ============================================================================
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING      // Sipariş alındı, ödeme onayı bekleniyor
+  PROCESSING   // Hazırlanıyor (üretim/paketleme)
+  SHIPPED      // Kargoya verildi
+  DELIVERED    // Teslim edildi
+  CANCELLED    // İptal edildi
+  REFUNDED     // İade edildi
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+// Kupon indirim tipi: yüzdesel mi (FLAŞ20 -> %20) yoksa sabit tutar mı
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+// ============================================================================
+// KULLANICI VE ADRES
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  phone         String?
+  passwordHash  String?
+  role          Role      @default(CUSTOMER)
+
+  emailVerified DateTime?
+  image         String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  addresses     Address[]
+  orders        Order[]
+  cart          Cart?
+
+  @@map("users")
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String   // örn: "Ev", "Ofis"
+  fullName    String
+  phone       String
+  city        String
+  district    String
+  addressLine String   @db.Text
+  postalCode  String?
+  isDefault   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders      Order[]
+
+  @@map("addresses")
+}
+
+// ============================================================================
+// TAKSONOMI: KATEGORİ + ODA (iki ayrı, birbirinden bağımsız eksen)
+// ============================================================================
+
+// Ürün TİPİ bazlı taksonomi. Örn: Gardrop, Portmanto, TV Ünitesi, Kahve Köşesi,
+// Banyo Dolabı, Dresuar, Makyaj Köşesi, Modüler Mutfak Dolabı...
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?    @db.Text
+  imageUrl    String?    // Kategori ikon/kapak görseli (anasayfadaki yuvarlak kategori ikonları için)
+
+  parentId    String?
+  parent      Category?  @relation("CategoryToSubcategory", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children    Category[] @relation("CategoryToSubcategory")
+
+  products    Product[]
+  coupons     Coupon[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("categories")
+}
+
+// MEKÂN bazlı taksonomi ("Odalara Göre" menüsü). Örn: Yatak Odası, Giyinme Odası,
+// Antre & Hol, Salon & Oturma Odası, Mutfak, Banyo, Çalışma Odası, Genç & Çocuk
+// Odası, Ofis & İş Yeri, Çok Amaçlı Dolaplar, Aksesuarlar.
+// Not: Product <-> Room ilişkisi çoktan-bire (bir ürünün tek odası olur).
+model Room {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  imageUrl    String?
+  order       Int       @default(0) // Menüdeki gösterim sırası
+
+  products    Product[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("rooms")
+}
+
+// ============================================================================
+// ÜRÜN
+// ============================================================================
+
+model Product {
+  id               String    @id @default(cuid())
+  name             String
+  slug             String    @unique
+  description      String    @db.Text
+  shortDescription String?
+
+  // --- Fiyatlandırma ---
+  basePrice        Decimal   @db.Decimal(10, 2) // Satış fiyatı (varyasyonsuz taban fiyat)
+  compareAtPrice   Decimal?  @db.Decimal(10, 2) // Üstü çizili "eski fiyat" (indirim gösterimi için, örn. 42.000₺ -> 30.000₺)
+  // İndirim yüzdesi ("Save %28" rozeti) uygulama katmanında basePrice/compareAtPrice'dan hesaplanır, DB'de tutulmaz.
+
+  stock            Int       @default(0) // Varyasyonsuz ürünler için genel stok
+
+  vendor           String    @default("Özcan Mobilya") // İleride farklı atölye/tedarikçi eklenmesi ihtimaline karşı serbest metin
+
+  // --- Fiziksel ölçüler (mobilya sektörü için zorunlu) ---
+  // Standart pratiğe göre temel ölçüler ürün (model) seviyesinde tutulur.
+  // Bir varyasyon (örn. ayak tipi) bu ölçüyü değiştiriyorsa ProductVariation
+  // içindeki override alanları kullanılır (aşağıda açıklanmıştır).
+  widthCm          Decimal?  @db.Decimal(6, 1) // Genişlik (W) - dış ölçü
+  heightCm         Decimal?  @db.Decimal(6, 1) // Yükseklik (H) - dış ölçü, taç dahilse dimensionNote'ta belirtilir
+  depthCm          Decimal?  @db.Decimal(6, 1) // Derinlik (D) - dış ölçü
+  footHeightCm     Decimal?  @db.Decimal(6, 1) // Ayak yüksekliği (örn: "10 cm, Robot Süpürge Uyumlu")
+  dimensionNote    String?   // Serbest not, örn: "Taç Dahil", "Robot Süpürge Uyumlu"
+
+  // --- Öne çıkan özellik rozetleri ---
+  // Ürün sayfasındaki checkmark listesi için: "Modern", "Yatak odanıza özel
+  // tasarımlar", "2 yıllık garanti" gibi kısa etiketler. Postgres native array.
+  features         String[]  @default([])
+
+  // "Ürünün Özellikleri" akordeonundaki uzun madde listesi (örn. "Tasarım: ...").
+  featureList      String[]  @default([])
+  // "Malzeme Bilgisi" akordeonu — [{ label: "Gövde ve Kapaklar:", text: "..." }, ...]
+  materialInfo     Json?
+
+  categoryId       String
+  category         Category  @relation(fields: [categoryId], references: [id])
+
+  roomId           String?
+  room             Room?     @relation(fields: [roomId], references: [id])
+
+  isActive         Boolean   @default(true)
+  isFeatured       Boolean   @default(false) // "Öne Çıkan Modeller" bölümünde gösterilecek mi
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  images           ProductImage[]
+  variationTypes   VariationType[]
+  variations       ProductVariation[]
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+
+  @@index([categoryId])
+  @@index([roomId])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  url       String
+  altText   String?
+  order     Int     @default(0)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+// ============================================================================
+// VARYASYON SİSTEMİ
+// ============================================================================
+
+model VariationType {
+  id        String            @id @default(cuid())
+  productId String
+  product   Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  name      String            // örn: "Kumaş Türü", "Ahşap Rengi", "Ayak Tipi"
+  order     Int               @default(0)
+
+  options   VariationOption[]
+
+  @@index([productId])
+  @@map("variation_types")
+}
+
+model VariationOption {
+  id              String        @id @default(cuid())
+  variationTypeId String
+  variationType   VariationType @relation(fields: [variationTypeId], references: [id], onDelete: Cascade)
+
+  value           String        // örn: "Gri Kadife", "Ceviz Ahşap", "Krom Ayak"
+  priceModifier   Decimal       @default(0) @db.Decimal(10, 2)
+  hexColor        String?
+  swatchImageUrl  String?
+
+  variantSelections VariationOptionOnVariation[]
+
+  @@index([variationTypeId])
+  @@map("variation_options")
+}
+
+model ProductVariation {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  sku       String   @unique
+  stock     Int      @default(0)
+  price     Decimal  @db.Decimal(10, 2) // basePrice + seçilen priceModifier'ların toplamı (denormalize)
+
+  // --- Ölçü override'ları ---
+  // Çoğu varyasyon (kumaş, renk) ölçüyü etkilemez -> null bırakılır, Product'taki
+  // değer kullanılır. Ayak tipi gibi ölçüyü değiştiren varyasyonlarda doldurulur.
+  heightOverrideCm     Decimal? @db.Decimal(6, 1)
+  footHeightOverrideCm Decimal? @db.Decimal(6, 1)
+
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  selectedOptions VariationOptionOnVariation[]
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_variations")
+}
+
+model VariationOptionOnVariation {
+  productVariationId String
+  productVariation    ProductVariation @relation(fields: [productVariationId], references: [id], onDelete: Cascade)
+
+  variationOptionId   String
+  variationOption     VariationOption  @relation(fields: [variationOptionId], references: [id], onDelete: Cascade)
+
+  @@id([productVariationId, variationOptionId])
+  @@map("variation_option_on_variation")
+}
+
+// ============================================================================
+// KAMPANYA / KUPON SİSTEMİ (FLAŞ20 tarzı)
+// ============================================================================
+
+model Coupon {
+  id              String       @id @default(cuid())
+  code            String       @unique // örn: "FLAS20"
+
+  discountType    DiscountType
+  discountValue   Decimal      @db.Decimal(10, 2) // PERCENTAGE ise 20 (=%20), FIXED_AMOUNT ise TL tutarı
+
+  description     String?      // örn: "Büyük Sezon İndirimi - tüm gardrop ve TV ünitelerinde"
+
+  minOrderAmount  Decimal?     @db.Decimal(10, 2) // Kuponun geçerli olması için minimum sepet tutarı
+  maxDiscountAmount Decimal?   @db.Decimal(10, 2) // Yüzdesel indirimlerde üst sınır (örn. en fazla 5000₺)
+
+  // Sadece belirli bir kategoriyle sınırlı kampanya (örn: "tüm gardrop ve TV ünitelerinde")
+  // null ise tüm siteye uygulanabilir kupon demektir.
+  categoryId      String?
+  category        Category?    @relation(fields: [categoryId], references: [id])
+
+  startsAt        DateTime
+  endsAt          DateTime     // Geri sayım banner'ındaki bitiş zamanı
+
+  usageLimit      Int?         // Toplam kaç kez kullanılabilir (null = sınırsız)
+  usedCount       Int          @default(0)
+
+  isActive        Boolean      @default(true)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  orders          Order[]
+
+  @@map("coupons")
+}
+
+// ============================================================================
+// SEPET
+// ============================================================================
+
+model Cart {
+  id           String     @id @default(cuid())
+
+  userId       String?    @unique
+  user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sessionToken String?    @unique
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  items        CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id                 String            @id @default(cuid())
+  cartId             String
+  cart               Cart              @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  productId          String
+  product            Product           @relation(fields: [productId], references: [id])
+
+  productVariationId String?
+  productVariation   ProductVariation? @relation(fields: [productVariationId], references: [id])
+
+  quantity           Int               @default(1)
+
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@unique([cartId, productId, productVariationId])
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+// ============================================================================
+// SİPARİŞ
+// ============================================================================
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+
+  addressId       String
+  address         Address       @relation(fields: [addressId], references: [id])
+
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+
+  subtotal        Decimal       @db.Decimal(10, 2) // İndirim öncesi ürünler toplamı
+  shippingCost    Decimal       @default(0) @db.Decimal(10, 2)
+
+  couponId        String?
+  coupon          Coupon?       @relation(fields: [couponId], references: [id])
+  discountAmount  Decimal       @default(0) @db.Decimal(10, 2) // Kupondan gelen toplam indirim tutarı
+
+  totalAmount     Decimal       @db.Decimal(10, 2) // subtotal - discountAmount + shippingCost
+
+  note            String?       @db.Text
+  trackingNumber  String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  items           OrderItem[]
+
+  @@index([userId])
+  @@index([couponId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                 String            @id @default(cuid())
+  orderId            String
+  order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId          String
+  product            Product           @relation(fields: [productId], references: [id])
+
+  productVariationId String?
+  productVariation   ProductVariation? @relation(fields: [productVariationId], references: [id])
+
+  quantity           Int
+  unitPrice          Decimal           @db.Decimal(10, 2)
+
+  productNameSnapshot String
+  variationSnapshot   String?
+
+  @@index([orderId])
+  @@map("order_items")
+}

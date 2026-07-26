@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+  /* Site geneli %125 ölçek: Tailwind'in rem tabanlı spacing/font-size ölçeği
+     buna göre orantılı büyür (breakpoint'ler px tabanlı olduğu için etkilenmez) */
+  font-size: 125%;
+}
+
+/* Kategori çemberi satırlarını (üst menü + "Yaşam Alanına Göre") yatay
+   kaydırılabilir ama scrollbar'sız yapmak için. Tailwind çekirdeğinde
+   bu utility yok, burada elle tanımlıyoruz. */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Scroll Reveal: eleman görünüm alanına girene kadar gizli ve hafif aşağıda
+   durur; IntersectionObserver (bkz. Reveal.tsx) görünür olduğunda .active
+   class'ını ekler ve geçiş CSS transition ile oynar. */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* "Kategoriler" mega menu (Navbar.tsx) — referans Shopify temasındaki details-mega
+   hover mekanizmasının CSS karşılığı: dış panel hover'da hemen belirir/kaybolur,
+   içindeki sütunlar ve sağdaki promosyon kartı ise fade + translate ile, kademeli
+   (staggered) gecikmelerle sahneye girer. */
+.categories-trigger {
+  transition: color 0.5s cubic-bezier(0.6, 0, 0.4, 1);
+  transition-delay: 0.1s;
+}
+
+.categories-mega {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease-out, visibility 0s linear 0.15s;
+}
+.categories-mega.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.15s ease-out, visibility 0s linear 0s;
+}
+
+.categories-mega__col,
+.categories-mega__promo {
+  opacity: 0;
+  transform: translate(-16px, -10px);
+  transition: opacity 0.5s cubic-bezier(0.6, 0, 0.4, 1), transform 0.5s cubic-bezier(0.6, 0, 0.4, 1);
+}
+.categories-mega.is-open .categories-mega__col,
+.categories-mega.is-open .categories-mega__promo {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+.categories-mega.is-open .categories-mega__col:nth-of-type(1) {
+  transition-delay: 0s;
+}
+.categories-mega.is-open .categories-mega__col:nth-of-type(2) {
+  transition-delay: 0.1s;
+}
+.categories-mega__promo {
+  transform: translate(16px, -10px);
+}
+.categories-mega.is-open .categories-mega__promo {
+  transition-delay: 0.25s;
+}
+
+.categories-mega__promo-media img {
+  transform: scale(1.15);
+  opacity: 0;
+  transition: transform 0.7s cubic-bezier(0.6, 0, 0.4, 1), opacity 0.5s ease-out;
+  transition-delay: 0.25s;
+}
+.categories-mega.is-open .categories-mega__promo-media img {
+  transform: scale(1);
+  opacity: 1;
+}
+.categories-mega.is-open .categories-mega__promo-media:hover img {
+  transform: scale(1.08);
+}
+
+.categories-mega__promo-eyebrow,
+.categories-mega__promo-title,
+.categories-mega__promo-cta {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+.categories-mega.is-open .categories-mega__promo-eyebrow {
+  transition-delay: 0.35s;
+}
+.categories-mega.is-open .categories-mega__promo-title {
+  transition-delay: 0.4s;
+}
+.categories-mega.is-open .categories-mega__promo-cta {
+  transition-delay: 0.45s;
+}
+.categories-mega.is-open .categories-mega__promo-eyebrow,
+.categories-mega.is-open .categories-mega__promo-title,
+.categories-mega.is-open .categories-mega__promo-cta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* "Odalara Göre" mega menu (Navbar.tsx) — referans hyper-theme-demo.myshopify.com'daki
+   "Shop By Room" mega menu'sünün (menu-sidebar custom element) CSS karşılığı: solda hover'da
+   aktif olan oda listesi, sağda odaya göre değişen kategori kartları grid stacking (aynı
+   grid hücresinde üst üste) ile crossfade + kayarak (slide) geçiş yapar. Referans temanın
+   --animation-fast (.3s cubic-bezier(.7,0,.3,1)) ve --animation-nav (.5s cubic-bezier(.6,0,.4,1))
+   değerleri birebir kullanıldı. */
+.rooms-mega-toggle {
+  transition: background-color 0.3s cubic-bezier(0.7, 0, 0.3, 1);
+}
+.rooms-mega-toggle.is-active {
+  background-color: rgba(0, 0, 0, 0.045);
+}
+
+.rooms-mega-panels {
+  display: grid;
+}
+.rooms-mega-panel {
+  grid-column: 1;
+  grid-row: 1;
+  z-index: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(10%);
+  transition: opacity 0.5s cubic-bezier(0.6, 0, 0.4, 1), transform 0.5s cubic-bezier(0.6, 0, 0.4, 1),
+    visibility 0s linear 0.5s;
+}
+/* ÖNEMLİ: visibility/pointer-events geçersiz kılmaları SADECE üst menü açıkken (.categories-mega.is-open)
+   uygulanmalı — aksi halde aktif oda paneli, mega menu tamamen kapalıyken bile görünmez ama
+   tıklanabilir/hover edilebilir kalır; sticky header'a sabit bu görünmez alan sayfa kaydırılınca
+   farklı içeriklerin üzerine denk gelir ve mouse oraya değince menü aniden yeniden açılır. */
+.categories-mega.is-open .rooms-mega-panel.is-active {
+  z-index: 1;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0);
+  transition: opacity 0.5s cubic-bezier(0.6, 0, 0.4, 1), transform 0.5s cubic-bezier(0.6, 0, 0.4, 1),
+    visibility 0s linear 0s;
+}
+
+.rooms-mega-panel__img img {
+  transform: scale(1.15);
+  transition: transform 0.7s cubic-bezier(0.6, 0, 0.4, 1);
+}
+.categories-mega.is-open .rooms-mega-panel.is-active .rooms-mega-panel__img img {
+  transform: scale(1);
+}
+.categories-mega.is-open .rooms-mega-panel.is-active .rooms-mega-panel__img:hover img {
+  transform: scale(1.05);
+}
+
+/* Kullanıcı "reduced motion" tercih ettiyse marquee ve geçiş animasyonlarını durdur */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

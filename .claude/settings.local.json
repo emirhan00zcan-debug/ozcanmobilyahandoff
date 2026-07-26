@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /tmp/home2.html -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Read(//tmp/**)",
+      "Bash(cygpath -w /tmp/home2.html)",
+      "Bash(mkdir -p \"C:/Users/pc/AppData/Local/Temp/claude/c--Users-pc-Downloads-ozcan-mobilya-handoff/6b5dd052-46b3-42b0-953e-4f5490f0f50f/scratchpad\")",
+      "Bash(curl -s -o /tmp/home3.html -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(cygpath -w /tmp/home4.html)",
+      "Bash(npx tsc *)",
+      "Bash(curl -sL \"https://mv2qjazrs3ve65n0-81016226030.shopifypreview.com/cdn/shop/files/ozcan-logo.png?v=1782047359&width=600\" -o \"C:\\\\Users\\\\pc\\\\Downloads\\\\ozcan-mobilya-handoff\\\\public\\\\brand\\\\ozcan-logo.png\" -w \"HTTP %{http_code}, size %{size_download} bytes, type: \")",
+      "Bash(awk '{print $5, $9}')"
+    ]
+  }
+}

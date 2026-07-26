@@ -1,0 +1,417 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
+import { FaSearch, FaUser, FaShoppingBag, FaBars, FaTimes, FaChevronRight } from "react-icons/fa";
+import { useCartTotalQuantity } from "@/store/cart-store";
+import { productCategories, promoCards, rooms } from "@/lib/data/homepage-mock";
+
+// Alt metin menüsü — referans Shopify sitesiyle birebir aynı etiketler ve sıra
+const MENU_LINKS = [
+  { label: "Kategoriler", href: "/kategori" },
+  { label: "Odalara Göre", href: "/oda" },
+  { label: "İndirmdekiler", href: "/indirimler" },
+  { label: "Katalog", href: "/katalog" },
+  { label: "Ana sayfa", href: "/" },
+  { label: "Hakkımızda", href: "/hakkimizda" },
+  { label: "İletişim", href: "/iletisim" },
+];
+
+// "Kategoriler" mega menu'sünde gösterilen sütunlar ve promosyon kartı — sabit veri
+// olduğu için modül seviyesinde bir kez hesaplanır.
+const CATEGORY_MID = Math.ceil(productCategories.length / 2);
+const CATEGORY_COLUMNS = [
+  productCategories.slice(0, CATEGORY_MID),
+  productCategories.slice(CATEGORY_MID),
+];
+const CATEGORY_PROMO = promoCards[0];
+
+// "Odalara Göre" mega menu'sünde her odanın sağ panelinde gösterilecek kategoriler —
+// gerçek kategori verisinden (productCategories) odayla ilişkili anlamlı bir alt küme.
+const ROOM_CATEGORY_SLUGS: Record<string, string[]> = {
+  "yatak-odasi": ["gardirop", "dresuar", "makyaj-kosesi", "portmanto", "tv-unitesi", "kahve-kosesi"],
+  "giyinme-odasi": ["gardirop", "portmanto", "makyaj-kosesi", "dresuar", "kahve-kosesi", "banyo-dolabi"],
+  "antre-hol": ["portmanto", "dresuar", "gardirop", "makyaj-kosesi"],
+  "salon-oturma-odasi": ["tv-unitesi", "dresuar", "kahve-kosesi", "gardirop", "portmanto", "calisma-masasi"],
+  mutfak: ["moduler-mutfak-dolabi", "kahve-kosesi", "dresuar"],
+  banyo: ["banyo-dolabi", "makyaj-kosesi"],
+  "calisma-odasi": ["calisma-masasi", "kahve-kosesi", "dresuar", "tv-unitesi"],
+  "genc-cocuk-odasi": ["cocuk-odasi", "oyuncu-masasi", "calisma-masasi", "gardirop", "dresuar"],
+  "ofis-is-yeri": ["calisma-masasi", "dresuar", "kahve-kosesi", "tv-unitesi"],
+  "cok-amacli-dolaplar": ["gardirop", "dresuar", "banyo-dolabi", "moduler-mutfak-dolabi", "portmanto", "tv-unitesi"],
+  aksesuarlar: ["kahve-kosesi", "makyaj-kosesi", "oyuncu-masasi", "dresuar"],
+};
+const CATEGORY_BY_SLUG = new Map(productCategories.map((cat) => [cat.slug, cat]));
+
+export default function Navbar() {
+  // Sayfa kaydırıldığında navbar arkasına cam efekti uygulamak ve alt menü
+  // satırını katlamak için — üst satır (logo/arama/ikonlar) HER ZAMAN sabit kalır,
+  // sadece alt metin menüsü (Kategoriler...İletişim) scroll'da kaybolur.
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const categoriesCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // "Odalara Göre" — referans temadaki menu-sidebar davranışı: panel açık/kapalı durumu
+  // ile o an aktif (hover'lanan) oda ayrı state'ler; oda seçimi panel kapansa da kalıcıdır.
+  const [roomsOpen, setRoomsOpen] = useState(false);
+  const [activeRoomSlug, setActiveRoomSlug] = useState(rooms[0].slug);
+  const roomsCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cartCount = useCartTotalQuantity();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    // Kayan sayfa en üste dönünce alt metin menüsü zaten yeniden görünür hale gelir;
+    // hamburger dropdown'u da açık kalırsa aynı linkler iki kez üst üste görünür.
+    // Bu yüzden en üste dönüldüğünde dropdown'u kapatıyoruz.
+    const handleScroll = () => {
+      const scrolled = window.scrollY > 8;
+      setIsScrolled(scrolled);
+      if (!scrolled) setMenuOpen(false);
+      // Alt metin menüsü scroll'da katlanınca "Kategoriler"/"Odalara Göre" tetikleyicileri de
+      // görünmez oluyor — mega menu panelleri ortada asılı kalmasın diye kapatıyoruz.
+      setCategoriesOpen(false);
+      setRoomsOpen(false);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Trigger'dan panele geçerken aradaki küçük boşlukta menünün anında kapanmaması için
+  // kapanışı hafifçe geciktiriyoruz; yeniden hover edilirse zamanlayıcı iptal edilir.
+  const openCategoriesMenu = () => {
+    if (categoriesCloseTimer.current) clearTimeout(categoriesCloseTimer.current);
+    setCategoriesOpen(true);
+  };
+  const closeCategoriesMenu = () => {
+    categoriesCloseTimer.current = setTimeout(() => setCategoriesOpen(false), 120);
+  };
+
+  const openRoomsMenu = () => {
+    if (roomsCloseTimer.current) clearTimeout(roomsCloseTimer.current);
+    setRoomsOpen(true);
+  };
+  const closeRoomsMenu = () => {
+    roomsCloseTimer.current = setTimeout(() => setRoomsOpen(false), 120);
+  };
+
+  // Güvenlik ağı: fare, tetikleyici satırı + açık panel alanının tamamını (aradaki
+  // boşluklar dahil) terk ettiğinde her iki mega menünün de kapanmasını garantiler.
+  const closeAllMegaMenus = () => {
+    closeCategoriesMenu();
+    closeRoomsMenu();
+  };
+
+  return (
+    <header
+      className={[
+        "sticky top-0 z-50 transition-all duration-300",
+        isScrolled ? "bg-white/80 shadow-sm backdrop-blur-md" : "bg-white/0 backdrop-blur-0",
+      ].join(" ")}
+    >
+      {/* Ana navbar satırı: hamburger / logo / arama / kullanıcı araçları */}
+      <div className="mx-auto flex max-w-7xl items-center gap-8 px-4 py-5 sm:px-6 lg:px-8">
+        {/* Logo yanındaki hamburger: sadece alt metin menüsü scroll'da katlanınca belirir, yerini alır */}
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label="Menüyü aç/kapat"
+          className={[
+            "grid shrink-0 place-items-center overflow-hidden text-secondary transition-all duration-300 hover:text-primary",
+            isScrolled ? "h-9 w-9 scale-100 opacity-100" : "h-9 w-0 scale-75 opacity-0",
+          ].join(" ")}
+        >
+          {menuOpen ? <FaTimes className="h-4 w-4" /> : <FaBars className="h-4 w-4" />}
+        </button>
+
+        {/* Logo — imza tam olarak "ÖZCAN MOBİLYA" satırının altına ortalanır */}
+        <Link href="/" className="flex shrink-0 flex-col items-center">
+          <span className="whitespace-nowrap">
+            <span className="font-display text-3xl font-bold tracking-wide text-brand">
+              ÖZCAN
+            </span>
+            <span className="ml-2 font-body text-xs font-medium tracking-[0.25em] text-secondary">
+              MOBİLYA
+            </span>
+          </span>
+          <span className="font-script text-2xl leading-none text-brand/80">
+            &ldquo;Hayallerinizi Tasarlar&rdquo;
+          </span>
+        </Link>
+
+        {/* Arama barı */}
+        <div className="hidden flex-1 items-center rounded-full border border-secondary/15 bg-secondary/[0.03] px-6 py-3.5 md:flex">
+          <input
+            type="text"
+            placeholder="Ne arıyorsunuz?"
+            className="w-full bg-transparent font-body text-sm text-secondary placeholder:text-secondary-light focus:outline-none"
+          />
+          <FaSearch className="ml-3 h-4 w-4 shrink-0 text-secondary-light" />
+        </div>
+
+        {/* Kullanıcı araçları */}
+        <div className="ml-auto flex shrink-0 items-center gap-5">
+          {status === "authenticated" ? (
+            <div className="hidden items-center gap-3 sm:flex">
+              <Link
+                href="/hesabim"
+                className="flex items-center gap-2 font-body text-xs font-medium text-secondary hover:text-primary"
+              >
+                <FaUser className="h-3.5 w-3.5" />
+                <span>{session.user?.name ?? "Hesabım"}</span>
+              </Link>
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="font-body text-xs font-medium text-secondary-light hover:text-primary"
+              >
+                Çıkış
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/giris"
+              className="hidden items-center gap-2 font-body text-xs font-medium text-secondary hover:text-primary sm:flex"
+            >
+              <FaUser className="h-3.5 w-3.5" />
+              <span>Sign in/ Register</span>
+            </Link>
+          )}
+          <Link href="/sepet" className="relative">
+            <FaShoppingBag className="h-5 w-5 text-secondary transition-colors hover:text-primary" />
+            {cartCount > 0 && (
+              <span
+                key={cartCount}
+                className="absolute -right-1.5 -top-1.5 flex h-4 w-4 animate-cart-bump items-center justify-center rounded-full bg-primary text-[9px] font-semibold text-white"
+              >
+                {cartCount}
+              </span>
+            )}
+          </Link>
+        </div>
+      </div>
+
+      {/* Alt metin menüsü — scroll'da veya hamburger dropdown'u açıkken katlanır, ikisi aynı anda görünmez.
+          "relative" kapsayıcı: mega menu paneli nav'ın overflow-hidden'ı tarafından kırpılmasın diye
+          nav'ın kendisi değil, bu dış sarmalayıcı konumlandırma referansı olarak kullanılıyor. */}
+      <div className="relative" onMouseLeave={closeAllMegaMenus}>
+        <nav
+          className={[
+            "scrollbar-hide overflow-hidden border-t border-secondary/10 transition-[max-height,opacity] duration-300 ease-in-out",
+            isScrolled || menuOpen ? "max-h-0 border-t-0 opacity-0" : "max-h-20 opacity-100",
+          ].join(" ")}
+        >
+          <ul className="mx-auto flex max-w-7xl items-center gap-8 whitespace-nowrap px-4 py-3.5 font-body text-sm font-medium text-secondary sm:px-6 lg:px-8">
+            {MENU_LINKS.map((link) =>
+              link.label === "Kategoriler" ? (
+                <li
+                  key={link.label}
+                  onMouseEnter={openCategoriesMenu}
+                  onMouseLeave={closeCategoriesMenu}
+                  onFocus={openCategoriesMenu}
+                >
+                  <Link
+                    href={link.href}
+                    className="categories-trigger relative inline-block py-1 text-secondary after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-0 after:bg-secondary after:transition-transform after:duration-300 after:ease-out hover:text-primary hover:after:scale-x-100"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ) : link.label === "Odalara Göre" ? (
+                <li
+                  key={link.label}
+                  onMouseEnter={openRoomsMenu}
+                  onMouseLeave={closeRoomsMenu}
+                  onFocus={openRoomsMenu}
+                >
+                  <Link
+                    href={link.href}
+                    className="categories-trigger relative inline-block py-1 text-secondary after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-0 after:bg-secondary after:transition-transform after:duration-300 after:ease-out hover:text-primary hover:after:scale-x-100"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ) : (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="relative inline-block py-1 transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-0 after:bg-secondary after:transition-transform after:duration-300 after:ease-out hover:text-primary hover:after:scale-x-100"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              )
+            )}
+          </ul>
+        </nav>
+
+        {/* "Kategoriler" mega menu paneli — referans temadaki .mega-menu__container gibi
+            TAM GENİŞLİKTE, düz bir panel (kart/gölge/yuvarlak köşe yok), sadece üstte ince
+            bir çizgiyle ayrılıyor. Hover'da .categories-mega.is-open ile açılır, animasyon
+            mantığı globals.css'te tanımlı (bkz. .categories-mega*). */}
+        <div
+          className={[
+            "categories-mega pointer-events-none absolute inset-x-0 top-full z-40 border-t border-secondary/10 bg-white",
+            categoriesOpen ? "is-open pointer-events-auto" : "",
+          ].join(" ")}
+          onMouseEnter={openCategoriesMenu}
+          onMouseLeave={closeCategoriesMenu}
+          aria-hidden={!categoriesOpen}
+        >
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap gap-16">
+              {CATEGORY_COLUMNS.map((col, i) => (
+                <ul key={i} className="categories-mega__col flex w-52 flex-col gap-4">
+                  {col.map((cat) => (
+                    <li key={cat.id}>
+                      <Link href={`/kategori/${cat.slug}`} className="group flex items-center gap-3">
+                        <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-secondary/10 bg-secondary/[0.04]">
+                          {cat.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={cat.imageUrl}
+                              alt=""
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            />
+                          ) : null}
+                        </span>
+                        <span className="relative font-body text-sm font-medium text-secondary after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-0 after:bg-secondary after:transition-transform after:duration-300 after:ease-out group-hover:text-primary group-hover:after:scale-x-100">
+                          {cat.name}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ))}
+
+              <Link
+                href={CATEGORY_PROMO.ctaHref}
+                className="categories-mega__promo group relative block w-72 shrink-0 overflow-hidden rounded-xl"
+              >
+                <span className="categories-mega__promo-media block h-64 w-full overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={CATEGORY_PROMO.imageUrl}
+                    alt={CATEGORY_PROMO.title}
+                    className="h-full w-full object-cover"
+                  />
+                </span>
+                <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+                <span className="absolute inset-x-0 bottom-0 p-5">
+                  <span className="categories-mega__promo-eyebrow block font-body text-[11px] font-semibold uppercase tracking-wider text-white/80">
+                    {CATEGORY_PROMO.badgeLabel} · {CATEGORY_PROMO.badgeValue}
+                  </span>
+                  <span className="categories-mega__promo-title mt-1 block font-display text-lg font-semibold text-white">
+                    {CATEGORY_PROMO.title}
+                  </span>
+                  <span className="categories-mega__promo-cta mt-3 inline-block rounded-full bg-white px-4 py-2 font-body text-xs font-semibold text-secondary">
+                    {CATEGORY_PROMO.ctaLabel}
+                  </span>
+                </span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* "Odalara Göre" mega menu paneli — referans hyper-theme-demo "Shop By Room" mega
+            menu'sünün birebir karşılığı: TAM GENİŞLİKTE düz panel (kart/gölge yok, sadece üst
+            çizgi), solda hover'da aktif olan oda listesi, sağda o odaya ait kategori kartlarının
+            aynı grid hücresinde üst üste durup (.rooms-mega-panel) crossfade + slide ile geçiş
+            yaptığı panel (bkz. globals.css .rooms-mega-panel*). */}
+        <div
+          className={[
+            "categories-mega pointer-events-none absolute inset-x-0 top-full z-40 border-t border-secondary/10 bg-white",
+            roomsOpen ? "is-open pointer-events-auto" : "",
+          ].join(" ")}
+          onMouseEnter={openRoomsMenu}
+          onMouseLeave={closeRoomsMenu}
+          aria-hidden={!roomsOpen}
+        >
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <div className="flex gap-12">
+              {/* Sol: oda listesi — hover'da aktif oda değişir, tıklama navigasyon yapmaz
+                  (referans temadaki summary davranışıyla birebir aynı: sadece sağdaki içeriği değiştirir) */}
+              <div className="scrollbar-hide flex max-h-[360px] w-[220px] shrink-0 flex-col gap-1 overflow-y-auto border-r border-secondary/10 pr-6">
+                {rooms.map((room) => (
+                  <button
+                    key={room.id}
+                    type="button"
+                    onMouseEnter={() => setActiveRoomSlug(room.slug)}
+                    className={[
+                      "rooms-mega-toggle flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left font-body text-sm font-medium text-secondary",
+                      activeRoomSlug === room.slug ? "is-active" : "",
+                    ].join(" ")}
+                  >
+                    {room.name}
+                    <FaChevronRight className="h-2.5 w-2.5 shrink-0 text-secondary-light" />
+                  </button>
+                ))}
+              </div>
+
+              {/* Sağ: aktif odaya ait kategori kartları — tüm odaların panelleri aynı grid
+                  hücresinde üst üste durur, sadece aktif olan görünür (bkz. .rooms-mega-panels).
+                  Grid satırı görünmeyen paneller dahil en uzun içeriğe göre boyutlanır; bu yüzden
+                  hem satırı (content-center) hem her panelin kendi hücre içindeki içeriğini
+                  (items-center) ortalıyoruz — az kategorili odalar üstte yapışık kalmasın. */}
+              <div className="rooms-mega-panels max-w-[620px] flex-1 content-center items-center">
+                {rooms.map((room) => {
+                  const roomCategories = (ROOM_CATEGORY_SLUGS[room.slug] ?? [])
+                    .map((slug) => CATEGORY_BY_SLUG.get(slug))
+                    .filter((cat): cat is NonNullable<typeof cat> => Boolean(cat));
+                  return (
+                    <div
+                      key={room.id}
+                      className={[
+                        "rooms-mega-panel grid grid-cols-3 gap-x-4 gap-y-5",
+                        activeRoomSlug === room.slug ? "is-active" : "",
+                      ].join(" ")}
+                    >
+                      {roomCategories.map((cat) => (
+                        <Link
+                          key={cat.id}
+                          href={`/kategori/${cat.slug}`}
+                          className="rooms-mega-panel__img group grid gap-2"
+                        >
+                          <span className="block aspect-[8/5] overflow-hidden rounded-lg bg-secondary/[0.04]">
+                            {cat.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={cat.imageUrl} alt="" className="h-full w-full object-cover" />
+                            ) : null}
+                          </span>
+                          <span className="relative font-body text-xs font-medium text-secondary after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-0 after:bg-secondary after:transition-transform after:duration-300 after:ease-out group-hover:text-primary group-hover:after:scale-x-100">
+                            {cat.name}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hamburger tıklanınca açılan, kategorileri yatay listeleyen dropdown menü */}
+      <div
+        className={[
+          "overflow-hidden border-t border-secondary/10 bg-white shadow-md transition-[max-height,opacity] duration-300 ease-in-out",
+          menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
+        ].join(" ")}
+      >
+        <ul className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-8 gap-y-3 px-4 py-4 font-body text-sm font-medium text-secondary sm:px-6 lg:px-8">
+          {MENU_LINKS.map((link) => (
+            <li key={link.label}>
+              <Link
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="relative inline-block py-1 transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-0 after:bg-secondary after:transition-transform after:duration-300 after:ease-out hover:text-primary hover:after:scale-x-100"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </header>
+  );
+}
