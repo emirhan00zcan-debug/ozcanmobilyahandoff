@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { FaSearch, FaUser, FaShoppingBag, FaBars, FaTimes, FaChevronRight } from "react-icons/fa";
 import { useCartTotalQuantity } from "@/store/cart-store";
-import { productCategories, promoCards, rooms } from "@/lib/data/homepage-mock";
+import { promoCards, type CategoryCircle } from "@/lib/data/homepage-mock";
 
 // Alt metin menüsü — referans Shopify sitesiyle birebir aynı etiketler ve sıra
 const MENU_LINKS = [
@@ -18,17 +19,13 @@ const MENU_LINKS = [
   { label: "İletişim", href: "/iletisim" },
 ];
 
-// "Kategoriler" mega menu'sünde gösterilen sütunlar ve promosyon kartı — sabit veri
-// olduğu için modül seviyesinde bir kez hesaplanır.
-const CATEGORY_MID = Math.ceil(productCategories.length / 2);
-const CATEGORY_COLUMNS = [
-  productCategories.slice(0, CATEGORY_MID),
-  productCategories.slice(CATEGORY_MID),
-];
+// "Kategoriler" mega menu'sündeki promosyon kartı — sabit veri olduğu için modül
+// seviyesinde bir kez hesaplanır (kategori sütunları artık props'tan geldiği için
+// bileşen içinde useMemo ile hesaplanıyor, bkz. aşağı).
 const CATEGORY_PROMO = promoCards[0];
 
 // "Odalara Göre" mega menu'sünde her odanın sağ panelinde gösterilecek kategoriler —
-// gerçek kategori verisinden (productCategories) odayla ilişkili anlamlı bir alt küme.
+// gerçek kategori verisinden (categories prop'u) odayla ilişkili anlamlı bir alt küme.
 const ROOM_CATEGORY_SLUGS: Record<string, string[]> = {
   "yatak-odasi": ["gardirop", "dresuar", "makyaj-kosesi", "portmanto", "tv-unitesi", "kahve-kosesi"],
   "giyinme-odasi": ["gardirop", "portmanto", "makyaj-kosesi", "dresuar", "kahve-kosesi", "banyo-dolabi"],
@@ -42,9 +39,20 @@ const ROOM_CATEGORY_SLUGS: Record<string, string[]> = {
   "cok-amacli-dolaplar": ["gardirop", "dresuar", "banyo-dolabi", "moduler-mutfak-dolabi", "portmanto", "tv-unitesi"],
   aksesuarlar: ["kahve-kosesi", "makyaj-kosesi", "oyuncu-masasi", "dresuar"],
 };
-const CATEGORY_BY_SLUG = new Map(productCategories.map((cat) => [cat.slug, cat]));
 
-export default function Navbar() {
+type Props = {
+  categories: CategoryCircle[];
+  rooms: CategoryCircle[];
+};
+
+export default function Navbar({ categories, rooms }: Props) {
+  const categoryMid = Math.ceil(categories.length / 2);
+  const categoryColumns = useMemo(
+    () => [categories.slice(0, categoryMid), categories.slice(categoryMid)],
+    [categories, categoryMid],
+  );
+  const categoryBySlug = useMemo(() => new Map(categories.map((cat) => [cat.slug, cat])), [categories]);
+
   // Sayfa kaydırıldığında navbar arkasına cam efekti uygulamak ve alt menü
   // satırını katlamak için — üst satır (logo/arama/ikonlar) HER ZAMAN sabit kalır,
   // sadece alt metin menüsü (Kategoriler...İletişim) scroll'da kaybolur.
@@ -55,10 +63,25 @@ export default function Navbar() {
   // "Odalara Göre" — referans temadaki menu-sidebar davranışı: panel açık/kapalı durumu
   // ile o an aktif (hover'lanan) oda ayrı state'ler; oda seçimi panel kapansa da kalıcıdır.
   const [roomsOpen, setRoomsOpen] = useState(false);
-  const [activeRoomSlug, setActiveRoomSlug] = useState(rooms[0].slug);
+  const [activeRoomSlug, setActiveRoomSlug] = useState(rooms[0]?.slug ?? "");
   const roomsCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cartCount = useCartTotalQuantity();
   const { data: session, status } = useSession();
+  const pathname = usePathname();
+
+  // Mega menu/hamburger içindeki bir linke tıklanıp sayfa değiştiğinde, Navbar
+  // aynı layout içinde kalıp yeniden mount olmadığı için panel açık kalabiliyordu
+  // (örn. "Gardrop"a tıklayınca kategori sayfasına geçilir ama panel üstte asılı kalırdı).
+  // Rota her değiştiğinde tüm menüleri kapatıyoruz — React'in "prop değişince state
+  // sıfırlama" için önerdiği şekilde, effect yerine render sırasında yapılıyor:
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setCategoriesOpen(false);
+    setRoomsOpen(false);
+    setMenuOpen(false);
+  }
 
   useEffect(() => {
     // Kayan sayfa en üste dönünce alt metin menüsü zaten yeniden görünür hale gelir;
@@ -259,7 +282,7 @@ export default function Navbar() {
         >
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <div className="flex flex-wrap gap-16">
-              {CATEGORY_COLUMNS.map((col, i) => (
+              {categoryColumns.map((col, i) => (
                 <ul key={i} className="categories-mega__col flex w-52 flex-col gap-4">
                   {col.map((cat) => (
                     <li key={cat.id}>
@@ -355,7 +378,7 @@ export default function Navbar() {
               <div className="rooms-mega-panels max-w-[620px] flex-1 content-center items-center">
                 {rooms.map((room) => {
                   const roomCategories = (ROOM_CATEGORY_SLUGS[room.slug] ?? [])
-                    .map((slug) => CATEGORY_BY_SLUG.get(slug))
+                    .map((slug) => categoryBySlug.get(slug))
                     .filter((cat): cat is NonNullable<typeof cat> => Boolean(cat));
                   return (
                     <div

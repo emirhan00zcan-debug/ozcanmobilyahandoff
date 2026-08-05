@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import Reveal from "@/components/ui/Reveal";
 import CategoryCircles from "@/components/layout/CategoryCircles";
 import HeroSlider from "@/components/home/HeroSlider";
@@ -12,10 +13,9 @@ import AboutSection from "@/components/home/AboutSection";
 import Testimonials from "@/components/home/Testimonials";
 import InstagramStrip from "@/components/home/InstagramStrip";
 import {
-  productCategories,
-  rooms,
+  getCategories,
+  getRooms,
   heroSlides,
-  featuredProducts,
   featuredProductsBanner,
   showcaseTiles,
   collectionTabs,
@@ -25,16 +25,24 @@ import {
   testimonials,
   socialLinks,
 } from "@/lib/data/homepage-mock";
+import { getFeaturedProducts } from "@/lib/data/products";
 
-// Kampanya bitiş tarihi — gerçek projede bu, aktif Coupon kaydının `endsAt`
-// alanından (schema.prisma) sunucu tarafında çekilecek.
-const CAMPAIGN_END_DATE = new Date(Date.now() + 1000 * 60 * 60 * 24 * 19 + 1000 * 60 * 60 * 2 + 1000 * 60 * 46);
+export default async function HomePage() {
+  // Kampanya sayacı, veritabanındaki aktif Coupon kaydının gerçek `endsAt` tarihine bağlı;
+  // süresi geçmiş veya pasif kuponlarda banner hiç gösterilmez.
+  const [activeCoupon, categories, rooms, featuredProducts] = await Promise.all([
+    prisma.coupon.findFirst({
+      where: { code: "FLAS20", isActive: true, endsAt: { gt: new Date() } },
+    }),
+    getCategories(),
+    getRooms(),
+    getFeaturedProducts(),
+  ]);
 
-export default function HomePage() {
   return (
     <>
       {/* 2. Kategori çemberi navigasyonu */}
-      <CategoryCircles items={productCategories} basePath="/kategori" size="sm" />
+      <CategoryCircles items={categories} basePath="/kategori" size="sm" />
 
       {/* 3. Ana görsel & slogan */}
       <HeroSlider slides={heroSlides} />
@@ -53,10 +61,12 @@ export default function HomePage() {
         />
       </Reveal>
 
-      {/* 5. Kampanya sayacı barı */}
-      <Reveal>
-        <CountdownBar targetDate={CAMPAIGN_END_DATE} couponCode="FLAS20" />
-      </Reveal>
+      {/* 5. Kampanya sayacı barı — kupon aktif ve süresi dolmamışsa gösterilir */}
+      {activeCoupon && (
+        <Reveal>
+          <CountdownBar targetDate={activeCoupon.endsAt} couponCode={activeCoupon.code} />
+        </Reveal>
+      )}
 
       {/* 6. Büyük banner'lı ürün ızgarası (2x2 / 4'lü tek sıra) */}
       <Reveal>

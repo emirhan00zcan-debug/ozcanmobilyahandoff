@@ -1,15 +1,233 @@
-// Geliştirme/staging veritabanını, src/lib/data/*.ts içindeki mock veriyle dolduran seed script.
+// Geliştirme/staging veritabanını referans-site içeriğiyle (ürünler, kategoriler, odalar,
+// FLAŞ20 kampanyası) dolduran seed script. Veri kaynağı burada literal olarak tutulur — uygulama
+// artık bu içeriği src/lib/data/*.ts üzerinden değil doğrudan Prisma sorgularıyla okuyor, seed
+// script'i ise ilk kurulumda/CI'da DB'yi aynı içerikle doldurmak için ayrı bir veri seti taşır.
 // Çalıştırma: npm run db:seed  (prisma db seed de aynı komutu tetikler, bkz. package.json#prisma.seed)
-//
-// Amaç: mock dosyalardaki gerçek referans-site içeriğini (ürünler, kategoriler, odalar,
-// FLAŞ20 kampanyası) birebir DB'ye taşımak — böylece sayfalar mock array'ler yerine
-// Prisma sorgularına geçtiğinde görünüm aynı kalır.
 
 import { PrismaClient } from "@prisma/client";
-import { productCategories, rooms } from "../src/lib/data/homepage-mock";
-import { products } from "../src/lib/data/products";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+
+type SeedTaxonomy = { name: string; slug: string; imageUrl?: string };
+
+// "Kategoriler" mega menu + /kategori sayfaları — görseller referans siteden indirilen gerçek fotoğraflar
+const SEED_CATEGORIES: SeedTaxonomy[] = [
+  { name: "Gardrop", slug: "gardirop", imageUrl: "/media/reklam2_karsidan.jpg" },
+  { name: "Portmanto", slug: "portmanto", imageUrl: "/media/wardrobe_front_closed_1776678972128.jpg" },
+  { name: "Çalışma Masası", slug: "calisma-masasi", imageUrl: "/media/Gemini_Generated_Image_ci9bm4ci9bm4ci9b.png" },
+  { name: "Tv Ünitesi", slug: "tv-unitesi", imageUrl: "/media/t3_pro_1769533120140.jpg" },
+  { name: "Kahve Köşesi", slug: "kahve-kosesi", imageUrl: "/media/Gemini_Generated_Image_5oyd1r5oyd1r5oyd.png" },
+  { name: "Oyuncu Masası", slug: "oyuncu-masasi", imageUrl: "/media/gorsel_2026-06-27_145006208.png" },
+  { name: "Banyo Dolabı", slug: "banyo-dolabi", imageUrl: "/media/d4_pro_1769532928933.jpg" },
+  { name: "Çocuk Odası", slug: "cocuk-odasi" },
+  { name: "Dresuar", slug: "dresuar", imageUrl: "/media/d2_pro_1769513413217.jpg" },
+  { name: "Makyaj Köşesi", slug: "makyaj-kosesi", imageUrl: "/media/9134f1b6-81e7-4e49-8914-9f9ae2af4137.jpg" },
+  { name: "Modüler Mutfak Dolabı", slug: "moduler-mutfak-dolabi", imageUrl: "/media/premium-kitchen.jpg" },
+];
+
+// "Odalara Göre" mega menu + /oda sayfaları — dizideki sıra menü sırasıdır (Room.order)
+const SEED_ROOMS: SeedTaxonomy[] = [
+  { name: "Yatak Odası", slug: "yatak-odasi", imageUrl: "/media/gorsel_2026-07-09_230726761.png" },
+  { name: "Giyinme Odası", slug: "giyinme-odasi", imageUrl: "/media/Gemini_Generated_Image_zfdnerzfdnerzfdn.jpg" },
+  { name: "Antre & Hol", slug: "antre-hol" },
+  { name: "Salon & Oturma Odası", slug: "salon-oturma-odasi", imageUrl: "/media/Gemini_Generated_Image_xzuxo6xzuxo6xzux.png" },
+  { name: "Mutfak", slug: "mutfak", imageUrl: "/media/premium-kitchen.jpg" },
+  { name: "Banyo", slug: "banyo", imageUrl: "/media/gorsel_2026-07-09_233916617.png" },
+  { name: "Çalışma Odası", slug: "calisma-odasi", imageUrl: "/media/Gemini_Generated_Image_umx6nlumx6nlumx6.png" },
+  { name: "Genç & Çocuk Odası", slug: "genc-cocuk-odasi", imageUrl: "/media/gorsel_2026-07-09_235237239.png" },
+  { name: "Ofis & İş Yeri", slug: "ofis-is-yeri", imageUrl: "/media/Gemini_Generated_Image_sn8381sn8381sn83.png" },
+  { name: "Çok Amaçlı Dolaplar", slug: "cok-amacli-dolaplar", imageUrl: "/media/Gemini_Generated_Image_h3rivih3rivih3ri.png" },
+  { name: "Aksesuarlar", slug: "aksesuarlar", imageUrl: "/media/Gemini_Generated_Image_8jyuzm8jyuzm8jyu.png" },
+];
+
+type SeedDimensionRow = { label: string; widthCm: string; heightCm: string; depthCm: string };
+type SeedMaterialInfo = { label: string; text: string };
+
+type SeedProduct = {
+  slug: string;
+  name: string;
+  vendor: string;
+  basePrice: number;
+  compareAtPrice?: number;
+  inStock: boolean;
+  categorySlug: string;
+  roomSlug: string;
+  images: string[];
+  features: string[];
+  dimensions: SeedDimensionRow[];
+  description: string;
+  featureList: string[];
+  materialInfo: SeedMaterialInfo[];
+};
+
+// "modern-klasik-3-kapakli-cerceve-kapakli-mat-beyaz-gardirop" kaydı referans Shopify sitesindeki
+// gerçek ürün sayfasından (preview link) birebir alınmıştır. Diğer kayıtlar aynı şablonu
+// kullanabilmesi için makul içerikle dolduruldu (henüz referans sitede tek tek incelenmedi).
+const SEED_PRODUCTS: SeedProduct[] = [
+  {
+    slug: "modern-klasik-3-kapakli-cerceve-kapakli-mat-beyaz-gardirop",
+    name: "Modern Klasik 3 Kapaklı Çerçeve Kapaklı Mat Beyaz Gardırop",
+    vendor: "Özcan Mobilya",
+    basePrice: 30000,
+    compareAtPrice: 42000,
+    inStock: false,
+    categorySlug: "gardirop",
+    roomSlug: "yatak-odasi",
+    images: [
+      "/media/k602_lifestyle_1782831673363.jpg",
+      "/media/k602_closed_studio_1782831490167.jpg",
+      "/media/k602_open_interior_1782831500815.jpg",
+    ],
+    features: ["Modern", "Yatak odanıza özel tasarımlar", "2 yıllık garanti"],
+    dimensions: [
+      { label: "Dış Ölçüler", widthCm: "200 cm", heightCm: "220 cm (Taç Dahil)", depthCm: "60 cm" },
+      { label: "Ayak Yüksekliği", widthCm: "-", heightCm: "10 cm (Robot Süpürge Uyumlu)", depthCm: "-" },
+    ],
+    description:
+      "Geleneksel çerçeve tasarımının en modern hali! K 602 gardırop, düz ve net dikdörtgen panel hatları ile hem country hem de modern yatak odası dekorasyonlarına mükemmel uyum sağlar",
+    featureList: [
+      "Tasarım: Derin fugalı, simetrik dikdörtgen çerçeve kapak yapısı ve belirgin üst taç detayı.",
+      "Depolama: Uzun kıyafetleriniz ve raflı düzenlemeler için optimum hacim sunan 3 kapaklı tasarım.",
+      "Kulp: Minimalist, estetik metalik gri/beyaz tonlarında düğme kulplar.",
+      "Malzeme: Çizilmeye karşı dayanıklı, uzun ömürlü mat beyaz gövde ve kapaklar.",
+    ],
+    materialInfo: [
+      {
+        label: "Gövde ve Kapaklar:",
+        text: "1. Sınıf E1 kalitesinde, neme, ısıya ve çizilmeye karşı maksimum dayanıklı, yüksek yoğunluklu 18mm kalınlığında MDF malzeme kullanılarak üretilmiştir.",
+      },
+      {
+        label: "Yüzey:",
+        text: "Kolay temizlenebilir, leke tutmayan ve sararmaya karşı dirençli premium mat beyaz kaplama.",
+      },
+      {
+        label: "Sağlık Standartları:",
+        text: "Kanserojen madde içermeyen, Avrupa standartlarına uygun (E1) çevre ve çocuk dostu materyallerden üretilmiştir.",
+      },
+    ],
+  },
+  {
+    slug: "alya-klasik-kemer-detayli-gardirop",
+    name: "Alya Klasik Kemer Detaylı 3 Kapaklı Gardırop - Mat Beyaz",
+    vendor: "Özcan Mobilya",
+    basePrice: 25000,
+    inStock: true,
+    categorySlug: "gardirop",
+    roomSlug: "yatak-odasi",
+    images: [
+      "/media/k88_closed_studio_1782832274292.jpg",
+      "/media/k88_lifestyle_1782832301685.jpg",
+    ],
+    features: ["Modern", "Yatak odanıza özel tasarımlar", "2 yıllık garanti"],
+    dimensions: [
+      { label: "Dış Ölçüler", widthCm: "180 cm", heightCm: "215 cm (Taç Dahil)", depthCm: "58 cm" },
+      { label: "Ayak Yüksekliği", widthCm: "-", heightCm: "8 cm", depthCm: "-" },
+    ],
+    description:
+      "Kemer detaylı kapak hatlarıyla klasik çizgiyi modern bir yatak odasına taşıyan Alya, mat beyaz gövdesiyle her dekorasyona uyum sağlar.",
+    featureList: [
+      "Tasarım: Üst kısmı kemerli, simetrik 3 kapaklı klasik çizgi.",
+      "Depolama: Raflı ve askılıklı iç düzenlemeyle geniş kullanım alanı.",
+      "Kulp: Zarif, ince profil metal kulplar.",
+      "Malzeme: Uzun ömürlü, çizilmeye dayanıklı mat beyaz gövde ve kapaklar.",
+    ],
+    materialInfo: [
+      {
+        label: "Gövde ve Kapaklar:",
+        text: "1. Sınıf E1 kalitesinde, neme ve çizilmeye dayanıklı 18mm MDF malzeme kullanılarak üretilmiştir.",
+      },
+      {
+        label: "Yüzey:",
+        text: "Kolay temizlenebilir, leke tutmayan mat beyaz kaplama.",
+      },
+      {
+        label: "Sağlık Standartları:",
+        text: "Avrupa standartlarına uygun (E1) çevre ve çocuk dostu materyallerden üretilmiştir.",
+      },
+    ],
+  },
+  {
+    slug: "klasik-avangart-4-cekmeceli-gardirop",
+    name: "Klasik Avangart 3 Kapaklı 4 Çekmeceli Beyaz Gardırop",
+    vendor: "Özcan Mobilya",
+    basePrice: 35000,
+    inStock: true,
+    categorySlug: "gardirop",
+    roomSlug: "yatak-odasi",
+    images: [
+      "/media/k83_closed_studio_1782833640405.jpg",
+      "/media/k83_lifestyle_1782833667431.jpg",
+    ],
+    features: ["Modern", "Yatak odanıza özel tasarımlar", "2 yıllık garanti"],
+    dimensions: [
+      { label: "Dış Ölçüler", widthCm: "210 cm", heightCm: "220 cm (Taç Dahil)", depthCm: "60 cm" },
+      { label: "Ayak Yüksekliği", widthCm: "-", heightCm: "10 cm (Robot Süpürge Uyumlu)", depthCm: "-" },
+    ],
+    description:
+      "Avangart kapak hatları ve 4 geniş çekmecesiyle depolama ihtiyacınızı katlayan Klasik Avangart, yatak odanıza kullanışlı ve şık bir çözüm sunar.",
+    featureList: [
+      "Tasarım: Avangart, dikdörtgen çerçeve kapak yapısı ve belirgin taç detayı.",
+      "Depolama: 3 kapaklı gövde + 4 geniş çekmece ile ekstra depolama alanı.",
+      "Kulp: Minimalist metalik düğme kulplar.",
+      "Malzeme: Çizilmeye karşı dayanıklı, uzun ömürlü mat beyaz gövde ve kapaklar.",
+    ],
+    materialInfo: [
+      {
+        label: "Gövde ve Kapaklar:",
+        text: "1. Sınıf E1 kalitesinde, yüksek yoğunluklu 18mm kalınlığında MDF malzeme kullanılarak üretilmiştir.",
+      },
+      {
+        label: "Yüzey:",
+        text: "Kolay temizlenebilir, leke tutmayan ve sararmaya karşı dirençli premium mat beyaz kaplama.",
+      },
+      {
+        label: "Çekmece Sistemi:",
+        text: "Yumuşak kapanma (soft-close) raylı çekmece mekanizması kullanılmıştır.",
+      },
+    ],
+  },
+  {
+    slug: "k37-4-kapili-4-cekmeceli-gardirop",
+    name: "K37 | 4 Kapılı 4 Çekmeceli Beyaz Gardırop",
+    vendor: "Özcan Mobilya",
+    basePrice: 42900,
+    inStock: false,
+    categorySlug: "gardirop",
+    roomSlug: "yatak-odasi",
+    images: [
+      "/media/k37_closed_studio_1782841086991.jpg",
+      "/media/k37_lifestyle_1782841116348.jpg",
+    ],
+    features: ["Modern", "Yatak odanıza özel tasarımlar", "2 yıllık garanti"],
+    dimensions: [
+      { label: "Dış Ölçüler", widthCm: "240 cm", heightCm: "220 cm (Taç Dahil)", depthCm: "60 cm" },
+      { label: "Ayak Yüksekliği", widthCm: "-", heightCm: "10 cm (Robot Süpürge Uyumlu)", depthCm: "-" },
+    ],
+    description:
+      "Geniş aile yatak odaları için tasarlanan K37, 4 kapılı gövdesi ve 4 çekmecesiyle maksimum depolama alanı sunar.",
+    featureList: [
+      "Tasarım: Geniş, simetrik 4 kapaklı çerçeve yapı ve belirgin üst taç detayı.",
+      "Depolama: 4 kapaklı gövde + 4 çekmece ile büyük hacimli depolama.",
+      "Kulp: Minimalist, estetik metalik düğme kulplar.",
+      "Malzeme: Çizilmeye karşı dayanıklı, uzun ömürlü mat beyaz gövde ve kapaklar.",
+    ],
+    materialInfo: [
+      {
+        label: "Gövde ve Kapaklar:",
+        text: "1. Sınıf E1 kalitesinde, yüksek yoğunluklu 18mm kalınlığında MDF malzeme kullanılarak üretilmiştir.",
+      },
+      {
+        label: "Yüzey:",
+        text: "Kolay temizlenebilir, leke tutmayan ve sararmaya karşı dirençli premium mat beyaz kaplama.",
+      },
+      {
+        label: "Çekmece Sistemi:",
+        text: "Yumuşak kapanma (soft-close) raylı çekmece mekanizması kullanılmıştır.",
+      },
+    ],
+  },
+];
 
 // "220 cm (Taç Dahil)" -> { value: 220, note: "Taç Dahil" }; "-" -> { value: null, note: null }
 function parseDimension(raw: string): { value: number | null; note: string | null } {
@@ -26,27 +244,27 @@ async function main() {
   console.log("Seed başlıyor...");
 
   // --- Kategoriler ("Kategoriler" mega menu + /kategori sayfaları) ---
-  for (const cat of productCategories) {
+  for (const cat of SEED_CATEGORIES) {
     await prisma.category.upsert({
       where: { slug: cat.slug },
       update: { name: cat.name, imageUrl: cat.imageUrl },
       create: { name: cat.name, slug: cat.slug, imageUrl: cat.imageUrl },
     });
   }
-  console.log(`  ${productCategories.length} kategori işlendi.`);
+  console.log(`  ${SEED_CATEGORIES.length} kategori işlendi.`);
 
   // --- Odalar ("Odalara Göre" mega menu + /oda sayfaları) — dizideki sıra menü sırasıdır ---
-  for (const [index, room] of rooms.entries()) {
+  for (const [index, room] of SEED_ROOMS.entries()) {
     await prisma.room.upsert({
       where: { slug: room.slug },
       update: { name: room.name, imageUrl: room.imageUrl, order: index },
       create: { name: room.name, slug: room.slug, imageUrl: room.imageUrl, order: index },
     });
   }
-  console.log(`  ${rooms.length} oda işlendi.`);
+  console.log(`  ${SEED_ROOMS.length} oda işlendi.`);
 
-  // --- Ürünler (products.ts'teki 4 gerçek ürün) ---
-  for (const p of products) {
+  // --- Ürünler ---
+  for (const p of SEED_PRODUCTS) {
     const category = await prisma.category.findUnique({ where: { slug: p.categorySlug } });
     if (!category) {
       console.warn(`  ! "${p.slug}" ürünü atlandı: "${p.categorySlug}" kategorisi bulunamadı.`);
@@ -83,6 +301,7 @@ async function main() {
         categoryId: category.id,
         roomId: room?.id ?? null,
         isActive: true,
+        isFeatured: true,
       },
       create: {
         name: p.name,
@@ -102,6 +321,7 @@ async function main() {
         materialInfo: p.materialInfo,
         categoryId: category.id,
         roomId: room?.id ?? null,
+        isFeatured: true,
       },
     });
 
@@ -113,7 +333,7 @@ async function main() {
       });
     }
   }
-  console.log(`  ${products.length} ürün işlendi.`);
+  console.log(`  ${SEED_PRODUCTS.length} ürün işlendi.`);
 
   // --- FLAŞ20 kampanyası (CountdownBar bileşenindeki gerçek metinle birebir) ---
   const gardirop = await prisma.category.findUnique({ where: { slug: "gardirop" } });
@@ -140,6 +360,24 @@ async function main() {
     },
   });
   console.log("  FLAS20 kuponu işlendi.");
+
+  // --- Admin kullanıcı (yönetim paneli girişi) ---
+  // .env'de ADMIN_EMAIL/ADMIN_PASSWORD tanımlıysa upsert edilir (var olan bir hesapsa
+  // sadece role=ADMIN yapılır + şifre günceller); tanımlı değilse bu adım atlanır —
+  // rastgele bir hesabı yanlışlıkla admin yapmamak için varsayılan değer kullanılmaz.
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminEmail && adminPassword) {
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+    await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: { role: "ADMIN", passwordHash },
+      create: { email: adminEmail, name: "Özcan Mobilya Yönetici", passwordHash, role: "ADMIN" },
+    });
+    console.log(`  Admin kullanıcı işlendi: ${adminEmail}`);
+  } else {
+    console.log("  ADMIN_EMAIL / ADMIN_PASSWORD tanımlı değil, admin kullanıcı adımı atlandı.");
+  }
 
   console.log("Seed tamamlandı.");
 }

@@ -5,12 +5,14 @@ import ProductListingSection from "@/components/product/ProductListingSection";
 import MaterialQualitySection from "@/components/layout/MaterialQualitySection";
 import CategoryChips from "@/components/home/CategoryChips";
 import TrustMarquee from "@/components/layout/TrustMarquee";
-import { productCategories, quickFilterChips } from "@/lib/data/homepage-mock";
-import { products } from "@/lib/data/products";
+import { getCategories, quickFilterChips } from "@/lib/data/homepage-mock";
+import { getAllProducts } from "@/lib/data/products";
 
 export const metadata = { title: "Tüm Ürünler | Özcan Mobilya" };
 
-export default function KoleksiyonPage() {
+export default async function KoleksiyonPage() {
+  const [categories, products] = await Promise.all([getCategories(), getAllProducts()]);
+
   return (
     <>
       <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
@@ -26,7 +28,7 @@ export default function KoleksiyonPage() {
       </div>
 
       <div className="mt-10">
-        <CategoryCircles items={productCategories} basePath="/kategori" size="sm" />
+        <CategoryCircles items={categories} basePath="/kategori" size="sm" />
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">

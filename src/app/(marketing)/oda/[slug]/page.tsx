@@ -6,10 +6,11 @@ import ProductListingSection from "@/components/product/ProductListingSection";
 import MaterialQualitySection from "@/components/layout/MaterialQualitySection";
 import CategoryChips from "@/components/home/CategoryChips";
 import TrustMarquee from "@/components/layout/TrustMarquee";
-import { rooms, quickFilterChips } from "@/lib/data/homepage-mock";
+import { getRooms, getRoomBySlug, quickFilterChips } from "@/lib/data/homepage-mock";
 import { getProductsByRoom } from "@/lib/data/products";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const rooms = await getRooms();
   return rooms.map((r) => ({ slug: r.slug }));
 }
 
@@ -19,13 +20,13 @@ export default async function OdaDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const room = rooms.find((r) => r.slug === slug);
+  const [room, rooms] = await Promise.all([getRoomBySlug(slug), getRooms()]);
 
   if (!room) {
     notFound();
   }
 
-  const gridProducts = getProductsByRoom(slug);
+  const gridProducts = await getProductsByRoom(slug);
 
   return (
     <>

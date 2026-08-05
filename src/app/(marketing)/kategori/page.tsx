@@ -1,10 +1,12 @@
 import Link from "next/link";
 import CategoryGrid from "@/components/layout/CategoryGrid";
-import { productCategories } from "@/lib/data/homepage-mock";
+import { getCategories } from "@/lib/data/homepage-mock";
 
 export const metadata = { title: "Kategoriler | Özcan Mobilya" };
 
-export default function KategorilerPage() {
+export default async function KategorilerPage() {
+  const categories = await getCategories();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <nav className="mb-6 flex items-center gap-2 font-body text-xs text-secondary-light">
@@ -17,7 +19,7 @@ export default function KategorilerPage() {
 
       <h1 className="mb-10 font-display text-3xl font-semibold text-secondary">Kategoriler</h1>
 
-      <CategoryGrid items={productCategories} basePath="/kategori" />
+      <CategoryGrid items={categories} basePath="/kategori" />
     </div>
   );
 }

@@ -6,11 +6,12 @@ import ProductListingSection from "@/components/product/ProductListingSection";
 import MaterialQualitySection from "@/components/layout/MaterialQualitySection";
 import CategoryChips from "@/components/home/CategoryChips";
 import TrustMarquee from "@/components/layout/TrustMarquee";
-import { productCategories, quickFilterChips } from "@/lib/data/homepage-mock";
+import { getCategories, getCategoryBySlug, quickFilterChips } from "@/lib/data/homepage-mock";
 import { getProductsByCategory } from "@/lib/data/products";
 
-export function generateStaticParams() {
-  return productCategories.map((c) => ({ slug: c.slug }));
+export async function generateStaticParams() {
+  const categories = await getCategories();
+  return categories.map((c) => ({ slug: c.slug }));
 }
 
 export default async function KategoriDetailPage({
@@ -19,13 +20,13 @@ export default async function KategoriDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const category = productCategories.find((c) => c.slug === slug);
+  const [category, categories] = await Promise.all([getCategoryBySlug(slug), getCategories()]);
 
   if (!category) {
     notFound();
   }
 
-  const gridProducts = getProductsByCategory(slug);
+  const gridProducts = await getProductsByCategory(slug);
 
   return (
     <>
@@ -46,7 +47,7 @@ export default async function KategoriDetailPage({
       </div>
 
       <div className="mt-10">
-        <CategoryCircles items={productCategories} basePath="/kategori" size="sm" />
+        <CategoryCircles items={categories} basePath="/kategori" size="sm" />
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">

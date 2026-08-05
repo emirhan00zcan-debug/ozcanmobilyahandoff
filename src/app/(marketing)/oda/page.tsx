@@ -1,10 +1,12 @@
 import Link from "next/link";
 import CategoryGrid from "@/components/layout/CategoryGrid";
-import { rooms } from "@/lib/data/homepage-mock";
+import { getRooms } from "@/lib/data/homepage-mock";
 
 export const metadata = { title: "Odalara Göre | Özcan Mobilya" };
 
-export default function OdalarPage() {
+export default async function OdalarPage() {
+  const rooms = await getRooms();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <nav className="mb-6 flex items-center gap-2 font-body text-xs text-secondary-light">

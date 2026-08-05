@@ -2,10 +2,11 @@ import { notFound } from "next/navigation";
 import ProductDetailClient from "@/components/product/ProductDetailClient";
 import ProductReviews from "@/components/product/ProductReviews";
 import ProductBrandTabs from "@/components/product/ProductBrandTabs";
-import { getProductBySlug, products } from "@/lib/data/products";
+import { getAllProductSlugs, getProductBySlug } from "@/lib/data/products";
 
-export function generateStaticParams() {
-  return products.map((product) => ({ slug: product.slug }));
+export async function generateStaticParams() {
+  const slugs = await getAllProductSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export default async function ProductPage({
@@ -14,7 +15,7 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();

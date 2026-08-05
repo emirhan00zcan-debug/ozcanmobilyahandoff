@@ -1,7 +1,9 @@
-// Bu dosya sadece ana sayfa arayüzünü geliştirebilmek için geçici mock veridir.
-// Gerçek ürünler eklendiğinde bu diziler yerine `prisma.product.findMany(...)`
-// sorgularının döndürdüğü veri kullanılacak; bileşenlerin prop tipleri buna göre
-// tasarlandı ki geçiş sorunsuz olsun.
+// Anasayfanın salt-görsel/pazarlama içerikleri (hero slayt, testimonial, promo kart, footer...)
+// burada statik kalır — Prisma şemasında bunlara karşılık gelen bir model yok. Kategori/oda
+// taksonomisi ise Category/Room modelleriyle birebir eşleştiği için aşağıdaki fonksiyonlarla
+// veritabanından okunuyor (bkz. getCategories/getRooms).
+
+import { prisma } from "@/lib/prisma";
 
 export type CategoryCircle = {
   id: string;
@@ -10,35 +12,29 @@ export type CategoryCircle = {
   imageUrl?: string; // boşsa bileşen otomatik yer tutucu gösterir
 };
 
-// Üstteki "Kategoriler" çember navigasyonu — görseller referans siteden indirilen gerçek fotoğraflar
-export const productCategories: CategoryCircle[] = [
-  { id: "1", name: "Gardrop", slug: "gardirop", imageUrl: "/media/reklam2_karsidan.jpg" },
-  { id: "2", name: "Portmanto", slug: "portmanto", imageUrl: "/media/wardrobe_front_closed_1776678972128.jpg" },
-  { id: "3", name: "Çalışma Masası", slug: "calisma-masasi", imageUrl: "/media/Gemini_Generated_Image_ci9bm4ci9bm4ci9b.png" },
-  { id: "4", name: "Tv Ünitesi", slug: "tv-unitesi", imageUrl: "/media/t3_pro_1769533120140.jpg" },
-  { id: "5", name: "Kahve Köşesi", slug: "kahve-kosesi", imageUrl: "/media/Gemini_Generated_Image_5oyd1r5oyd1r5oyd.png" },
-  { id: "6", name: "Oyuncu Masası", slug: "oyuncu-masasi", imageUrl: "/media/gorsel_2026-06-27_145006208.png" },
-  { id: "7", name: "Banyo Dolabı", slug: "banyo-dolabi", imageUrl: "/media/d4_pro_1769532928933.jpg" },
-  { id: "8", name: "Çocuk Odası", slug: "cocuk-odasi" },
-  { id: "9", name: "Dresuar", slug: "dresuar", imageUrl: "/media/d2_pro_1769513413217.jpg" },
-  { id: "10", name: "Makyaj Köşesi", slug: "makyaj-kosesi", imageUrl: "/media/9134f1b6-81e7-4e49-8914-9f9ae2af4137.jpg" },
-  { id: "11", name: "Modüler Mutfak Dolabı", slug: "moduler-mutfak-dolabi", imageUrl: "/media/premium-kitchen.jpg" },
-];
+// Üstteki "Kategoriler" çember navigasyonu — Category tablosundan, eklenme sırasına göre.
+export async function getCategories(): Promise<CategoryCircle[]> {
+  const categories = await prisma.category.findMany({ orderBy: { createdAt: "asc" } });
+  return categories.map((c) => ({ id: c.id, name: c.name, slug: c.slug, imageUrl: c.imageUrl ?? undefined }));
+}
 
-// Alttaki "Yaşam Alanına Göre Alışveriş" — Room taksonomisi (schema.prisma'daki Room modeliyle birebir)
-export const rooms: CategoryCircle[] = [
-  { id: "r1", name: "Yatak Odası", slug: "yatak-odasi", imageUrl: "/media/gorsel_2026-07-09_230726761.png" },
-  { id: "r2", name: "Giyinme Odası", slug: "giyinme-odasi", imageUrl: "/media/Gemini_Generated_Image_zfdnerzfdnerzfdn.jpg" },
-  { id: "r3", name: "Antre & Hol", slug: "antre-hol" },
-  { id: "r4", name: "Salon & Oturma Odası", slug: "salon-oturma-odasi", imageUrl: "/media/Gemini_Generated_Image_xzuxo6xzuxo6xzux.png" },
-  { id: "r5", name: "Mutfak", slug: "mutfak", imageUrl: "/media/premium-kitchen.jpg" },
-  { id: "r6", name: "Banyo", slug: "banyo", imageUrl: "/media/gorsel_2026-07-09_233916617.png" },
-  { id: "r7", name: "Çalışma Odası", slug: "calisma-odasi", imageUrl: "/media/Gemini_Generated_Image_umx6nlumx6nlumx6.png" },
-  { id: "r8", name: "Genç & Çocuk Odası", slug: "genc-cocuk-odasi", imageUrl: "/media/gorsel_2026-07-09_235237239.png" },
-  { id: "r9", name: "Ofis & İş Yeri", slug: "ofis-is-yeri", imageUrl: "/media/Gemini_Generated_Image_sn8381sn8381sn83.png" },
-  { id: "r10", name: "Çok Amaçlı Dolaplar", slug: "cok-amacli-dolaplar", imageUrl: "/media/Gemini_Generated_Image_h3rivih3rivih3ri.png" },
-  { id: "r11", name: "Aksesuarlar", slug: "aksesuarlar", imageUrl: "/media/Gemini_Generated_Image_8jyuzm8jyuzm8jyu.png" },
-];
+export async function getCategoryBySlug(slug: string): Promise<CategoryCircle | null> {
+  const category = await prisma.category.findUnique({ where: { slug } });
+  if (!category) return null;
+  return { id: category.id, name: category.name, slug: category.slug, imageUrl: category.imageUrl ?? undefined };
+}
+
+// Alttaki "Yaşam Alanına Göre Alışveriş" — Room taksonomisi, Room.order'a göre sıralı.
+export async function getRooms(): Promise<CategoryCircle[]> {
+  const rooms = await prisma.room.findMany({ orderBy: { order: "asc" } });
+  return rooms.map((r) => ({ id: r.id, name: r.name, slug: r.slug, imageUrl: r.imageUrl ?? undefined }));
+}
+
+export async function getRoomBySlug(slug: string): Promise<CategoryCircle | null> {
+  const room = await prisma.room.findUnique({ where: { slug } });
+  if (!room) return null;
+  return { id: room.id, name: room.name, slug: room.slug, imageUrl: room.imageUrl ?? undefined };
+}
 
 export type HeroSlide = {
   id: string;
@@ -82,42 +78,8 @@ export const featuredProductsBanner: FeaturedBanner = {
   imageUrl: "/media/premium-bedroom.jpg",
 };
 
-// Görseller referans sitedeki gerçek ürün fotoğrafları (stüdyo + yaşam alanı çekimi, hover'da ikincisi belirir)
-export const featuredProducts: FeaturedProduct[] = [
-  {
-    id: "p1",
-    slug: "modern-klasik-3-kapakli-cerceve-kapakli-mat-beyaz-gardirop",
-    name: "Modern Klasik 3 Kapaklı Çerçeve Kapaklı Mat Beyaz Gardırop",
-    price: 30000,
-    compareAtPrice: 42000,
-    imageUrl: "/media/k602_closed_studio_1782831490167.jpg",
-    hoverImageUrl: "/media/k602_lifestyle_1782831673363.jpg",
-  },
-  {
-    id: "p2",
-    slug: "alya-klasik-kemer-detayli-gardirop",
-    name: "Alya Klasik Kemer Detaylı 3 Kapaklı Gardırop - Mat Beyaz",
-    price: 25000,
-    imageUrl: "/media/k88_closed_studio_1782832274292.jpg",
-    hoverImageUrl: "/media/k88_lifestyle_1782832301685.jpg",
-  },
-  {
-    id: "p3",
-    slug: "klasik-avangart-4-cekmeceli-gardirop",
-    name: "Klasik Avangart 3 Kapaklı 4 Çekmeceli Beyaz Gardırop",
-    price: 35000,
-    imageUrl: "/media/k83_closed_studio_1782833640405.jpg",
-    hoverImageUrl: "/media/k83_lifestyle_1782833667431.jpg",
-  },
-  {
-    id: "p4",
-    slug: "k37-4-kapili-4-cekmeceli-gardirop",
-    name: "K37 | 4 Kapılı 4 Çekmeceli Beyaz Gardırop",
-    price: 42900,
-    imageUrl: "/media/k37_closed_studio_1782841086991.jpg",
-    hoverImageUrl: "/media/k37_lifestyle_1782841116348.jpg",
-  },
-];
+// "Öne Çıkan Modeller" vitrini artık Product.isFeatured alanından geliyor —
+// bkz. getFeaturedProducts() (src/lib/data/products.ts).
 
 export type ShowcaseTile = {
   id: string;
@@ -309,7 +271,8 @@ export const footerColumns = [
     links: [
       { label: "Hakkımızda", href: "/hakkimizda" },
       { label: "İletişim", href: "/iletisim" },
-      { label: "Sıkça Sorulan Sorular", href: "/sss" },
+      { label: "Mesafeli Satış Sözleşmesi", href: "/mesafeli-satis-sozlesmesi" },
+      { label: "Gizlilik Politikası", href: "/gizlilik-politikasi" },
     ],
   },
   {
