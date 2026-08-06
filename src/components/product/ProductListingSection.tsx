@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { FaFilter, FaThLarge, FaList, FaShoppingBag, FaPlus, FaMinus } from "react-icons/fa";
 import ProductCard from "@/components/product/ProductCard";
@@ -22,7 +23,7 @@ type Props = {
   promoTile?: PromoTile;
 };
 
-type SortOption = "relevant" | "price-asc" | "price-desc" | "name-asc";
+type SortOption = "relevant" | "newest" | "price-asc" | "price-desc" | "name-asc";
 type StockFilter = "all" | "in-stock" | "sold-out";
 
 function formatPrice(value: number) {
@@ -39,6 +40,7 @@ export default function ProductListingSection({ products, emptyMessage, promoTil
   const [filterOpen, setFilterOpen] = useState(true);
   const [stockFacetOpen, setStockFacetOpen] = useState(false);
   const [priceFacetOpen, setPriceFacetOpen] = useState(false);
+  const [widthFacetOpen, setWidthFacetOpen] = useState(false);
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
   const [sortBy, setSortBy] = useState<SortOption>("relevant");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -50,20 +52,28 @@ export default function ProductListingSection({ products, emptyMessage, promoTil
   const maxPrice = prices.length ? Math.max(...prices) : 0;
   const [maxPriceFilter, setMaxPriceFilter] = useState(maxPrice);
 
+  // Ölçü (genişlik) filtresi — sadece genişliği kayıtlı ürünler dikkate alınır.
+  const widths = products.map((p) => p.widthCm).filter((w): w is number => w != null);
+  const minWidth = widths.length ? Math.min(...widths) : 0;
+  const maxWidth = widths.length ? Math.max(...widths) : 0;
+  const [maxWidthFilter, setMaxWidthFilter] = useState(maxWidth);
+
   const visibleProducts = useMemo(() => {
     let list = products.filter((p) => {
       if (stockFilter === "in-stock" && !p.inStock) return false;
       if (stockFilter === "sold-out" && p.inStock) return false;
       if (p.basePrice > maxPriceFilter) return false;
+      if (p.widthCm != null && p.widthCm > maxWidthFilter) return false;
       return true;
     });
 
-    if (sortBy === "price-asc") list = [...list].sort((a, b) => a.basePrice - b.basePrice);
+    if (sortBy === "newest") list = [...list].reverse();
+    else if (sortBy === "price-asc") list = [...list].sort((a, b) => a.basePrice - b.basePrice);
     else if (sortBy === "price-desc") list = [...list].sort((a, b) => b.basePrice - a.basePrice);
     else if (sortBy === "name-asc") list = [...list].sort((a, b) => a.name.localeCompare(b.name, "tr"));
 
     return list;
-  }, [products, stockFilter, sortBy, maxPriceFilter]);
+  }, [products, stockFilter, sortBy, maxPriceFilter, maxWidthFilter]);
 
   const compareProducts = products.filter((p) => compareSlugs.includes(p.slug));
 
@@ -127,6 +137,7 @@ export default function ProductListingSection({ products, emptyMessage, promoTil
               className="rounded-full border border-secondary/20 bg-white px-4 py-2.5 font-body text-sm text-secondary focus:outline-none"
             >
               <option value="relevant">En alakalı</option>
+              <option value="newest">En Yeni</option>
               <option value="price-asc">Fiyat: Artan</option>
               <option value="price-desc">Fiyat: Azalan</option>
               <option value="name-asc">İsim: A-Z</option>
@@ -164,6 +175,22 @@ export default function ProductListingSection({ products, emptyMessage, promoTil
       <div className="grid gap-8 md:grid-cols-[200px_1fr]">
         {/* Filtre kenar çubuğu — masaüstünde her zaman görünür, mobilde "Filtrele" ile açılır */}
         <aside className={filterOpen ? "block" : "hidden"}>
+          {maxWidth > minWidth && (
+            <FacetGroup title="Ölçü (Genişlik)" open={widthFacetOpen} onToggle={() => setWidthFacetOpen((v) => !v)}>
+              <p className="mb-3 font-body text-xs text-secondary-light">
+                {minWidth} cm – {maxWidthFilter} cm
+              </p>
+              <input
+                type="range"
+                min={minWidth}
+                max={maxWidth}
+                value={maxWidthFilter}
+                onChange={(e) => setMaxWidthFilter(Number(e.target.value))}
+                className="w-full accent-primary"
+              />
+            </FacetGroup>
+          )}
+
           <FacetGroup title="Stok durumu" open={stockFacetOpen} onToggle={() => setStockFacetOpen((v) => !v)}>
             <div className="flex flex-col gap-2.5">
               {STOCK_OPTIONS.map((option) => (
@@ -274,8 +301,13 @@ function CompareTable({ products }: { products: ProductDetail[] }) {
             {products.map((p) => (
               <th key={p.slug} className="px-4 py-3 text-left">
                 <div className="flex items-center gap-2.5">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.images[0]} alt={p.name} className="h-10 w-10 shrink-0 rounded object-cover" />
+                  <Image
+                    src={p.images[0]}
+                    alt={p.name}
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 shrink-0 rounded object-cover"
+                  />
                   <span className="line-clamp-2 font-medium text-secondary">{p.name}</span>
                 </div>
               </th>
@@ -343,11 +375,12 @@ function PromoTileCard({ eyebrow, title, ctaLabel, ctaHref, imageUrl }: PromoTil
       rel={isExternal ? "noopener noreferrer" : undefined}
       className="group relative flex aspect-square flex-col justify-end overflow-hidden rounded-xl bg-secondary p-5"
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src={imageUrl}
         alt={title}
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+        fill
+        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+        className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
       <div className="relative z-10 text-white">
@@ -367,12 +400,13 @@ function ProductListRow({ product }: { product: ProductDetail }) {
 
   return (
     <Link href={`/urun/${product.slug}`} className="group flex items-center gap-5 py-5">
-      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-secondary/[0.04]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-secondary/[0.04]">
+        <Image
           src={product.images[0]}
           alt={product.name}
-          className={["h-full w-full object-cover", isSoldOut ? "opacity-60 grayscale" : ""].join(" ")}
+          fill
+          sizes="80px"
+          className={["object-cover", isSoldOut ? "opacity-60 grayscale" : ""].join(" ")}
         />
       </div>
       <div className="flex-1">

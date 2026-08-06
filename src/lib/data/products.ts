@@ -3,6 +3,7 @@
 // bileşenlerin (ProductCard, ProductDetailClient, ProductListingSection...) beklediği şekli
 // korumak için tutuluyor; sadece veri kaynağı sabit dizi yerine DB sorgusu oldu.
 
+import { cache } from "react";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { FeaturedProduct } from "./homepage-mock";
@@ -57,6 +58,9 @@ export type ProductDetail = {
   images: string[];
   features: string[];
   dimensions: ProductDimensionRow[];
+  // Genişlik (W), ham sayı — kategori/oda listeleme sayfalarındaki ölçü filtresi için.
+  // Ekranda gösterilen metin (örn. "200 cm") `dimensions` içinde ayrıca duruyor.
+  widthCm: number | null;
   description: string;
   featureList: string[];
   materialInfo: MaterialInfoItem[];
@@ -132,6 +136,7 @@ function mapToProductDetail(p: ProductWithRelations): ProductDetail {
     images: p.images.map((img) => img.url),
     features: p.features,
     dimensions,
+    widthCm: p.widthCm?.toNumber() ?? null,
     description: p.description,
     featureList: p.featureList,
     materialInfo: (p.materialInfo as MaterialInfoItem[] | null) ?? [],
@@ -160,13 +165,15 @@ function mapToProductDetail(p: ProductWithRelations): ProductDetail {
   };
 }
 
-export async function getProductBySlug(slug: string): Promise<ProductDetail | null> {
+// generateMetadata ve sayfa bileşeni aynı slug için bu fonksiyonu ayrı ayrı çağırır —
+// React'in request-scoped cache()'i ile aynı render'da tekrar DB sorgusu atılmaz.
+export const getProductBySlug = cache(async (slug: string): Promise<ProductDetail | null> => {
   const product = await prisma.product.findFirst({
     where: { slug, isActive: true },
     include: productDetailInclude,
   });
   return product ? mapToProductDetail(product) : null;
-}
+});
 
 export async function getAllProductSlugs(): Promise<string[]> {
   const products = await prisma.product.findMany({
