@@ -19,6 +19,34 @@ export type MaterialInfoItem = {
   text: string;
 };
 
+// Ürün sayfasındaki varyasyon seçici (renk/kumaş numunesi, kapak tipi, ölçü) için —
+// bkz. prisma/schema.prisma VariationType/VariationOption/ProductVariation.
+export type VariationOptionView = {
+  id: string;
+  value: string; // örn: "Ceviz Ahşap", "Cam Kapak"
+  priceModifier: number;
+  hexColor: string | null;
+  swatchImageUrl: string | null;
+};
+
+export type VariationTypeView = {
+  id: string;
+  name: string; // örn: "Kapak Tipi", "Kulp Rengi", "Ayak Tipi"
+  options: VariationOptionView[];
+};
+
+export type ProductVariationView = {
+  id: string;
+  sku: string;
+  stock: number;
+  price: number;
+  heightOverrideCm: number | null;
+  footHeightOverrideCm: number | null;
+  // Bu varyantı oluşturan seçenek id'lerinin kümesi — seçili option id'leriyle
+  // eşleştirilerek hangi ProductVariation'ın aktif olduğu bulunur.
+  optionIds: string[];
+};
+
 export type ProductDetail = {
   slug: string;
   name: string;
@@ -36,12 +64,22 @@ export type ProductDetail = {
   // /kategori/[slug] ve /oda/[slug] sayfalarında ürünleri filtrelemek için kullanılır.
   categorySlug: string;
   roomSlug: string;
+  variationTypes: VariationTypeView[];
+  variations: ProductVariationView[];
 };
 
 const productDetailInclude = {
   images: { orderBy: { order: "asc" } },
   category: true,
   room: true,
+  variationTypes: {
+    orderBy: { order: "asc" },
+    include: { options: true },
+  },
+  variations: {
+    where: { isActive: true },
+    include: { selectedOptions: true },
+  },
 } satisfies Prisma.ProductInclude;
 
 type ProductWithRelations = Prisma.ProductGetPayload<{ include: typeof productDetailInclude }>;
@@ -99,6 +137,26 @@ function mapToProductDetail(p: ProductWithRelations): ProductDetail {
     materialInfo: (p.materialInfo as MaterialInfoItem[] | null) ?? [],
     categorySlug: p.category.slug,
     roomSlug: p.room?.slug ?? "",
+    variationTypes: p.variationTypes.map((vt) => ({
+      id: vt.id,
+      name: vt.name,
+      options: vt.options.map((opt) => ({
+        id: opt.id,
+        value: opt.value,
+        priceModifier: opt.priceModifier.toNumber(),
+        hexColor: opt.hexColor,
+        swatchImageUrl: opt.swatchImageUrl,
+      })),
+    })),
+    variations: p.variations.map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      stock: v.stock,
+      price: v.price.toNumber(),
+      heightOverrideCm: v.heightOverrideCm?.toNumber() ?? null,
+      footHeightOverrideCm: v.footHeightOverrideCm?.toNumber() ?? null,
+      optionIds: v.selectedOptions.map((s) => s.variationOptionId),
+    })),
   };
 }
 
@@ -143,6 +201,39 @@ export async function getProductsByRoom(roomSlug: string): Promise<ProductDetail
     orderBy: { createdAt: "asc" },
   });
   return products.map(mapToProductDetail);
+}
+
+// Üst menüdeki arama kutusu ve /arama sonuç sayfası — ürün adı, açıklaması, kategori
+// veya oda adında eşleşme arar (case-insensitive).
+export async function searchProducts(query: string): Promise<ProductDetail[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  const products = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      OR: [
+        { name: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+        { category: { name: { contains: q, mode: "insensitive" } } },
+        { room: { name: { contains: q, mode: "insensitive" } } },
+      ],
+    },
+    include: productDetailInclude,
+    orderBy: { createdAt: "asc" },
+  });
+  return products.map(mapToProductDetail);
+}
+
+// "İndirimdekiler" (/indirimler) ve "Kaçırılmayacak Fırsatlar" vitrini — üstü çizili
+// compareAtPrice'ı olan (yani gerçekten indirimde olan) ürünler.
+export async function getDiscountedProducts(): Promise<ProductDetail[]> {
+  const products = await prisma.product.findMany({
+    where: { isActive: true, compareAtPrice: { not: null } },
+    include: productDetailInclude,
+    orderBy: { createdAt: "asc" },
+  });
+  return products.map(mapToProductDetail).filter((p) => (p.compareAtPrice ?? 0) > p.basePrice);
 }
 
 // Anasayfadaki "Öne Çıkan Modeller" vitrini — Product.isFeatured alanına göre seçilir.

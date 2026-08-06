@@ -3,6 +3,7 @@
 // taksonomisi ise Category/Room modelleriyle birebir eşleştiği için aşağıdaki fonksiyonlarla
 // veritabanından okunuyor (bkz. getCategories/getRooms).
 
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 export type CategoryCircle = {
@@ -13,10 +14,16 @@ export type CategoryCircle = {
 };
 
 // Üstteki "Kategoriler" çember navigasyonu — Category tablosundan, eklenme sırasına göre.
-export async function getCategories(): Promise<CategoryCircle[]> {
-  const categories = await prisma.category.findMany({ orderBy: { createdAt: "asc" } });
-  return categories.map((c) => ({ id: c.id, name: c.name, slug: c.slug, imageUrl: c.imageUrl ?? undefined }));
-}
+// Her sayfa (marketing layout üzerinden Navbar'a) bunu çağırdığı için unstable_cache ile
+// sarmalanıyor — aksi halde 50+ sayfalık bir build tek başına aynı sorguyu 50+ kez tekrarlar.
+export const getCategories = unstable_cache(
+  async (): Promise<CategoryCircle[]> => {
+    const categories = await prisma.category.findMany({ orderBy: { createdAt: "asc" } });
+    return categories.map((c) => ({ id: c.id, name: c.name, slug: c.slug, imageUrl: c.imageUrl ?? undefined }));
+  },
+  ["homepage-mock:getCategories"],
+  { revalidate: 300 },
+);
 
 export async function getCategoryBySlug(slug: string): Promise<CategoryCircle | null> {
   const category = await prisma.category.findUnique({ where: { slug } });
@@ -24,11 +31,15 @@ export async function getCategoryBySlug(slug: string): Promise<CategoryCircle | 
   return { id: category.id, name: category.name, slug: category.slug, imageUrl: category.imageUrl ?? undefined };
 }
 
-// Alttaki "Yaşam Alanına Göre Alışveriş" — Room taksonomisi, Room.order'a göre sıralı.
-export async function getRooms(): Promise<CategoryCircle[]> {
-  const rooms = await prisma.room.findMany({ orderBy: { order: "asc" } });
-  return rooms.map((r) => ({ id: r.id, name: r.name, slug: r.slug, imageUrl: r.imageUrl ?? undefined }));
-}
+// Alttaki "Yaşam Alanına Göre Alışveriş" — Room taksonomisi, Room.order'a göre sıralı (bkz. getCategories yorumu).
+export const getRooms = unstable_cache(
+  async (): Promise<CategoryCircle[]> => {
+    const rooms = await prisma.room.findMany({ orderBy: { order: "asc" } });
+    return rooms.map((r) => ({ id: r.id, name: r.name, slug: r.slug, imageUrl: r.imageUrl ?? undefined }));
+  },
+  ["homepage-mock:getRooms"],
+  { revalidate: 300 },
+);
 
 export async function getRoomBySlug(slug: string): Promise<CategoryCircle | null> {
   const room = await prisma.room.findUnique({ where: { slug } });
@@ -280,7 +291,7 @@ export const footerColumns = [
     links: [
       { label: "Kategoriler", href: "/kategori" },
       { label: "Odalara Göre", href: "/oda" },
-      { label: "Yeni Gelenler", href: "/yeni-gelenler" },
+      { label: "Yeni Gelenler", href: "/koleksiyon/yeni-gelenler" },
     ],
   },
   {

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { FaSearch, FaUser, FaShoppingBag, FaBars, FaTimes, FaChevronRight } from "react-icons/fa";
 import { useCartTotalQuantity } from "@/store/cart-store";
@@ -13,7 +14,7 @@ const MENU_LINKS = [
   { label: "Kategoriler", href: "/kategori" },
   { label: "Odalara Göre", href: "/oda" },
   { label: "İndirmdekiler", href: "/indirimler" },
-  { label: "Katalog", href: "/katalog" },
+  { label: "Katalog", href: "/koleksiyon" },
   { label: "Ana sayfa", href: "/" },
   { label: "Hakkımızda", href: "/hakkimizda" },
   { label: "İletişim", href: "/iletisim" },
@@ -65,9 +66,20 @@ export default function Navbar({ categories, rooms }: Props) {
   const [roomsOpen, setRoomsOpen] = useState(false);
   const [activeRoomSlug, setActiveRoomSlug] = useState(rooms[0]?.slug ?? "");
   const roomsCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const cartCount = useCartTotalQuantity();
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    router.push(`/arama?q=${encodeURIComponent(q)}`);
+    setMobileSearchOpen(false);
+  };
 
   // Mega menu/hamburger içindeki bir linke tıklanıp sayfa değiştiğinde, Navbar
   // aynı layout içinde kalıp yeniden mount olmadığı için panel açık kalabiliyordu
@@ -81,6 +93,7 @@ export default function Navbar({ categories, rooms }: Props) {
     setCategoriesOpen(false);
     setRoomsOpen(false);
     setMenuOpen(false);
+    setMobileSearchOpen(false);
   }
 
   useEffect(() => {
@@ -162,20 +175,48 @@ export default function Navbar({ categories, rooms }: Props) {
           </span>
         </Link>
 
-        {/* Arama barı */}
-        <div className="hidden flex-1 items-center rounded-full border border-secondary/15 bg-secondary/[0.03] px-6 py-3.5 md:flex">
+        {/* Arama barı — masaüstünde her zaman görünür, /arama sonuç sayfasına gönderir */}
+        <form
+          onSubmit={submitSearch}
+          className="hidden flex-1 items-center rounded-full border border-secondary/15 bg-secondary/[0.03] px-6 py-3.5 md:flex"
+        >
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Ne arıyorsunuz?"
             className="w-full bg-transparent font-body text-sm text-secondary placeholder:text-secondary-light focus:outline-none"
           />
-          <FaSearch className="ml-3 h-4 w-4 shrink-0 text-secondary-light" />
-        </div>
+          <button
+            type="submit"
+            aria-label="Ara"
+            className="ml-3 shrink-0 text-secondary-light transition-colors hover:text-primary"
+          >
+            <FaSearch className="h-4 w-4" />
+          </button>
+        </form>
 
         {/* Kullanıcı araçları */}
         <div className="ml-auto flex shrink-0 items-center gap-5">
+          {/* Mobil arama ikonu — masaüstü arama kutusu md:hidden olduğu için mobilde tek giriş noktası bu */}
+          <button
+            onClick={() => setMobileSearchOpen((v) => !v)}
+            aria-label="Aramayı aç/kapat"
+            className="md:hidden"
+          >
+            <FaSearch className="h-4 w-4 text-secondary transition-colors hover:text-primary" />
+          </button>
+
           {status === "authenticated" ? (
             <div className="hidden items-center gap-3 sm:flex">
+              {session.user?.role === "ADMIN" && (
+                <Link
+                  href="/admin"
+                  className="font-body text-xs font-medium text-secondary hover:text-primary"
+                >
+                  Admin Paneli
+                </Link>
+              )}
               <Link
                 href="/hesabim"
                 className="flex items-center gap-2 font-body text-xs font-medium text-secondary hover:text-primary"
@@ -212,6 +253,37 @@ export default function Navbar({ categories, rooms }: Props) {
           </Link>
         </div>
       </div>
+
+      {/* Mobil tam genişlikte arama katmanı — masaüstü arama kutusu md:hidden olduğu için
+          mobil ziyaretçinin arama yapabildiği tek yer burası. */}
+      {mobileSearchOpen && (
+        <div className="border-t border-secondary/10 bg-white px-4 py-4 sm:px-6 md:hidden">
+          <form
+            onSubmit={submitSearch}
+            className="flex items-center gap-3 rounded-full border border-secondary/15 bg-secondary/[0.03] px-5 py-3"
+          >
+            <input
+              type="text"
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Ne arıyorsunuz?"
+              className="w-full bg-transparent font-body text-sm text-secondary placeholder:text-secondary-light focus:outline-none"
+            />
+            <button type="submit" aria-label="Ara" className="shrink-0 text-secondary-light hover:text-primary">
+              <FaSearch className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileSearchOpen(false)}
+              aria-label="Aramayı kapat"
+              className="shrink-0 text-secondary-light hover:text-primary"
+            >
+              <FaTimes className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Alt metin menüsü — scroll'da veya hamburger dropdown'u açıkken katlanır, ikisi aynı anda görünmez.
           "relative" kapsayıcı: mega menu paneli nav'ın overflow-hidden'ı tarafından kırpılmasın diye
@@ -287,13 +359,14 @@ export default function Navbar({ categories, rooms }: Props) {
                   {col.map((cat) => (
                     <li key={cat.id}>
                       <Link href={`/kategori/${cat.slug}`} className="group flex items-center gap-3">
-                        <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-secondary/10 bg-secondary/[0.04]">
+                        <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-secondary/10 bg-secondary/[0.04]">
                           {cat.imageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <Image
                               src={cat.imageUrl}
                               alt=""
-                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                              fill
+                              sizes="36px"
+                              className="object-cover transition-transform duration-300 group-hover:scale-110"
                             />
                           ) : null}
                         </span>
@@ -310,12 +383,13 @@ export default function Navbar({ categories, rooms }: Props) {
                 href={CATEGORY_PROMO.ctaHref}
                 className="categories-mega__promo group relative block w-72 shrink-0 overflow-hidden rounded-xl"
               >
-                <span className="categories-mega__promo-media block h-64 w-full overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                <span className="categories-mega__promo-media relative block h-64 w-full overflow-hidden">
+                  <Image
                     src={CATEGORY_PROMO.imageUrl}
                     alt={CATEGORY_PROMO.title}
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="288px"
+                    className="object-cover"
                   />
                 </span>
                 <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
@@ -394,10 +468,9 @@ export default function Navbar({ categories, rooms }: Props) {
                           href={`/kategori/${cat.slug}`}
                           className="rooms-mega-panel__img group grid gap-2"
                         >
-                          <span className="block aspect-[8/5] overflow-hidden rounded-lg bg-secondary/[0.04]">
+                          <span className="relative block aspect-[8/5] overflow-hidden rounded-lg bg-secondary/[0.04]">
                             {cat.imageUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={cat.imageUrl} alt="" className="h-full w-full object-cover" />
+                              <Image src={cat.imageUrl} alt="" fill sizes="200px" className="object-cover" />
                             ) : null}
                           </span>
                           <span className="relative font-body text-xs font-medium text-secondary after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-0 after:bg-secondary after:transition-transform after:duration-300 after:ease-out group-hover:text-primary group-hover:after:scale-x-100">
