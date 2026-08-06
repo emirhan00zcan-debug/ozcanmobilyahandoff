@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import CategoryHero from "@/components/layout/CategoryHero";
@@ -8,10 +9,43 @@ import CategoryChips from "@/components/home/CategoryChips";
 import TrustMarquee from "@/components/layout/TrustMarquee";
 import { getRooms, getRoomBySlug, quickFilterChips } from "@/lib/data/homepage-mock";
 import { getProductsByRoom } from "@/lib/data/products";
+import { absoluteUrl, truncateForMeta } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const rooms = await getRooms();
   return rooms.map((r) => ({ slug: r.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const room = await getRoomBySlug(slug);
+
+  if (!room) {
+    return { title: "Oda Bulunamadı | Özcan Mobilya" };
+  }
+
+  const title = `${room.name} Mobilyaları | Özcan Mobilya`;
+  const description = truncateForMeta(
+    `${room.name} için özel tasarım mobilya modelleri Özcan Mobilya'da. Sinop'taki atölyemizden Türkiye'nin her yerine özel ölçü ve renk seçenekleriyle üretim ve teslimat.`,
+  );
+  const url = absoluteUrl(`/oda/${room.slug}`);
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Özcan Mobilya",
+      images: room.imageUrl ? [{ url: room.imageUrl }] : undefined,
+    },
+  };
 }
 
 export default async function OdaDetailPage({
@@ -55,7 +89,7 @@ export default async function OdaDetailPage({
           products={gridProducts}
           emptyMessage={`${room.name} için henüz ürün eklenmedi, yakında burada olacak.`}
           promoTile={{
-            eyebrow: "Home & Decor",
+            eyebrow: "Ev & Dekorasyon",
             title: "Kulplar için en iyisi",
             ctaLabel: "Göz atın",
             ctaHref: "https://www.eryildiz.net/kategori/dolap-kulplari",

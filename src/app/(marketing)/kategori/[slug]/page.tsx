@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import CategoryHero from "@/components/layout/CategoryHero";
@@ -8,10 +9,44 @@ import CategoryChips from "@/components/home/CategoryChips";
 import TrustMarquee from "@/components/layout/TrustMarquee";
 import { getCategories, getCategoryBySlug, quickFilterChips } from "@/lib/data/homepage-mock";
 import { getProductsByCategory } from "@/lib/data/products";
+import { absoluteUrl, truncateForMeta } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const categories = await getCategories();
   return categories.map((c) => ({ slug: c.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const category = await getCategoryBySlug(slug);
+
+  if (!category) {
+    return { title: "Kategori Bulunamadı | Özcan Mobilya" };
+  }
+
+  const title = `${category.name} | Özcan Mobilya`;
+  const description = truncateForMeta(
+    category.description ||
+      `${category.name} modelleri Özcan Mobilya'da. Sinop'taki atölyemizden Türkiye'nin her yerine özel ölçü ve renk seçenekleriyle üretim ve teslimat.`,
+  );
+  const url = absoluteUrl(`/kategori/${category.slug}`);
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Özcan Mobilya",
+      images: category.imageUrl ? [{ url: category.imageUrl }] : undefined,
+    },
+  };
 }
 
 export default async function KategoriDetailPage({
@@ -55,7 +90,7 @@ export default async function KategoriDetailPage({
           products={gridProducts}
           emptyMessage={`${category.name} kategorisinde henüz ürün eklenmedi, yakında burada olacak.`}
           promoTile={{
-            eyebrow: "Home & Decor",
+            eyebrow: "Ev & Dekorasyon",
             title: "Kulplar için en iyisi",
             ctaLabel: "Göz atın",
             ctaHref: "https://www.eryildiz.net/kategori/dolap-kulplari",

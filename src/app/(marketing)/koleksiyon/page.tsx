@@ -36,7 +36,7 @@ export default async function KoleksiyonPage() {
           products={products}
           emptyMessage="Henüz ürün eklenmedi, yakında burada olacak."
           promoTile={{
-            eyebrow: "Home & Decor",
+            eyebrow: "Ev & Dekorasyon",
             title: "Kulplar için en iyisi",
             ctaLabel: "Göz atın",
             ctaHref: "https://www.eryildiz.net/kategori/dolap-kulplari",

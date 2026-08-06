@@ -13,8 +13,8 @@ import { promoCards, type CategoryCircle } from "@/lib/data/homepage-mock";
 const MENU_LINKS = [
   { label: "Kategoriler", href: "/kategori" },
   { label: "Odalara Göre", href: "/oda" },
-  { label: "İndirmdekiler", href: "/indirimler" },
-  { label: "Katalog", href: "/koleksiyon" },
+  { label: "İndirimdekiler", href: "/indirimler" },
+  { label: "Katalog", href: "/katalog" },
   { label: "Ana sayfa", href: "/" },
   { label: "Hakkımızda", href: "/hakkimizda" },
   { label: "İletişim", href: "/iletisim" },
@@ -148,13 +148,14 @@ export default function Navbar({ categories, rooms }: Props) {
     >
       {/* Ana navbar satırı: hamburger / logo / arama / kullanıcı araçları */}
       <div className="mx-auto flex max-w-7xl items-center gap-8 px-4 py-5 sm:px-6 lg:px-8">
-        {/* Logo yanındaki hamburger: sadece alt metin menüsü scroll'da katlanınca belirir, yerini alır */}
         <button
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Menüyü aç/kapat"
           className={[
             "grid shrink-0 place-items-center overflow-hidden text-secondary transition-all duration-300 hover:text-primary",
-            isScrolled ? "h-9 w-9 scale-100 opacity-100" : "h-9 w-0 scale-75 opacity-0",
+            // Desktop: kaydırılınca göster (isScrolled), kaydırılmamışsa gizle.
+            // Mobil: Her zaman göster (w-9, opacity-100, scale-100 vb. zorlanıyor)
+            isScrolled ? "h-9 w-9 scale-100 opacity-100" : "max-lg:h-9 max-lg:w-9 max-lg:scale-100 max-lg:opacity-100 lg:h-9 lg:w-0 lg:scale-75 lg:opacity-0",
           ].join(" ")}
         >
           {menuOpen ? <FaTimes className="h-4 w-4" /> : <FaBars className="h-4 w-4" />}
@@ -237,7 +238,7 @@ export default function Navbar({ categories, rooms }: Props) {
               className="hidden items-center gap-2 font-body text-xs font-medium text-secondary hover:text-primary sm:flex"
             >
               <FaUser className="h-3.5 w-3.5" />
-              <span>Sign in/ Register</span>
+              <span>Giriş Yap / Kayıt Ol</span>
             </Link>
           )}
           <Link href="/sepet" className="relative">
@@ -286,9 +287,8 @@ export default function Navbar({ categories, rooms }: Props) {
       )}
 
       {/* Alt metin menüsü — scroll'da veya hamburger dropdown'u açıkken katlanır, ikisi aynı anda görünmez.
-          "relative" kapsayıcı: mega menu paneli nav'ın overflow-hidden'ı tarafından kırpılmasın diye
-          nav'ın kendisi değil, bu dış sarmalayıcı konumlandırma referansı olarak kullanılıyor. */}
-      <div className="relative" onMouseLeave={closeAllMegaMenus}>
+          Mobil cihazlarda (lg altı) tamamen gizlenir, çünkü menü erişimi sadece hamburgerden sağlanır. */}
+      <div className="relative hidden lg:block" onMouseLeave={closeAllMegaMenus}>
         <nav
           className={[
             "scrollbar-hide overflow-hidden border-t border-secondary/10 transition-[max-height,opacity] duration-300 ease-in-out",
@@ -487,14 +487,14 @@ export default function Navbar({ categories, rooms }: Props) {
         </div>
       </div>
 
-      {/* Hamburger tıklanınca açılan, kategorileri yatay listeleyen dropdown menü */}
+      {/* Hamburger tıklanınca açılan dropdown menü */}
       <div
         className={[
           "overflow-hidden border-t border-secondary/10 bg-white shadow-md transition-[max-height,opacity] duration-300 ease-in-out",
-          menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
+          menuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0",
         ].join(" ")}
       >
-        <ul className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-8 gap-y-3 px-4 py-4 font-body text-sm font-medium text-secondary sm:px-6 lg:px-8">
+        <ul className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 py-4 font-body text-base font-medium text-secondary sm:px-6 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-8 lg:gap-y-3 lg:px-8 lg:text-sm">
           {MENU_LINKS.map((link) => (
             <li key={link.label}>
               <Link

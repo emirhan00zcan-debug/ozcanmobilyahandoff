@@ -29,7 +29,7 @@ export default function MaterialQualitySection() {
           onClick={() => setExpanded((v) => !v)}
           className="relative mt-3 inline-block font-body text-sm font-semibold text-secondary after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-100 after:bg-secondary"
         >
-          {expanded ? "View less" : "View More"}
+          {expanded ? "Daha Az Göster" : "Devamını Gör"}
         </button>
       </div>
     </section>
