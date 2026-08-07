@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { FaPlus, FaMinus } from "react-icons/fa";
 
@@ -34,12 +35,13 @@ export default function AboutFaq() {
     <section className="bg-[#1D349A] py-16">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[280px_1fr] lg:px-8">
         <div className="rounded-2xl bg-white p-6">
-          <div className="aspect-[4/3] overflow-hidden rounded-xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
+            <Image
               src="/media/ozcan-marka-kimligi.jpg"
               alt="Hâlâ yardıma mı ihtiyacınız var?"
-              className="h-full w-full object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 280px"
+              className="object-cover"
             />
           </div>
           <p className="mt-4 font-display text-lg font-semibold text-secondary">Hâlâ yardıma mı ihtiyacınız var?</p>

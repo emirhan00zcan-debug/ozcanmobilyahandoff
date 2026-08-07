@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { FaCheck } from "react-icons/fa";
 import AboutHero from "@/components/layout/AboutHero";
 import AboutSplit from "@/components/layout/AboutSplit";
@@ -90,9 +91,14 @@ export default function HakkimizdaPage() {
         <div className="grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-4">
           {FEATURES.map((feature, i) => (
             <div key={feature.title}>
-              <div className="aspect-square overflow-hidden rounded-xl bg-secondary/[0.04]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={feature.imageUrl} alt={feature.title} className="h-full w-full object-cover" />
+              <div className="relative aspect-square overflow-hidden rounded-xl bg-secondary/[0.04]">
+                <Image
+                  src={feature.imageUrl}
+                  alt={feature.title}
+                  fill
+                  sizes="(max-width: 640px) 50vw, 25vw"
+                  className="object-cover"
+                />
               </div>
               <p className="mt-4 font-body text-xs font-semibold text-primary">{i + 1}.</p>
               <h3 className="mt-1 font-display text-base font-semibold text-secondary">{feature.title}</h3>

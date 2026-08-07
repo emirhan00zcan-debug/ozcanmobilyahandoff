@@ -363,7 +363,7 @@ export default function Navbar({ categories, rooms }: Props) {
                           {cat.imageUrl ? (
                             <Image
                               src={cat.imageUrl}
-                              alt=""
+                              alt={cat.name}
                               fill
                               sizes="36px"
                               className="object-cover transition-transform duration-300 group-hover:scale-110"
@@ -470,7 +470,7 @@ export default function Navbar({ categories, rooms }: Props) {
                         >
                           <span className="relative block aspect-[8/5] overflow-hidden rounded-lg bg-secondary/[0.04]">
                             {cat.imageUrl ? (
-                              <Image src={cat.imageUrl} alt="" fill sizes="200px" className="object-cover" />
+                              <Image src={cat.imageUrl} alt={cat.name} fill sizes="200px" className="object-cover" />
                             ) : null}
                           </span>
                           <span className="relative font-body text-xs font-medium text-secondary after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-0 after:bg-secondary after:transition-transform after:duration-300 after:ease-out group-hover:text-primary group-hover:after:scale-x-100">

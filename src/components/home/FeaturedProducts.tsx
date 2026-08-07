@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { FeaturedBanner, FeaturedProduct } from "@/lib/data/homepage-mock";
 import ProductCard from "@/components/product/ProductCard";
@@ -61,11 +62,12 @@ export default function FeaturedProducts({ title, description, tabs, allHref, ba
             className="group relative flex aspect-square flex-col justify-end overflow-hidden rounded-xl bg-secondary p-5"
           >
             {banner.imageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={banner.imageUrl}
                 alt={banner.title}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+                fill
+                sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 20vw"
+                className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />

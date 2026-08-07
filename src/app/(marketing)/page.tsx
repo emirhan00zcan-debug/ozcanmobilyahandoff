@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import Reveal from "@/components/ui/Reveal";
 import CategoryCircles from "@/components/layout/CategoryCircles";
@@ -94,13 +95,14 @@ export default async function HomePage() {
                 href={`/oda/${room.slug}`}
                 className="group flex flex-col items-center gap-3"
               >
-                <div className="h-24 w-24 overflow-hidden rounded-full border border-secondary/10 bg-secondary/[0.04] transition-transform duration-300 group-hover:-translate-y-1 lg:h-28 lg:w-28">
+                <div className="relative h-24 w-24 overflow-hidden rounded-full border border-secondary/10 bg-secondary/[0.04] transition-transform duration-300 group-hover:-translate-y-1 lg:h-28 lg:w-28">
                   {room.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={room.imageUrl}
                       alt={room.name}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      fill
+                      sizes="(min-width: 1024px) 112px, 96px"
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center font-display text-lg text-secondary/25">

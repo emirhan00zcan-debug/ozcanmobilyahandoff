@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { CollectionTab } from "@/lib/data/homepage-mock";
 
@@ -36,63 +37,69 @@ export default function CollectionTabs({ tabs }: Props) {
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-      <h2 className="mb-10 font-display text-3xl font-semibold text-secondary">
-        Sizin İçin Seçtiklerimiz
-      </h2>
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,380px)_1fr] lg:items-start">
+        {/* Sol: sekme listesi + açıklama + CTA */}
+        <div className="flex flex-col items-start justify-start gap-6 pt-4 lg:pt-8">
+          <div className="space-y-4">
+            <h2 className="font-body text-sm font-bold text-secondary">
+              Sizin İçin Seçtiklerimiz
+            </h2>
 
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,340px)_1fr] lg:items-center">
-        {/* Sol: sekme listesi + açıklama + CTA — görselle dikey olarak ortalanır */}
-        <div className="flex flex-col items-start justify-center gap-5">
-          {tabs.map((tab, i) => (
-            <button
-              key={tab.id}
-              onClick={() => setActive(i)}
-              className={[
-                "relative font-display text-3xl font-semibold transition-colors after:absolute after:inset-x-0 after:-bottom-1 after:h-[1.5px] after:origin-left after:bg-secondary after:transition-transform after:duration-300 after:ease-out",
-                i === active
-                  ? "text-secondary after:scale-x-100"
-                  : "text-secondary-light/40 hover:text-secondary-light after:scale-x-0 hover:after:scale-x-100",
-              ].join(" ")}
-            >
-              {tab.label}
-            </button>
-          ))}
+            <div className="flex flex-col items-start gap-2">
+              {tabs.map((tab, i) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActive(i)}
+                  className={[
+                    "relative font-display text-2xl sm:text-3xl font-semibold leading-tight transition-colors after:absolute after:inset-x-0 after:-bottom-1 after:h-[3px] after:origin-left after:bg-secondary after:transition-transform after:duration-300 after:ease-out",
+                    i === active
+                      ? "text-secondary after:scale-x-100"
+                      : "text-secondary-light/40 hover:text-secondary-light after:scale-x-0 hover:after:scale-x-100",
+                  ].join(" ")}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid w-full grid-cols-4 gap-3 mt-2">
             {QUICK_PRODUCTS.map((p) => (
               <Link
                 key={p.slug}
                 href={`/urun/${p.slug}`}
                 aria-label={p.name}
-                className="group aspect-square overflow-hidden rounded-lg bg-secondary/[0.04]"
+                className="group relative aspect-square overflow-hidden rounded-xl bg-secondary/[0.04]"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={p.image}
                   alt={p.name}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  fill
+                  sizes="(min-width: 1024px) 85px, 25vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-110"
                 />
               </Link>
             ))}
           </div>
 
-          <p className="mt-2 font-body text-base text-secondary-light">{current.description}</p>
+          <p className="font-body text-sm text-secondary-light">{current.description}</p>
 
           <Link
             href={current.ctaHref}
-            className="mt-3 rounded-full bg-secondary px-7 py-3.5 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-primary active:scale-95"
+            className="rounded-full bg-black px-8 py-3.5 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:bg-black/80 active:scale-95"
           >
             Modelleri İncele
           </Link>
         </div>
 
         {/* Sağ: aktif sekmenin yaşam alanı görseli */}
-        <div key={active} className="animate-fade-in aspect-square w-full overflow-hidden rounded-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <div key={active} className="relative animate-fade-in aspect-square lg:aspect-[4/5] w-full overflow-hidden rounded-2xl">
+          <Image
             src={current.imageUrl}
             alt={current.label}
-            className="h-full w-full object-cover"
+            fill
+            sizes="(min-width: 1024px) 60vw, 100vw"
+            className="object-cover"
           />
         </div>
       </div>

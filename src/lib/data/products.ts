@@ -54,6 +54,8 @@ export type ProductDetail = {
   vendor: string;
   basePrice: number;
   compareAtPrice?: number;
+  stock: number;
+  leadTimeDays: number | null;
   inStock: boolean;
   images: string[];
   features: string[];
@@ -70,6 +72,8 @@ export type ProductDetail = {
   roomSlug: string;
   variationTypes: VariationTypeView[];
   variations: ProductVariationView[];
+  installationAvailable: boolean;
+  installationPrice: number | null;
 };
 
 const productDetailInclude = {
@@ -132,7 +136,9 @@ function mapToProductDetail(p: ProductWithRelations): ProductDetail {
     vendor: p.vendor,
     basePrice: p.basePrice.toNumber(),
     compareAtPrice: p.compareAtPrice?.toNumber(),
-    inStock: p.stock > 0,
+    stock: p.stock ?? 0,
+    leadTimeDays: (p as any).leadTimeDays ?? null,
+    inStock: (p.stock ?? 0) > 0,
     images: p.images.map((img) => img.url),
     features: p.features,
     dimensions,
@@ -162,6 +168,8 @@ function mapToProductDetail(p: ProductWithRelations): ProductDetail {
       footHeightOverrideCm: v.footHeightOverrideCm?.toNumber() ?? null,
       optionIds: v.selectedOptions.map((s) => s.variationOptionId),
     })),
+    installationAvailable: p.installationAvailable,
+    installationPrice: p.installationPrice?.toNumber() ?? null,
   };
 }
 
@@ -259,6 +267,7 @@ export async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
     imageUrl: p.images[0]?.url,
     hoverImageUrl: p.images[1]?.url,
     inStock: p.stock > 0,
+    stock: p.stock,
   }));
 }
 
@@ -274,6 +283,7 @@ export function toFeaturedProduct(product: ProductDetail): FeaturedProduct {
     imageUrl: product.images[0],
     hoverImageUrl: product.images[1],
     inStock: product.inStock,
+    stock: product.stock,
   };
 }
 
@@ -285,6 +295,9 @@ export type ProductReview = {
   name: string;
   rating: number;
   quote: string;
+  productName: string;
+  productSlug: string;
+  verifiedPurchase: boolean;
 };
 
 export const productReviews: ProductReview[] = [
@@ -295,6 +308,9 @@ export const productReviews: ProductReview[] = [
     rating: 5,
     quote:
       "Ürünler sorunsuz geldi özellikle ürünü teslim aldığımızda bizi arayıp ilgilendiler kurulumda herhangi bi yardıma ihtiyaç oluğ olmadığını sordular ilgi alaka çok iyiydi",
+    productName: "Tırtıklı 4 Kapaklı Ceviz Modern Gardırop",
+    productSlug: "tirtikli-4-kapakli-ceviz-modern-gardirop",
+    verifiedPurchase: true,
   },
   {
     id: "rev2",
@@ -303,6 +319,9 @@ export const productReviews: ProductReview[] = [
     rating: 5,
     quote:
       "İnternetten büyük bir mobilya alırken tereddütlerim vardı fakat montaj şeması ve minifiks sistemi sayesinde kurulumu eşimle çok rahat yaptık",
+    productName: "Tırtıklı 6 Kapaklı Ceviz Gardırop",
+    productSlug: "tirtikli-6-kapakli-ceviz-gardirop",
+    verifiedPurchase: true,
   },
   {
     id: "rev3",
@@ -311,6 +330,9 @@ export const productReviews: ProductReview[] = [
     rating: 5,
     quote:
       "Gardrop almıştık raflarından biri hasarlı geldi ancak bizimle ilgilenip hızlıca yenisini gönderdiler teşekkürler özcan mobilya",
+    productName: "Modern Lake Çizgili Gardırop",
+    productSlug: "modern-lake-cizgili-gardirop",
+    verifiedPurchase: true,
   },
   {
     id: "rev4",
@@ -319,6 +341,9 @@ export const productReviews: ProductReview[] = [
     rating: 5,
     quote:
       "Salonumuz için TV ünitesi ve gardırop siparişi verdik. Üretim kalitesi, özellikle MDF işçiliği beklediğimin çok üzerinde geldi. Paketleme o kadar sağlamdı ki hiçbir zarar görmeden teslim aldık",
+    productName: "Ahşap TV Ünitesi",
+    productSlug: "ahsap-tv-unitesi",
+    verifiedPurchase: true,
   },
 ];
 

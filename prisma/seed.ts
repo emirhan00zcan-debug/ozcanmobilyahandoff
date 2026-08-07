@@ -240,6 +240,106 @@ function parseDimension(raw: string): { value: number | null; note: string | nul
   };
 }
 
+// ============================================================================
+// VARYASYONLAR (renk/kapak tipi/ölçü seçici) — gardırop ürünleri için
+// ============================================================================
+
+type SeedVariationOption = { value: string; priceModifier?: number; hexColor?: string };
+type SeedVariationType = { name: string; options: SeedVariationOption[] };
+
+// Sıra önemli: Ayak Tipi'nin "Uzun Ayak" seçeneği aşağıda footHeightOverrideCm hesaplanırken
+// index üzerinden (GARDIROP_VARIATIONS[2]) referans alınıyor.
+const GARDIROP_VARIATIONS: SeedVariationType[] = [
+  {
+    name: "Kapak Tipi",
+    options: [
+      { value: "Çerçeve Kapak" },
+      { value: "Cam Kapak", priceModifier: 1500 },
+      { value: "Aynalı Kapak", priceModifier: 2500 },
+    ],
+  },
+  {
+    name: "Kulp Rengi",
+    options: [
+      { value: "Krom", hexColor: "#C0C0C0" },
+      { value: "Mat Siyah", priceModifier: 300, hexColor: "#1A1A1A" },
+    ],
+  },
+  {
+    name: "Ayak Tipi",
+    options: [
+      { value: "Standart Ayak" },
+      { value: "Uzun Ayak (+5 cm)", priceModifier: 400 },
+    ],
+  },
+];
+
+function slugifyValue(value: string): string {
+  const trMap: Record<string, string> = {
+    ç: "c", Ç: "c", ğ: "g", Ğ: "g", ı: "i", İ: "i", ö: "o", Ö: "o", ş: "s", Ş: "s", ü: "u", Ü: "u",
+  };
+  return value
+    .split("")
+    .map((ch) => trMap[ch] ?? ch)
+    .join("")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function cartesianProduct<T>(arrays: T[][]): T[][] {
+  return arrays.reduce<T[][]>((acc, curr) => acc.flatMap((a) => curr.map((c) => [...a, c])), [[]]);
+}
+
+// Kapak Tipi / Kulp Rengi / Ayak Tipi eksenlerini ve bunların tüm kombinasyonu için birer
+// ProductVariation (fiyat = basePrice + priceModifier toplamı) oluşturur. "Uzun Ayak" seçilen
+// kombinasyonlarda footHeightOverrideCm = ürünün taban ayak yüksekliği + 5cm olarak hesaplanır.
+async function seedGardirobVariations(productId: string, slug: string, basePrice: number, inStock: boolean, baseFootHeightCm: number | null) {
+  await prisma.productVariation.deleteMany({ where: { productId } });
+  await prisma.variationType.deleteMany({ where: { productId } }); // cascade: VariationOption'ları da siler
+
+  const createdTypes: { options: { id: string; value: string; priceModifier: number }[] }[] = [];
+  for (const [order, vt] of GARDIROP_VARIATIONS.entries()) {
+    const type = await prisma.variationType.create({ data: { productId, name: vt.name, order } });
+    const options = await Promise.all(
+      vt.options.map((opt) =>
+        prisma.variationOption.create({
+          data: {
+            variationTypeId: type.id,
+            value: opt.value,
+            priceModifier: opt.priceModifier ?? 0,
+            hexColor: opt.hexColor ?? null,
+          },
+        }),
+      ),
+    );
+    createdTypes.push({
+      options: options.map((o) => ({ id: o.id, value: o.value, priceModifier: o.priceModifier.toNumber() })),
+    });
+  }
+
+  const AYAK_TIPI_INDEX = 2;
+  const combos = cartesianProduct(createdTypes.map((t) => t.options));
+  for (const combo of combos) {
+    const priceModifierSum = combo.reduce((sum, o) => sum + o.priceModifier, 0);
+    const isUzunAyak = combo[AYAK_TIPI_INDEX]?.value.startsWith("Uzun Ayak");
+    const footHeightOverrideCm = isUzunAyak && baseFootHeightCm != null ? baseFootHeightCm + 5 : null;
+
+    const variation = await prisma.productVariation.create({
+      data: {
+        productId,
+        sku: `${slug}-${combo.map((o) => slugifyValue(o.value)).join("-")}`,
+        stock: inStock ? 10 : 0,
+        price: basePrice + priceModifierSum,
+        footHeightOverrideCm,
+      },
+    });
+    await prisma.variationOptionOnVariation.createMany({
+      data: combo.map((o) => ({ productVariationId: variation.id, variationOptionId: o.id })),
+    });
+  }
+}
+
 async function main() {
   console.log("Seed başlıyor...");
 
@@ -331,6 +431,11 @@ async function main() {
       await prisma.productImage.createMany({
         data: p.images.map((url, order) => ({ productId: product.id, url, order })),
       });
+    }
+
+    // Varyasyon seçici (renk/kapak tipi/ölçü) — şimdilik gardırop ürünlerinde
+    if (p.categorySlug === "gardirop") {
+      await seedGardirobVariations(product.id, p.slug, p.basePrice, p.inStock, foot.value);
     }
   }
   console.log(`  ${SEED_PRODUCTS.length} ürün işlendi.`);

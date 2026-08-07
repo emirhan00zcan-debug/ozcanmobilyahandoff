@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 type Props = { title: string; imageUrl?: string };
 
 // Kategori/oda detay sayfalarının üst banner'ı — referans sitedeki collection-hero
@@ -8,10 +10,9 @@ export default function CategoryHero({ title, imageUrl }: Props) {
       <div className="flex items-center bg-primary px-8 sm:px-12 lg:px-16">
         <h1 className="font-display text-4xl font-semibold text-white sm:text-5xl">{title}</h1>
       </div>
-      <div className="hidden bg-secondary/[0.04] lg:block">
+      <div className="relative hidden bg-secondary/[0.04] lg:block">
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
+          <Image src={imageUrl} alt={title} fill sizes="100vw" priority className="object-cover" />
         ) : null}
       </div>
     </div>

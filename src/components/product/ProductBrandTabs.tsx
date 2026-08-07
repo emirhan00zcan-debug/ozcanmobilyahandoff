@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { FaCheck } from "react-icons/fa";
 import { productTechnicalTab, productBrandTab } from "@/lib/data/products";
@@ -41,9 +42,14 @@ export default function ProductBrandTabs() {
       </div>
 
       <div key={active} className="grid animate-fade-in grid-cols-1 items-center gap-10 md:grid-cols-2">
-        <div className="overflow-hidden rounded-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={tab.image} alt={tab.heading} className="h-full w-full object-cover" />
+        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
+          <Image
+            src={tab.image}
+            alt={tab.heading}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover"
+          />
         </div>
         <div>
           <h3 className="font-display text-2xl font-semibold text-secondary">{tab.heading}</h3>

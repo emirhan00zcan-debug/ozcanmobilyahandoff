@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { FaCheck, FaShoppingBag } from "react-icons/fa";
 import type { FeaturedProduct } from "@/lib/data/homepage-mock";
 import { useCartStore } from "@/store/cart-store";
+import CompareCheckbox from "./CompareCheckbox";
 
 type Props = { product: FeaturedProduct };
 
@@ -21,6 +23,8 @@ export default function ProductCard({ product }: Props) {
   const discountPct = hasDiscount
     ? Math.round((1 - product.price / product.compareAtPrice!) * 100)
     : 0;
+  const isLowStock =
+    !isSoldOut && typeof product.stock === "number" && product.stock > 0 && product.stock <= 3;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -38,9 +42,13 @@ export default function ProductCard({ product }: Props) {
   };
 
   return (
-    <Link href={`/urun/${product.slug}`} className="group flex flex-col">
+    <Link href={`/urun/${product.slug}`} className="group flex flex-col relative">
       {/* Görsel alanı: iki katmanlı (görsel 1 / görsel 2) hover cross-fade + hafif zoom */}
       <div className="relative aspect-square overflow-hidden rounded-xl bg-secondary/[0.04]">
+
+        {/* Karşılaştır Checkbox */}
+        <CompareCheckbox product={{ ...product, categorySlug: "" }} />
+
         {isSoldOut ? (
           <span className="absolute left-3 top-3 z-10 rounded-full bg-secondary-light px-2.5 py-1 font-body text-[11px] font-semibold text-white">
             Tükendi
@@ -53,14 +61,23 @@ export default function ProductCard({ product }: Props) {
           )
         )}
 
+        {isLowStock && (
+          // top-12: sağ üstteki Karşılaştır butonunun (CompareCheckbox, h-7/h-8 + top-3) hemen altına düşer,
+          // aynı right-3 sütununda üst üste binmesin diye.
+          <span className="absolute right-3 top-12 z-10 rounded-full bg-amber-600 px-2.5 py-1 font-body text-[11px] font-semibold text-white sm:top-14">
+            Son {product.stock} Adet
+          </span>
+        )}
+
         {/* Görsel 1 (varsayılan) */}
         {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={product.imageUrl}
             alt={product.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={[
-              "absolute inset-0 h-full w-full object-cover transition-all duration-500 ease-in-out group-hover:scale-105 group-hover:opacity-0",
+              "object-cover transition-all duration-500 ease-in-out group-hover:scale-105 group-hover:opacity-0",
               isSoldOut ? "opacity-60 grayscale" : "",
             ].join(" ")}
           />
@@ -72,11 +89,12 @@ export default function ProductCard({ product }: Props) {
 
         {/* Görsel 2 (hover'da beliren "iç görünüm" görseli) */}
         {product.hoverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={product.hoverImageUrl}
             alt={product.name}
-            className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-secondary/[0.06] font-display text-4xl text-secondary/20 opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100">

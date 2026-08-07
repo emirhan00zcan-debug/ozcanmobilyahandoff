@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { trackAddToCart } from "@/lib/analytics";
 
 // ============================================================================
 // TİPLER
@@ -17,24 +18,32 @@ export type SelectedVariations = {
 export type CartItem = {
   id: string; // Satır kimliği (lineId): productId + varyasyon kombinasyonundan üretilir
   productId: string; // Asıl ürünün kimliği (Prisma Product.id ile eşleşir)
+  productVariationId?: string; // Seçili ProductVariation kaydı — ödeme adımında sunucunun gerçek fiyatı bulması için
   name: string;
   basePrice: number; // Varyasyonsuz taban fiyat (referans/gösterim amaçlı)
-  unitPrice: number; // Seçilen varyasyonların priceModifier'ları eklenmiş, TEK adet fiyatı
+  unitPrice: number; // Seçilen varyasyonların priceModifier'ları eklenmiş, TEK adet fiyatı (sadece gösterim — sipariş tutarı sunucuda yeniden hesaplanır)
   totalPrice: number; // unitPrice * quantity (satırın toplam tutarı)
   image?: string;
   quantity: number;
+  maxStock?: number;
   selectedVariations: SelectedVariations;
+  installationRequested?: boolean; // Bu satırda kurulum/montaj hizmeti isteniyor mu
+  installationPrice?: number; // Kurulum hizmetinin TEK adet fiyatı (totalPrice'a dahil değil, checkout'ta ayrı gösterilir)
 };
 
 // addItem'a dışarıdan verilecek girdi: id/totalPrice store tarafından hesaplanır
 export type AddCartItemInput = {
   productId: string;
+  productVariationId?: string;
   name: string;
   basePrice: number;
   unitPrice: number;
   image?: string;
   quantity?: number; // verilmezse 1 kabul edilir
+  maxStock?: number;
   selectedVariations?: SelectedVariations;
+  installationRequested?: boolean;
+  installationPrice?: number;
 };
 
 type CartState = {
@@ -55,6 +64,8 @@ type CartState = {
   // Persist hydration takibi (SSR/CSR uyuşmazlığını önlemek için)
   hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
+
+  setItems: (items: CartItem[]) => void;
 };
 
 // ============================================================================
@@ -104,12 +115,16 @@ export const useCartStore = create<CartState>()(
           if (existingIndex !== -1) {
             const updatedItems = [...state.items];
             const existing = updatedItems[existingIndex];
-            const newQuantity = existing.quantity + quantityToAdd;
+            const max = existing.maxStock ?? 9999;
+            const newQuantity = Math.min(max, existing.quantity + quantityToAdd);
 
             updatedItems[existingIndex] = {
               ...existing,
               quantity: newQuantity,
+              maxStock: input.maxStock ?? existing.maxStock,
               totalPrice: existing.unitPrice * newQuantity,
+              installationRequested: input.installationRequested ?? existing.installationRequested,
+              installationPrice: input.installationPrice ?? existing.installationPrice,
             };
 
             return { items: updatedItems, isOpen: true };
@@ -119,16 +134,27 @@ export const useCartStore = create<CartState>()(
           const newItem: CartItem = {
             id: lineId,
             productId: input.productId,
+            productVariationId: input.productVariationId,
             name: input.name,
             basePrice: input.basePrice,
             unitPrice: input.unitPrice,
             totalPrice: input.unitPrice * quantityToAdd,
             image: input.image,
-            quantity: quantityToAdd,
+            quantity: Math.min(input.maxStock ?? 9999, quantityToAdd),
+            maxStock: input.maxStock,
             selectedVariations: input.selectedVariations ?? {},
+            installationRequested: input.installationRequested,
+            installationPrice: input.installationPrice,
           };
 
           return { items: [...state.items, newItem], isOpen: true };
+        });
+
+        trackAddToCart({
+          item_id: input.productId,
+          item_name: input.name,
+          price: input.unitPrice,
+          quantity: quantityToAdd,
         });
       },
 
@@ -146,17 +172,22 @@ export const useCartStore = create<CartState>()(
         }
 
         set((state) => ({
-          items: state.items.map((item) =>
-            item.id === lineId
-              ? { ...item, quantity, totalPrice: item.unitPrice * quantity }
-              : item,
-          ),
+          items: state.items.map((item) => {
+            if (item.id === lineId) {
+              const max = item.maxStock ?? 9999;
+              const boundedQty = Math.min(max, quantity);
+              return { ...item, quantity: boundedQty, totalPrice: item.unitPrice * boundedQty };
+            }
+            return item;
+          }),
         }));
       },
 
       clearCart: () => set({ items: [] }),
 
       setHasHydrated: (state) => set({ hasHydrated: state }),
+
+      setItems: (items) => set({ items }),
     }),
     {
       name: "ozcan-cart-storage", // localStorage anahtarı
@@ -186,3 +217,11 @@ export const useCartTotalQuantity = () =>
 
 export const useCartSubtotal = () =>
   useCartStore((state) => state.items.reduce((sum, item) => sum + item.totalPrice, 0));
+
+export const useCartInstallationTotal = () =>
+  useCartStore((state) =>
+    state.items.reduce(
+      (sum, item) => sum + (item.installationRequested ? (item.installationPrice ?? 0) * item.quantity : 0),
+      0,
+    ),
+  );

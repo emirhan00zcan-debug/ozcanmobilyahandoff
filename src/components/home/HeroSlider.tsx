@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { HeroSlide } from "@/lib/data/homepage-mock";
 
@@ -36,14 +37,13 @@ export default function HeroSlider({ slides }: Props) {
             className="relative flex h-[560px] w-full shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-secondary/80 via-secondary/60 to-secondary/80 sm:h-[680px]"
           >
             {slide.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={slide.imageUrl}
                 alt={slide.title}
-                className={[
-                  "absolute inset-0 h-full w-full object-cover",
-                  i === index ? "animate-hero-zoom" : "",
-                ].join(" ")}
+                fill
+                sizes="100vw"
+                priority={i === 0}
+                className={["object-cover", i === index ? "animate-hero-zoom" : ""].join(" ")}
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-white/10">

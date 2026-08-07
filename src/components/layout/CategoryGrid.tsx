@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { CategoryCircle } from "@/lib/data/homepage-mock";
 
@@ -16,10 +17,11 @@ export default function CategoryGrid({ items, basePath }: Props) {
         <Link key={item.id} href={`${basePath}/${item.slug}`} className="group flex flex-col items-center gap-3">
           <div className="h-24 w-24 overflow-hidden rounded-full border border-secondary/10 bg-secondary/[0.04] transition-transform duration-300 group-hover:-translate-y-1 lg:h-28 lg:w-28">
             {item.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={item.imageUrl}
                 alt={item.name}
+                width={96}
+                height={96}
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
             ) : (

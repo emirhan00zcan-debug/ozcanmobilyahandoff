@@ -63,23 +63,98 @@ model User {
   passwordHash  String?
   role          Role      @default(CUSTOMER)
 
+  // Giriş formuna kaba kuvvet (brute-force) koruması — authorize() içinde kullanılır
+  // (bkz. src/lib/auth.ts). Art arda başarısız denemelerde hesap geçici olarak kilitlenir.
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+
   emailVerified DateTime?
   image         String?
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  addresses     Address[]
-  orders        Order[]
-  cart          Cart?
+  addresses      Address[]
+  orders         Order[]
+  cart           Cart?
+  accounts       Account[]
+  sessions       Session[]
+  paymentMethods PaymentMethod[]
 
   @@map("users")
 }
 
+// ============================================================================
+// AUTH.JS (NextAuth v5) — PrismaAdapter'ın beklediği standart şema.
+// Google/Apple gibi OAuth sağlayıcılarıyla girişte hesabı kullanıcıya bağlamak
+// için gerekli; session stratejisi "jwt" olsa da adapter bu modellerin varlığını
+// (Prisma Client üzerinde ilgili delegate'lerin bulunmasını) şart koşuyor.
+// ============================================================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Sipariş onay e-postasının gönderilebilmesi için e-posta doğrulaması — Google ile giriş
+// yapan kullanıcıların e-postası zaten sağlayıcı tarafından doğrulanmış sayılır (bkz.
+// src/lib/auth.ts Google profile() eşlemesi ve User.emailVerified); misafir siparişlerde
+// ve şifreyle kayıtlı, henüz doğrulanmamış hesaplarda bu kod kullanılır (bkz.
+// src/lib/order-verification.ts).
+model EmailVerificationCode {
+  id         String    @id @default(cuid())
+  email      String
+  code       String
+  expires    DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  orderId    String    @unique
+  order      Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@map("email_verification_codes")
+}
+
 model Address {
   id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?  // misafir siparişte null — adres yalnızca o siparişe ait, hesaba kaydedilmez
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   title       String   // örn: "Ev", "Ofis"
   fullName    String
@@ -160,8 +235,15 @@ model Product {
   // İndirim yüzdesi ("Save %28" rozeti) uygulama katmanında basePrice/compareAtPrice'dan hesaplanır, DB'de tutulmaz.
 
   stock            Int       @default(0) // Varyasyonsuz ürünler için genel stok
+  leadTimeDays     Int?      // Tahmini üretim/teslim süresi (iş günü) — siparişe üretilen mobilya için
 
   vendor           String    @default("Özcan Mobilya") // İleride farklı atölye/tedarikçi eklenmesi ihtimaline karşı serbest metin
+
+  // --- Ücretli kurulum/montaj hizmeti ---
+  // Ürün bazında sunulur/sunulmaz + sabit fiyatı; ürün sayfasında/sepette seçilebilir,
+  // seçilen fiyat OrderItem.installationPrice'a anlık değer olarak kopyalanır (bkz. order-actions.ts).
+  installationAvailable Boolean  @default(false)
+  installationPrice     Decimal? @db.Decimal(10, 2)
 
   // --- Fiziksel ölçüler (mobilya sektörü için zorunlu) ---
   // Standart pratiğe göre temel ölçüler ürün (model) seviyesinde tutulur.
@@ -379,17 +461,26 @@ model Order {
   id              String        @id @default(cuid())
   orderNumber     String        @unique
 
-  userId          String
-  user            User          @relation(fields: [userId], references: [id])
+  // Misafir siparişte userId null olur; iletişim/takip için guestEmail kullanılır
+  // (kayıtlı kullanıcıda contact bilgisi zaten user.email/phone üzerinden erişilir).
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id])
+  guestEmail      String?
 
   addressId       String
   address         Address       @relation(fields: [addressId], references: [id])
 
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
+  // Müşterinin checkout'ta seçtiği ödeme yöntemi — PayTR ile ödenen siparişlerde CARD olur
+  // ve paymentStatus PayTR callback'i onayladığında PAID'e çekilir (bkz. lib/payment/paytr.ts).
+  paymentMethod   PaymentMethodType @default(CASH_ON_DELIVERY)
 
   subtotal        Decimal       @db.Decimal(10, 2) // İndirim öncesi ürünler toplamı
   shippingCost    Decimal       @default(0) @db.Decimal(10, 2)
+  // Seçilen tüm satırların kurulum/montaj hizmeti toplamı (bkz. OrderItem.installationPrice) —
+  // totalAmount = subtotal - discountAmount + shippingCost + installationTotal
+  installationTotal Decimal     @default(0) @db.Decimal(10, 2)
 
   couponId        String?
   coupon          Coupon?       @relation(fields: [couponId], references: [id])
@@ -404,6 +495,7 @@ model Order {
   updatedAt       DateTime      @updatedAt
 
   items           OrderItem[]
+  emailVerification EmailVerificationCode?
 
   @@index([userId])
   @@index([couponId])
@@ -424,9 +516,68 @@ model OrderItem {
   quantity           Int
   unitPrice          Decimal           @db.Decimal(10, 2)
 
+  // Sipariş anında seçilmişse kurulum/montaj hizmeti — fiyat, Product.installationPrice'dan
+  // o anki değeriyle kopyalanır (ürünün fiyatı sonradan değişse bile sipariş kaydı sabit kalır).
+  installationRequested Boolean @default(false)
+  installationPrice     Decimal @default(0) @db.Decimal(10, 2)
+
   productNameSnapshot String
   variationSnapshot   String?
 
   @@index([orderId])
   @@map("order_items")
+}
+
+// ============================================================================
+// ÖDEME YÖNTEMLERİ
+// ============================================================================
+// PayTR entegrasyonu henüz bağlanmadı (bkz. hesabım sayfası) — CARD tipi şimdilik
+// arayüzde "yakında" olarak gösterilir, seçilemez. Kapıda Ödeme / Havale-EFT gibi
+// kart gerektirmeyen tercihler hemen kullanılabilir. PayTR bağlandığında CARD
+// satırları providerToken/cardLast4/cardBrand doldurularak eklenecek — gerçek kart
+// numarası hiçbir zaman burada saklanmaz.
+enum PaymentMethodType {
+  CASH_ON_DELIVERY
+  BANK_TRANSFER
+  CARD
+}
+
+model PaymentMethod {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      PaymentMethodType
+  label     String?           // Kullanıcının kendi verdiği isim, örn. "İş Kartım"
+  isDefault Boolean           @default(false)
+
+  providerToken String?       // PayTR "Saklı Kart" token'ı (entegrasyon sonrası dolar)
+  cardLast4     String?
+  cardBrand     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payment_methods")
+}
+
+// ============================================================================
+// İLETİŞİM FORMU
+// ============================================================================
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String   @db.Text
+
+  isRead    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("contact_messages")
 }

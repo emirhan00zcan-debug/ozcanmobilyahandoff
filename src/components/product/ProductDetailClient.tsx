@@ -24,6 +24,7 @@ import type { SelectedVariations } from "@/store/cart-store";
 import { trackViewItem } from "@/lib/analytics";
 import type { ProductDetail } from "@/lib/data/products";
 import RoomFitCalculator from "./RoomFitCalculator";
+import SampleRequestModal from "./SampleRequestModal";
 
 type Props = { product: ProductDetail };
 
@@ -81,6 +82,8 @@ export default function ProductDetailClient({ product }: Props) {
   const [isMaterialOpen, setIsMaterialOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isInstallmentOpen, setIsInstallmentOpen] = useState(false);
+  const [isSampleModalOpen, setIsSampleModalOpen] = useState(false);
+  const [wantsInstallation, setWantsInstallation] = useState(false);
 
   // Lightbox açıkken sayfa kaydırılmasını (scroll) önle
   useEffect(() => {
@@ -142,7 +145,15 @@ export default function ProductDetailClient({ product }: Props) {
   }, [hasVariations, product.variationTypes, product.variations, selectedOptions]);
 
   const effectivePrice = resolvedVariation ? resolvedVariation.price : product.basePrice;
-  const effectiveInStock = hasVariations ? (resolvedVariation?.stock ?? 0) > 0 : product.inStock;
+  const effectiveStock = hasVariations ? (resolvedVariation?.stock ?? 0) : product.stock;
+  const effectiveInStock = effectiveStock > 0;
+
+  // Stok limitini ve UI state'i senkron tut
+  useEffect(() => {
+    if (effectiveInStock && quantity > effectiveStock) {
+      setQuantity(Math.max(1, effectiveStock));
+    }
+  }, [effectiveStock, quantity, effectiveInStock]);
 
   const hasDiscount = !!product.compareAtPrice && effectivePrice < product.compareAtPrice;
   const discountPct = hasDiscount
@@ -194,7 +205,10 @@ export default function ProductDetailClient({ product }: Props) {
       unitPrice: effectivePrice,
       image: product.images[0],
       quantity,
+      maxStock: effectiveStock,
       selectedVariations: selectedVariationsSummary,
+      installationRequested: wantsInstallation,
+      installationPrice: product.installationPrice ?? 0,
     });
   };
 
@@ -210,7 +224,10 @@ export default function ProductDetailClient({ product }: Props) {
       unitPrice: effectivePrice,
       image: product.images[0],
       quantity,
+      maxStock: effectiveStock,
       selectedVariations: selectedVariationsSummary,
+      installationRequested: wantsInstallation,
+      installationPrice: product.installationPrice ?? 0,
     });
     router.push(status === "authenticated" ? "/odeme" : "/giris?callbackUrl=%2Fodeme");
   };
@@ -235,57 +252,58 @@ export default function ProductDetailClient({ product }: Props) {
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         {/* ================= SOL BLOK: GALERİ ================= */}
-        <div className="flex gap-4">
-          {/* Dikey thumbnail şeridi */}
-          <div className="flex flex-col gap-3">
-            {product.images.map((img, i) => (
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-4">
+            {/* Dikey thumbnail şeridi */}
+            <div className="flex flex-col gap-3">
+              {product.images.map((img, i) => (
+                <button
+                  key={img}
+                  onClick={() => setActiveImageIndex(i)}
+                  aria-label={`Görsel ${i + 1}`}
+                  className={[
+                    "relative h-20 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors",
+                    i === activeImageIndex
+                      ? "border-secondary"
+                      : "border-secondary/10 hover:border-secondary/30",
+                  ].join(" ")}
+                >
+                  <Image
+                    src={img}
+                    alt={`${product.name} ${i + 1}`}
+                    fill
+                    sizes="64px"
+                    className="object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+
+            {/* Ana görsel */}
+            <div className="relative flex-1 overflow-hidden rounded-lg bg-secondary/[0.04] aspect-[4/5] sm:aspect-square lg:aspect-[4/5]">
               <button
-                key={img}
-                onClick={() => setActiveImageIndex(i)}
-                aria-label={`Görsel ${i + 1}`}
-                className={[
-                  "relative h-20 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors",
-                  i === activeImageIndex
-                    ? "border-secondary"
-                    : "border-secondary/10 hover:border-secondary/30",
-                ].join(" ")}
+                type="button"
+                onClick={() => setIsFullscreen(true)}
+                aria-label="Görseli büyüt"
+                className="group absolute inset-0 w-full h-full cursor-zoom-in"
               >
                 <Image
-                  src={img}
-                  alt={`${product.name} ${i + 1}`}
+                  key={activeImageIndex}
+                  src={product.images[activeImageIndex]}
+                  alt={product.name}
                   fill
-                  sizes="64px"
-                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
+                  className="animate-fade-in object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                 />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-300 group-hover:bg-black/5 group-hover:opacity-100">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-secondary shadow-lg">
+                    <FaSearchPlus className="h-5 w-5" />
+                  </span>
+                </div>
               </button>
-            ))}
-          </div>
-
-          {/* Ana görsel */}
-          <button
-            type="button"
-            onClick={() => setIsFullscreen(true)}
-            aria-label="Görseli büyüt"
-            className="group relative flex-1 cursor-zoom-in overflow-hidden rounded-lg bg-secondary/[0.04]"
-          >
-            <div className="relative aspect-[4/5] w-full">
-              <Image
-                key={activeImageIndex}
-                src={product.images[activeImageIndex]}
-                alt={product.name}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority
-                className="animate-fade-in object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-              />
-              {/* Büyüteç ikonu "Hover" efekti olarak hafifçe görünür */}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-300 group-hover:bg-black/5 group-hover:opacity-100">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-secondary shadow-lg">
-                  <FaSearchPlus className="h-5 w-5" />
-                </span>
-              </div>
             </div>
-          </button>
+          </div>
         </div>
 
         {/* ================= SAĞ BLOK: ÜRÜN BİLGİLERİ ================= */}
@@ -371,6 +389,20 @@ export default function ProductDetailClient({ product }: Props) {
               Tükendi
             </p>
           )}
+
+          {/* Stok ve Teslimat Süresi */}
+          <div className="mt-3 space-y-1">
+            {effectiveInStock && (
+              <p className="font-body text-[13px] text-secondary">
+                <span className="font-semibold text-emerald-600">Stokta {effectiveStock} adet</span> mevcut.
+              </p>
+            )}
+            {product.leadTimeDays && (
+              <p className="font-body text-[13px] text-secondary">
+                <span className="font-semibold">Tahmini Üretim/Teslim Süresi:</span> {product.leadTimeDays} gün
+              </p>
+            )}
+          </div>
 
           {/* Check ikonlu özellikler */}
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
@@ -492,10 +524,32 @@ export default function ProductDetailClient({ product }: Props) {
                   </div>
                 );
               })}
+
+              <div className="flex justify-start">
+                <button
+                  type="button"
+                  onClick={() => setIsSampleModalOpen(true)}
+                  className="font-body text-xs font-semibold text-primary underline underline-offset-4 transition-colors hover:text-emerald-700"
+                >
+                  Ücretsiz Kumaş/Ahşap Numunesi İste
+                </button>
+              </div>
             </div>
           )}
 
           {/* ============ SATIN ALMA ALANI ============ */}
+          {product.installationAvailable && (
+            <label className="mt-5 flex items-center gap-2 rounded-md bg-secondary/[0.04] px-3 py-2.5 font-body text-sm text-secondary">
+              <input
+                type="checkbox"
+                checked={wantsInstallation}
+                onChange={(e) => setWantsInstallation(e.target.checked)}
+                className="accent-primary"
+              />
+              Kurulum/Montaj Hizmeti İstiyorum (+{formatPrice(product.installationPrice ?? 0)})
+            </label>
+          )}
+
           <div className="mt-6 flex items-center gap-3">
             {/* Adet seçici */}
             <div className="flex items-center rounded-full border border-secondary/20">
@@ -511,9 +565,9 @@ export default function ProductDetailClient({ product }: Props) {
                 {quantity}
               </span>
               <button
-                onClick={() => setQuantity((q) => q + 1)}
+                onClick={() => setQuantity((q) => Math.min(effectiveStock, q + 1))}
                 aria-label="Adedi artır"
-                disabled={!effectiveInStock}
+                disabled={!effectiveInStock || quantity >= effectiveStock}
                 className="px-4 py-3 text-secondary transition-colors hover:text-primary disabled:opacity-40"
               >
                 <FaPlus className="h-3 w-3" />
@@ -699,6 +753,13 @@ export default function ProductDetailClient({ product }: Props) {
           </div>
         </div>
       )}
+
+      {/* Numune İstek Modalı */}
+      <SampleRequestModal
+        isOpen={isSampleModalOpen}
+        onClose={() => setIsSampleModalOpen(false)}
+        productName={product.name}
+      />
     </div>
   );
 }

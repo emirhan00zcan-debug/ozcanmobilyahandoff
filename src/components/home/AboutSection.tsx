@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { FaMapMarkerAlt, FaSmile, FaCouch } from "react-icons/fa";
 
@@ -22,8 +23,13 @@ export default function AboutSection({ data }: Props) {
         {/* Sol: görsel + dönen rozet */}
         <div className="relative aspect-square overflow-hidden rounded-2xl bg-secondary/[0.04]">
           {data.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.imageUrl} alt={data.title} className="h-full w-full object-cover" />
+            <Image
+              src={data.imageUrl}
+              alt={data.title}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-secondary/10">
               <span className="font-display text-8xl">ÖM</span>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 type Props = {
@@ -14,9 +15,14 @@ export default function AboutSplit({ eyebrow, title, body, imageUrl, reverse, ct
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <div className={`grid items-center gap-12 md:grid-cols-2 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}>
-        <div className="aspect-[4/3] overflow-hidden rounded-2xl">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
+        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
+          <Image
+            src={imageUrl}
+            alt={title}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover"
+          />
         </div>
         <div>
           <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-primary">{eyebrow}</p>

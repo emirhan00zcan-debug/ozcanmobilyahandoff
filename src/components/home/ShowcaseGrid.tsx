@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ShowcaseTile } from "@/lib/data/homepage-mock";
 
@@ -18,11 +19,12 @@ export default function ShowcaseGrid({ tiles }: Props) {
             className="group relative flex aspect-square items-end overflow-hidden bg-secondary/[0.04]"
           >
             {tile.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={tile.imageUrl}
                 alt={tile.title}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+                fill
+                sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 25vw"
+                className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-secondary/10 transition-transform duration-500 ease-in-out group-hover:scale-105">

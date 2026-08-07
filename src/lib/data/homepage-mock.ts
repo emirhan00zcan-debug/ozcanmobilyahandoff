@@ -11,6 +11,7 @@ export type CategoryCircle = {
   name: string;
   slug: string;
   imageUrl?: string; // boşsa bileşen otomatik yer tutucu gösterir
+  description?: string; // sadece Category'de var (Room'da yok) — kategori sayfası meta description'ı için
 };
 
 // Üstteki "Kategoriler" çember navigasyonu — Category tablosundan, eklenme sırasına göre.
@@ -25,11 +26,23 @@ export const getCategories = unstable_cache(
   { revalidate: 300 },
 );
 
-export async function getCategoryBySlug(slug: string): Promise<CategoryCircle | null> {
-  const category = await prisma.category.findUnique({ where: { slug } });
-  if (!category) return null;
-  return { id: category.id, name: category.name, slug: category.slug, imageUrl: category.imageUrl ?? undefined };
-}
+// generateMetadata ve sayfa bileşeni aynı slug için ayrı ayrı çağırır — diğer fonksiyonlarla
+// aynı unstable_cache deseni burada da tekrar sorguyu önler (bkz. getCategories yorumu).
+export const getCategoryBySlug = unstable_cache(
+  async (slug: string): Promise<CategoryCircle | null> => {
+    const category = await prisma.category.findUnique({ where: { slug } });
+    if (!category) return null;
+    return {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      imageUrl: category.imageUrl ?? undefined,
+      description: category.description ?? undefined,
+    };
+  },
+  ["homepage-mock:getCategoryBySlug"],
+  { revalidate: 300 },
+);
 
 // Alttaki "Yaşam Alanına Göre Alışveriş" — Room taksonomisi, Room.order'a göre sıralı (bkz. getCategories yorumu).
 export const getRooms = unstable_cache(
@@ -41,11 +54,15 @@ export const getRooms = unstable_cache(
   { revalidate: 300 },
 );
 
-export async function getRoomBySlug(slug: string): Promise<CategoryCircle | null> {
-  const room = await prisma.room.findUnique({ where: { slug } });
-  if (!room) return null;
-  return { id: room.id, name: room.name, slug: room.slug, imageUrl: room.imageUrl ?? undefined };
-}
+export const getRoomBySlug = unstable_cache(
+  async (slug: string): Promise<CategoryCircle | null> => {
+    const room = await prisma.room.findUnique({ where: { slug } });
+    if (!room) return null;
+    return { id: room.id, name: room.name, slug: room.slug, imageUrl: room.imageUrl ?? undefined };
+  },
+  ["homepage-mock:getRoomBySlug"],
+  { revalidate: 300 },
+);
 
 export type HeroSlide = {
   id: string;
@@ -70,6 +87,7 @@ export type FeaturedProduct = {
   imageUrl?: string;
   hoverImageUrl?: string; // ürünün 2. görseli (hover'da açılan iç görünüm vb.)
   inStock?: boolean; // belirtilmezse stokta kabul edilir
+  stock?: number; // gerçek stok adedi (opsiyonel — bazı çağıranlar hâlâ sadece inStock verebilir)
 };
 
 export type FeaturedBanner = {
@@ -284,6 +302,7 @@ export const footerColumns = [
       { label: "İletişim", href: "/iletisim" },
       { label: "Mesafeli Satış Sözleşmesi", href: "/mesafeli-satis-sozlesmesi" },
       { label: "Gizlilik Politikası", href: "/gizlilik-politikasi" },
+      { label: "Çerez Politikası", href: "/cerez-politikasi" },
     ],
   },
   {
@@ -300,6 +319,7 @@ export const footerColumns = [
       { label: "Sepetim", href: "/sepet" },
       { label: "Hesabım", href: "/hesabim" },
       { label: "Kargo & İade", href: "/kargo-iade" },
+      { label: "Cayma Formu", href: "/cayma-formu" },
     ],
   },
 ];

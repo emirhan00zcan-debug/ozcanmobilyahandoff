@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { PromoCard } from "@/lib/data/homepage-mock";
 
@@ -13,11 +14,12 @@ export default function PromoDuo({ cards }: Props) {
             className="relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl bg-secondary/[0.04] p-9"
           >
             {card.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={card.imageUrl}
                 alt={card.title}
-                className="absolute inset-0 h-full w-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-secondary/10">
