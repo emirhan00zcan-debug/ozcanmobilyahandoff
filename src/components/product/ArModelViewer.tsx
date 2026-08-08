@@ -66,9 +66,14 @@ export default function ArModelViewer({
                 style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
                 className="group"
             >
-                {/* Buton: AR modunu başlatıcı. (model-viewer 'ar' attribute'u ile bu butonu otomatik yakalar) */}
+                {/* Buton: AR modunu başlatıcı. slot="ar-button" model-viewer'ın otomatik tıklama
+                    algılamasını da devreye sokar, ama iOS Quick Look'un çalışması için activateAR()
+                    kullanıcı tıklamasından SENKRON çağrılmalı (bkz. model-viewer AR dokümantasyonu) —
+                    bu bileşen sekme geçişiyle sonradan (lazy) monte edildiği için otomatik algılamaya
+                    güvenmek yerine burada açıkça çağırıyoruz. */}
                 <button
                     slot="ar-button"
+                    onClick={() => modelViewerRef.current?.activateAR?.()}
                     className="btn-sweep absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center justify-center rounded-full border border-primary/30 px-6 py-3 font-body text-sm font-semibold text-secondary shadow-xl ring-4 ring-primary/20 focus:outline-none focus:ring-4 hover:scale-105 active:scale-95"
                 >
                     Odanızda Görün (AR)
