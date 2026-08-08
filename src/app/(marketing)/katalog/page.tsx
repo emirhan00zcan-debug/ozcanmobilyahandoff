@@ -51,7 +51,7 @@ export default async function KatalogPage() {
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <a
                             href="#online-galeri"
-                            className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 font-body text-sm font-semibold text-secondary transition-transform hover:scale-105"
+                            className="btn-sweep flex w-full sm:w-auto items-center justify-center gap-2 rounded-full px-8 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-105"
                         >
                             <FaEye className="h-4 w-4" />
                             Kataloğa Göz At
@@ -121,7 +121,7 @@ export default async function KatalogPage() {
                     </p>
                     <Link
                         href="/iletisim"
-                        className="inline-flex rounded-full bg-secondary px-8 py-3.5 font-body text-sm font-semibold text-white transition-colors hover:bg-secondary/90"
+                        className="btn-sweep inline-flex rounded-full border border-primary/30 px-8 py-3.5 font-body text-sm font-semibold text-secondary"
                     >
                         Showroom'u Ziyaret Et
                     </Link>

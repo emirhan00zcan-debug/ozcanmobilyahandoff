@@ -10,9 +10,11 @@ import ShowcaseGrid from "@/components/home/ShowcaseGrid";
 import CollectionTabs from "@/components/home/CollectionTabs";
 import PromoDuo from "@/components/home/PromoDuo";
 import CategoryChips from "@/components/home/CategoryChips";
+import CategorySpotlight from "@/components/home/CategorySpotlight";
 import AboutSection from "@/components/home/AboutSection";
 import Testimonials from "@/components/home/Testimonials";
 import InstagramStrip from "@/components/home/InstagramStrip";
+import ConsultCta from "@/components/home/ConsultCta";
 import {
   getCategories,
   getRooms,
@@ -25,6 +27,7 @@ import {
   aboutSection,
   testimonials,
   socialLinks,
+  categorySpotlight,
 } from "@/lib/data/homepage-mock";
 import { getFeaturedProducts } from "@/lib/data/products";
 
@@ -129,7 +132,12 @@ export default async function HomePage() {
         <CategoryChips chips={quickFilterChips} />
       </Reveal>
 
-      {/* 10. Kaçırılmayacak Fırsatlar — ikinci ürün vitrin */}
+      {/* 10. Öne Çıkan Kategoriler — büyük tanıtım kartı + 2x2 kategori vitrini */}
+      <Reveal>
+        <CategorySpotlight hero={categorySpotlight.hero} cards={categorySpotlight.cards} />
+      </Reveal>
+
+      {/* 11. Kaçırılmayacak Fırsatlar — ikinci ürün vitrin */}
       <Reveal>
         <FeaturedProducts
           title="Kaçırılmayacak Fırsatlar"
@@ -139,24 +147,29 @@ export default async function HomePage() {
         />
       </Reveal>
 
-      {/* 11. Biz Kimiz? */}
+      {/* 12. Biz Kimiz? */}
       <Reveal>
         <AboutSection data={aboutSection} />
       </Reveal>
 
-      {/* 12. TV Üniteleri %40 / Gardroplar %30 kampanya kartları */}
+      {/* 13. TV Üniteleri %40 / Gardroplar %30 kampanya kartları */}
       <Reveal>
         <PromoDuo cards={promoCards} />
       </Reveal>
 
-      {/* 13. Müşteri Deneyimleri */}
+      {/* 14. Müşteri Deneyimleri */}
       <Reveal>
         <Testimonials items={testimonials} />
       </Reveal>
 
-      {/* 14. Instagram şeridi */}
+      {/* 15. Instagram şeridi */}
       <Reveal>
         <InstagramStrip social={socialLinks} />
+      </Reveal>
+
+      {/* 16. Kararsız mısınız? — tasarımcı/usta WhatsApp danışma CTA'sı */}
+      <Reveal>
+        <ConsultCta />
       </Reveal>
     </>
   );

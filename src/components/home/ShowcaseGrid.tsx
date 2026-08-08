@@ -42,7 +42,13 @@ export default function ShowcaseGrid({ tiles }: Props) {
 
               {tile.miniProduct && (
                 <div className="mt-3 flex items-center gap-2.5 rounded-lg bg-white/95 px-2.5 py-2 text-secondary">
-                  <div className="h-8 w-8 shrink-0 rounded bg-secondary/10" />
+                  {tile.imageUrl ? (
+                    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded">
+                      <Image src={tile.imageUrl} alt={tile.miniProduct.name} fill sizes="32px" className="object-cover" />
+                    </div>
+                  ) : (
+                    <div className="h-8 w-8 shrink-0 rounded bg-secondary/10" />
+                  )}
                   <div className="min-w-0">
                     <p className="truncate font-body text-[11px] font-medium">
                       {tile.miniProduct.name}

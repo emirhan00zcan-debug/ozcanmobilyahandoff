@@ -225,6 +225,71 @@ export const promoCards: (PromoCard & { imageUrl: string })[] = [
   },
 ];
 
+// "Sizin İçin Seçtiklerimiz" sekmelerinin hemen altındaki keşif bölümü — solda büyük
+// tanıtım kartı, sağda 2x2 kategori vitrini (referans Shopify temasındaki "Hot Deals" bölümü)
+export type CategorySpotlightHero = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  ctaLabel: string;
+  ctaHref: string;
+  images: string[]; // anasayfa üstündeki HeroSlider ile aynı otomatik geçişli slider
+};
+
+export type CategorySpotlightCard = {
+  id: string;
+  title: string;
+  subtitle: string;
+  href: string;
+  imageUrl: string;
+};
+
+export const categorySpotlight: { hero: CategorySpotlightHero; cards: CategorySpotlightCard[] } = {
+  hero: {
+    eyebrow: "Fabrikadan Doğrudan",
+    title: "Demonte Tasarımlarda Kolay Kurulum",
+    description:
+      "Sağlam paketleme, numaralandırılmış parçalar ve net kurulum şemasıyla mobilyanız evinizde yarım saatte hazır.",
+    ctaLabel: "Koleksiyonu Keşfet",
+    ctaHref: "/koleksiyon",
+    images: [
+      "/media/download.jpg",
+      "/media/gbxv.jpg",
+      "/media/dasd.jpg",
+    ],
+  },
+  cards: [
+    {
+      id: "spotlight-calisma-masasi",
+      title: "Çalışma Masası",
+      subtitle: "Ev ofisiniz için fonksiyonel çözümler",
+      href: "/kategori/calisma-masasi",
+      imageUrl: "/media/Gemini_Generated_Image_umx6nlumx6nlumx6.png",
+    },
+    {
+      id: "spotlight-kahve-kosesi",
+      title: "Kahve Köşesi",
+      subtitle: "Sabah keyfinize özel setler",
+      href: "/kategori/kahve-kosesi",
+      imageUrl: "/media/Gemini_Generated_Image_5oyd1r5oyd1r5oyd.png",
+    },
+    {
+      id: "spotlight-banyo-dolabi",
+      title: "Banyo Dolabı",
+      subtitle: "Neme dayanıklı şık modeller",
+      href: "/kategori/banyo-dolabi",
+      imageUrl: "/media/d4_pro_1769532928933.jpg",
+    },
+    {
+      id: "spotlight-mutfak-dolabi",
+      title: "Mutfak Dolabı",
+      subtitle: "Ölçünüze özel modüler üretim",
+      href: "/kategori/moduler-mutfak-dolabi",
+      imageUrl: "/media/premium-kitchen.jpg",
+    },
+  ],
+};
+
 // Ürün grid'lerinin üstünde hızlı filtre olarak kullanılan gerçek kategori isimleri
 export const quickFilterChips: string[] = [
   "Gardrop",

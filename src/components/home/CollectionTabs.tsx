@@ -34,6 +34,11 @@ const QUICK_PRODUCTS = [
 export default function CollectionTabs({ tabs }: Props) {
   const [active, setActive] = useState(0);
   const current = tabs[active];
+  // Aktif olmayan diğer iki sekmenin görseli — öndeki görselin arkasında, biri sağda
+  // biri solda karartılmış şekilde kısmen görünür (bkz. aşağıdaki görsel yığını).
+  const prevTab = tabs[(active - 1 + tabs.length) % tabs.length];
+  const nextTab = tabs[(active + 1) % tabs.length];
+  const hasSidePeeks = tabs.length > 2;
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
@@ -92,15 +97,44 @@ export default function CollectionTabs({ tabs }: Props) {
           </Link>
         </div>
 
-        {/* Sağ: aktif sekmenin yaşam alanı görseli */}
-        <div key={active} className="relative animate-fade-in aspect-square lg:aspect-[4/5] w-full overflow-hidden rounded-2xl">
-          <Image
-            src={current.imageUrl}
-            alt={current.label}
-            fill
-            sizes="(min-width: 1024px) 60vw, 100vw"
-            className="object-cover"
-          />
+        {/* Sağ: aktif sekmenin görseli önde, diğer iki sekmenin görseli arkasında
+            (biri sağda biri solda daha belirgin taşarak) karartılmış şekilde kısmen görünür.
+            Sekme değişince üçü de birlikte, hafif kademeli bir gecikmeyle büyüyerek belirir. */}
+        <div className="relative mx-auto w-full max-w-sm">
+          {hasSidePeeks && (
+            <div
+              key={prevTab.id}
+              style={{ animationDelay: "80ms" }}
+              className="absolute inset-y-6 -left-14 z-0 hidden w-[80%] animate-collection-reveal overflow-hidden rounded-2xl opacity-0 sm:block"
+            >
+              <Image src={prevTab.imageUrl} alt="" fill sizes="320px" className="object-cover" />
+              <div className="absolute inset-0 bg-black/50" />
+            </div>
+          )}
+          {hasSidePeeks && (
+            <div
+              key={nextTab.id}
+              style={{ animationDelay: "80ms" }}
+              className="absolute inset-y-6 -right-14 z-0 hidden w-[80%] animate-collection-reveal overflow-hidden rounded-2xl opacity-0 sm:block"
+            >
+              <Image src={nextTab.imageUrl} alt="" fill sizes="320px" className="object-cover" />
+              <div className="absolute inset-0 bg-black/50" />
+            </div>
+          )}
+
+          <div
+            key={active}
+            className="relative z-10 aspect-square w-full animate-collection-reveal overflow-hidden rounded-2xl opacity-0 shadow-xl lg:aspect-[4/5]"
+          >
+            <Image
+              src={current.imageUrl}
+              alt={current.label}
+              fill
+              sizes="(min-width: 1024px) 480px, 100vw"
+              priority
+              className="object-cover"
+            />
+          </div>
         </div>
       </div>
     </section>

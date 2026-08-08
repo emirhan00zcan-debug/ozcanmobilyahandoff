@@ -255,6 +255,13 @@ model Product {
   footHeightCm     Decimal?  @db.Decimal(6, 1) // Ayak yüksekliği (örn: "10 cm, Robot Süpürge Uyumlu")
   dimensionNote    String?   // Serbest not, örn: "Taç Dahil", "Robot Süpürge Uyumlu"
 
+  // --- AR (Artırılmış Gerçeklik) 3D model dosyaları ---
+  // scripts/ar-pipeline/ hattıyla üretilir (bkz. o klasördeki README). İkisi de doluysa
+  // ürün sayfasında "Odanızda Görün (AR)" gösterilir (bkz. ArModelViewer bileşeni).
+  // Ölçek, üretim sırasında widthCm/heightCm/depthCm alanlarına göre 1:1 kilitlenir.
+  glbUrl           String?   // Android / WebXR için .glb model yolu (public/models/<slug>/model.glb)
+  usdzUrl          String?   // iOS AR Quick Look için .usdz model yolu (public/models/<slug>/model.usdz)
+
   // --- Öne çıkan özellik rozetleri ---
   // Ürün sayfasındaki checkmark listesi için: "Modern", "Yatak odanıza özel
   // tasarımlar", "2 yıllık garanti" gibi kısa etiketler. Postgres native array.
@@ -564,6 +571,20 @@ model PaymentMethod {
 // ============================================================================
 // İLETİŞİM FORMU
 // ============================================================================
+
+// ============================================================================
+// ÇIKIŞ NİYETİ (EXIT-INTENT) BÜLTEN KAYDI
+// ============================================================================
+// Fare üst kenardan (geri tuşu/adres çubuğu yönüne) çıkarken gösterilen "%10 indirim"
+// popup'ının e-posta kaydı — bkz. src/components/layout/ExitIntentPopup.tsx.
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("newsletter_subscribers")
+}
 
 model ContactMessage {
   id        String   @id @default(cuid())

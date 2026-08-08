@@ -50,13 +50,13 @@ export default async function SiparisDurumuPage({ params }: { params: Promise<{ 
       <div className="mt-6 flex gap-3">
         <Link
           href="/"
-          className="rounded-full border border-secondary/20 px-6 py-3 font-body text-sm font-semibold text-secondary transition-colors hover:border-primary hover:text-primary"
+          className="btn-sweep rounded-full border border-primary/30 px-6 py-3 font-body text-sm font-semibold text-secondary"
         >
           Ana Sayfa
         </Link>
         <Link
           href="/hesabim"
-          className="rounded-full bg-secondary px-6 py-3 font-body text-sm font-semibold text-white transition-all duration-200 hover:bg-primary"
+          className="btn-sweep rounded-full border border-primary/30 px-6 py-3 font-body text-sm font-semibold text-secondary"
         >
           Siparişlerim
         </Link>

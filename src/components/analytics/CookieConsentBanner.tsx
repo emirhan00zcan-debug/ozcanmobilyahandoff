@@ -30,14 +30,14 @@ export default function CookieConsentBanner() {
           <button
             type="button"
             onClick={() => setStatus("rejected")}
-            className="rounded-full border border-secondary/20 px-4 py-2.5 font-body text-xs font-semibold text-secondary transition-colors hover:border-secondary/40"
+            className="btn-sweep rounded-full border border-primary/30 px-4 py-2.5 font-body text-xs font-semibold text-secondary"
           >
             Sadece Zorunlu
           </button>
           <button
             type="button"
             onClick={() => setStatus("accepted")}
-            className="rounded-full bg-secondary px-5 py-2.5 font-body text-xs font-semibold text-white transition-colors hover:bg-primary"
+            className="btn-sweep rounded-full border border-primary/30 px-5 py-2.5 font-body text-xs font-semibold text-secondary"
           >
             Kabul Et
           </button>

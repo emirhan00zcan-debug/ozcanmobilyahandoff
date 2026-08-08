@@ -68,7 +68,7 @@ export default function CompareFloatingBar() {
 
                     <Link
                         href="/karsilastir"
-                        className={`flex items-center justify-center gap-2 rounded-xl bg-secondary px-6 py-2.5 font-body text-sm font-semibold text-white transition-all hover:bg-primary active:scale-95 ${compareItems.length < 2 ? "pointer-events-none opacity-50" : ""
+                        className={`btn-sweep flex items-center justify-center gap-2 rounded-xl border border-primary/30 px-6 py-2.5 font-body text-sm font-semibold text-secondary active:scale-95 ${compareItems.length < 2 ? "pointer-events-none opacity-50" : ""
                             }`}
                     >
                         Karşılaştır <span className="hidden sm:inline">({compareItems.length})</span>

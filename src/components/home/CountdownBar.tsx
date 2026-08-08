@@ -76,7 +76,7 @@ export default function CountdownBar({ targetDate, couponCode = "FLAS20" }: Prop
         </p>
         <button
           onClick={handleCopy}
-          className="rounded-full bg-primary px-5 py-2 font-body text-xs font-semibold tracking-wide transition-all duration-200 hover:scale-105 hover:bg-primary-600 active:scale-95"
+          className="btn-sweep rounded-full px-5 py-2 font-body text-xs font-semibold tracking-wide text-secondary hover:scale-105 active:scale-95"
         >
           {copied ? "Kopyalandı ✓" : `Kodu Kullan: ${couponCode}`}
         </button>

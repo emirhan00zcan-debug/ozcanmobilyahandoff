@@ -3,6 +3,7 @@ import Navbar from "@/components/layout/Navbar";
 import ContactInfoBar from "@/components/layout/ContactInfoBar";
 import Footer from "@/components/layout/Footer";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import ExitIntentPopup from "@/components/layout/ExitIntentPopup";
 import { contactInfo, getCategories, getRooms } from "@/lib/data/homepage-mock";
 
 import CompareFloatingBar from "@/components/product/CompareFloatingBar";
@@ -22,6 +23,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
       <Footer />
       <WhatsAppButton />
       <CompareFloatingBar />
+      <ExitIntentPopup />
     </>
   );
 }

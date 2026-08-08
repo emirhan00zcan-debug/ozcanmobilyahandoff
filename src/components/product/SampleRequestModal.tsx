@@ -72,7 +72,7 @@ export default function SampleRequestModal({ isOpen, onClose, productName }: Pro
                             </p>
                             <button
                                 onClick={onClose}
-                                className="mt-6 rounded-full bg-secondary px-8 py-2.5 font-body text-sm font-semibold text-white transition-all hover:scale-[1.02] active:scale-95"
+                                className="btn-sweep mt-6 rounded-full border border-primary/30 px-8 py-2.5 font-body text-sm font-semibold text-secondary hover:scale-[1.02] active:scale-95"
                             >
                                 Kapat
                             </button>
@@ -206,7 +206,7 @@ export default function SampleRequestModal({ isOpen, onClose, productName }: Pro
                                 <button
                                     type="submit"
                                     disabled={isPending}
-                                    className="w-full rounded-full bg-secondary py-3.5 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:bg-primary active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
+                                    className="btn-sweep w-full rounded-full border border-primary/30 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
                                 >
                                     {isPending ? "Gönderiliyor..." : "Numune Talep Et"}
                                 </button>

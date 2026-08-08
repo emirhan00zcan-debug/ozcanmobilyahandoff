@@ -52,13 +52,23 @@ const config: Config = {
           "50%": { transform: "scale(1.3)" },
           "100%": { transform: "scale(1)" },
         },
+        "collection-reveal": {
+          "0%": { opacity: "0", transform: "scale(0.94)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         marquee: "marquee 22s linear infinite",
+        // "Biz Kimiz?" bölümündeki dönen rozet (AboutSection.tsx) için — Tailwind'in
+        // yerleşik "spin" keyframe'ini kullanır, sadece çok daha yavaş bir süreyle.
+        "spin-slow": "spin 14s linear infinite",
         "hero-zoom": "hero-zoom 6s ease-out forwards",
         "fade-in": "fade-in 0.4s ease-out forwards",
         "fade-in-up": "fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         "cart-bump": "cart-bump 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards",
+        // "Sizin İçin Seçtiklerimiz" (CollectionTabs.tsx) sekme değişiminde görsel
+        // yığınının (ön + iki yan karartılmış görsel) yumuşak büyüyerek belirmesi için.
+        "collection-reveal": "collection-reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
     },
   },

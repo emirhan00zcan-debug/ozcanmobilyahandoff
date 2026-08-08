@@ -27,7 +27,7 @@ export default function Footer() {
             />
             <button
               type="submit"
-              className="shrink-0 bg-secondary px-6 font-body text-sm font-semibold text-white transition-all duration-200 hover:bg-primary active:scale-95"
+              className="btn-sweep shrink-0 border-l border-primary/30 px-6 font-body text-sm font-semibold text-secondary active:scale-95"
             >
               Kaydol
             </button>

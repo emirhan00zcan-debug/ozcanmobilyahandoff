@@ -233,7 +233,7 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
         <h1 className="font-display text-2xl font-bold text-secondary">Sepetiniz boş</h1>
         <Link
           href="/kategori"
-          className="mt-6 rounded-full bg-secondary px-8 py-3.5 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-primary active:scale-95"
+          className="btn-sweep mt-6 rounded-full border border-primary/30 px-8 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-105 active:scale-95"
         >
           Kategorilere Göz At
         </Link>
@@ -271,13 +271,13 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
         <div className="mt-6 flex gap-3">
           <Link
             href="/"
-            className="rounded-full border border-secondary/20 px-6 py-3 font-body text-sm font-semibold text-secondary transition-colors hover:border-primary hover:text-primary"
+            className="btn-sweep rounded-full border border-primary/30 px-6 py-3 font-body text-sm font-semibold text-secondary"
           >
             Ana Sayfa
           </Link>
           <Link
             href="/hesabim"
-            className="rounded-full bg-secondary px-6 py-3 font-body text-sm font-semibold text-white transition-all duration-200 hover:bg-primary"
+            className="btn-sweep rounded-full border border-primary/30 px-6 py-3 font-body text-sm font-semibold text-secondary"
           >
             Siparişlerim
           </Link>
@@ -417,7 +417,7 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
                   type="button"
                   onClick={handleApplyCoupon}
                   disabled={couponLoading || !couponCode.trim()}
-                  className="shrink-0 rounded-xl bg-secondary px-4 py-2.5 font-body text-xs font-semibold text-white transition-colors hover:bg-primary disabled:opacity-60"
+                  className="btn-sweep shrink-0 rounded-xl border border-primary/30 px-4 py-2.5 font-body text-xs font-semibold text-secondary disabled:opacity-60"
                 >
                   {couponLoading ? "..." : "Uygula"}
                 </button>
@@ -480,7 +480,7 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-5 w-full rounded-full bg-secondary py-3.5 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:bg-primary active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
+            className="btn-sweep mt-5 w-full rounded-full border border-primary/30 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
           >
             {isSubmitting
               ? paymentMethod === "CARD"

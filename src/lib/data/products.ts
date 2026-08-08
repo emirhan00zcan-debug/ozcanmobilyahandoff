@@ -74,6 +74,10 @@ export type ProductDetail = {
   variations: ProductVariationView[];
   installationAvailable: boolean;
   installationPrice: number | null;
+  // scripts/ar-pipeline/ hattıyla üretilir — ikisi de doluysa ürün sayfasında AR
+  // görünümü (bkz. ArModelViewer) gösterilir (bkz. prisma/schema.prisma Product.glbUrl).
+  glbUrl: string | null;
+  usdzUrl: string | null;
 };
 
 const productDetailInclude = {
@@ -170,6 +174,8 @@ function mapToProductDetail(p: ProductWithRelations): ProductDetail {
     })),
     installationAvailable: p.installationAvailable,
     installationPrice: p.installationPrice?.toNumber() ?? null,
+    glbUrl: p.glbUrl,
+    usdzUrl: p.usdzUrl,
   };
 }
 

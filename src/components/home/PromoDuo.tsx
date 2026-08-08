@@ -39,7 +39,7 @@ export default function PromoDuo({ cards }: Props) {
               <p className="mt-3 font-body text-sm text-white/80">{card.description}</p>
               <Link
                 href={card.ctaHref}
-                className="mt-6 inline-block rounded-full bg-white px-7 py-3.5 font-body text-sm font-semibold text-secondary transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-white active:scale-95"
+                className="btn-sweep mt-6 inline-block rounded-full px-7 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-105 active:scale-95"
               >
                 {card.ctaLabel}
               </Link>

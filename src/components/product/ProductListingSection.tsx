@@ -386,7 +386,7 @@ function PromoTileCard({ eyebrow, title, ctaLabel, ctaHref, imageUrl }: PromoTil
       <div className="relative z-10 text-white">
         <p className="font-body text-xs font-medium uppercase tracking-[0.15em] text-white/70">{eyebrow}</p>
         <h3 className="mt-1.5 font-display text-xl font-semibold leading-snug">{title}</h3>
-        <span className="mt-4 inline-block rounded-full bg-white px-5 py-2.5 font-body text-xs font-semibold text-secondary transition-all duration-200 group-hover:bg-primary group-hover:text-white">
+        <span className="btn-sweep mt-4 inline-block rounded-full px-5 py-2.5 font-body text-xs font-semibold text-secondary">
           {ctaLabel}
         </span>
       </div>
@@ -434,7 +434,12 @@ function ProductListRow({ product }: { product: ProductDetail }) {
           });
         }}
         disabled={isSoldOut}
-        className="hidden shrink-0 items-center gap-2 rounded-full bg-secondary px-5 py-2.5 font-body text-xs font-semibold text-white transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-40 sm:flex"
+        className={[
+          "hidden shrink-0 items-center gap-2 rounded-full border px-5 py-2.5 font-body text-xs font-semibold sm:flex",
+          isSoldOut
+            ? "cursor-not-allowed border-transparent bg-secondary-light text-white opacity-40"
+            : "btn-sweep border-primary/30 text-secondary",
+        ].join(" ")}
       >
         <FaShoppingBag className="h-3 w-3" />
         Sepete Ekle

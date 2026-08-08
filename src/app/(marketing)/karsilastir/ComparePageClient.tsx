@@ -55,7 +55,7 @@ export default function ComparePageClient() {
                 </div>
                 <h2 className="font-display text-2xl font-bold text-secondary">Karşılaştırılacak Ürün Yok</h2>
                 <p className="mt-2 text-secondary-light font-body">Listede henüz bir ürün bulunmuyor. Ürün sayfası veya liste görünümlerinden ürün kartlarında bulunan karşılaştır butonuna tıklayarak ürün ekleyebilirsiniz.</p>
-                <Link href="/kategori" className="mt-8 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+                <Link href="/kategori" className="btn-sweep mt-8 rounded-full border border-primary/30 px-8 py-3 text-sm font-semibold text-secondary">
                     Kategorilere Göz At
                 </Link>
             </div>
@@ -237,7 +237,7 @@ export default function ComparePageClient() {
                             <div key={`btn-${product.id}`} className="flex-1 min-w-[200px] p-4 border-r border-secondary/10">
                                 <Link
                                     href={`/urun/${product.slug}`}
-                                    className="block w-full text-center rounded-xl bg-secondary py-3 font-body text-sm font-semibold text-white transition-colors hover:bg-primary"
+                                    className="btn-sweep block w-full text-center rounded-xl border border-primary/30 py-3 font-body text-sm font-semibold text-secondary"
                                 >
                                     Detayları İncele
                                 </Link>

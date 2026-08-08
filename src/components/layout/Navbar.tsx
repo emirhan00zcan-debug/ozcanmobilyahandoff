@@ -16,6 +16,7 @@ const MENU_LINKS = [
   { label: "İndirimdekiler", href: "/indirimler" },
   { label: "Katalog", href: "/katalog" },
   { label: "Ana sayfa", href: "/" },
+  { label: "Blog", href: "/blog" },
   { label: "Hakkımızda", href: "/hakkimizda" },
   { label: "İletişim", href: "/iletisim" },
 ];
@@ -61,11 +62,13 @@ export default function Navbar({ categories, rooms }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const categoriesCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const categoriesOpenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // "Odalara Göre" — referans temadaki menu-sidebar davranışı: panel açık/kapalı durumu
   // ile o an aktif (hover'lanan) oda ayrı state'ler; oda seçimi panel kapansa da kalıcıdır.
   const [roomsOpen, setRoomsOpen] = useState(false);
   const [activeRoomSlug, setActiveRoomSlug] = useState(rooms[0]?.slug ?? "");
   const roomsCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const roomsOpenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const cartCount = useCartTotalQuantity();
@@ -120,7 +123,22 @@ export default function Navbar({ categories, rooms }: Props) {
     if (categoriesCloseTimer.current) clearTimeout(categoriesCloseTimer.current);
     setCategoriesOpen(true);
   };
+  // Trigger metninin üzerinden sadece geçerken (fare yatayda kayarken) mega menünün
+  // kazara açılmasını önlemek için: imleç 400ms boyunca trigger üzerinde kalırsa açılır,
+  // daha erken ayrılırsa (closeCategoriesMenu) zamanlayıcı hiç tetiklenmeden iptal edilir.
+  const scheduleOpenCategoriesMenu = () => {
+    if (categoriesCloseTimer.current) clearTimeout(categoriesCloseTimer.current);
+    if (categoriesOpenTimer.current) return;
+    categoriesOpenTimer.current = setTimeout(() => {
+      categoriesOpenTimer.current = null;
+      setCategoriesOpen(true);
+    }, 400);
+  };
   const closeCategoriesMenu = () => {
+    if (categoriesOpenTimer.current) {
+      clearTimeout(categoriesOpenTimer.current);
+      categoriesOpenTimer.current = null;
+    }
     categoriesCloseTimer.current = setTimeout(() => setCategoriesOpen(false), 120);
   };
 
@@ -128,7 +146,19 @@ export default function Navbar({ categories, rooms }: Props) {
     if (roomsCloseTimer.current) clearTimeout(roomsCloseTimer.current);
     setRoomsOpen(true);
   };
+  const scheduleOpenRoomsMenu = () => {
+    if (roomsCloseTimer.current) clearTimeout(roomsCloseTimer.current);
+    if (roomsOpenTimer.current) return;
+    roomsOpenTimer.current = setTimeout(() => {
+      roomsOpenTimer.current = null;
+      setRoomsOpen(true);
+    }, 400);
+  };
   const closeRoomsMenu = () => {
+    if (roomsOpenTimer.current) {
+      clearTimeout(roomsOpenTimer.current);
+      roomsOpenTimer.current = null;
+    }
     roomsCloseTimer.current = setTimeout(() => setRoomsOpen(false), 120);
   };
 
@@ -300,7 +330,7 @@ export default function Navbar({ categories, rooms }: Props) {
               link.label === "Kategoriler" ? (
                 <li
                   key={link.label}
-                  onMouseEnter={openCategoriesMenu}
+                  onMouseEnter={scheduleOpenCategoriesMenu}
                   onMouseLeave={closeCategoriesMenu}
                   onFocus={openCategoriesMenu}
                 >
@@ -314,7 +344,7 @@ export default function Navbar({ categories, rooms }: Props) {
               ) : link.label === "Odalara Göre" ? (
                 <li
                   key={link.label}
-                  onMouseEnter={openRoomsMenu}
+                  onMouseEnter={scheduleOpenRoomsMenu}
                   onMouseLeave={closeRoomsMenu}
                   onFocus={openRoomsMenu}
                 >
@@ -400,7 +430,7 @@ export default function Navbar({ categories, rooms }: Props) {
                   <span className="categories-mega__promo-title mt-1 block font-display text-lg font-semibold text-white">
                     {CATEGORY_PROMO.title}
                   </span>
-                  <span className="categories-mega__promo-cta mt-3 inline-block rounded-full bg-white px-4 py-2 font-body text-xs font-semibold text-secondary">
+                  <span className="categories-mega__promo-cta btn-sweep mt-3 inline-block rounded-full px-4 py-2 font-body text-xs font-semibold text-secondary">
                     {CATEGORY_PROMO.ctaLabel}
                   </span>
                 </span>

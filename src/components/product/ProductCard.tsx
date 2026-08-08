@@ -109,7 +109,7 @@ export default function ProductCard({ product }: Props) {
               onClick={handleAddToCart}
               className={[
                 "flex w-full items-center justify-center gap-2 rounded-full py-2.5 font-body text-xs font-semibold shadow-sm transition-all duration-200 active:scale-95",
-                justAdded ? "bg-primary text-white" : "bg-secondary text-white hover:scale-[1.03] hover:bg-primary",
+                justAdded ? "bg-primary text-white" : "btn-sweep text-secondary hover:scale-[1.03]",
               ].join(" ")}
             >
               {justAdded ? (

@@ -47,7 +47,7 @@ export default function AboutFaq() {
           <p className="mt-4 font-display text-lg font-semibold text-secondary">Hâlâ yardıma mı ihtiyacınız var?</p>
           <Link
             href="/iletisim"
-            className="mt-4 inline-block rounded-full bg-secondary px-6 py-3 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-primary active:scale-95"
+            className="btn-sweep mt-4 inline-block rounded-full border border-primary/30 px-6 py-3 font-body text-sm font-semibold text-secondary hover:scale-105 active:scale-95"
           >
             İletişime Geç
           </Link>

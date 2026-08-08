@@ -58,7 +58,7 @@ export default function SepetPage() {
         </p>
         <Link
           href="/kategori"
-          className="mt-6 rounded-full bg-secondary px-8 py-3.5 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-primary active:scale-95"
+          className="btn-sweep mt-6 rounded-full border border-primary/30 px-8 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-105 active:scale-95"
         >
           Kategorilere Göz At
         </Link>
@@ -172,7 +172,7 @@ export default function SepetPage() {
 
           <button
             onClick={handleCheckout}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-secondary py-3.5 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:bg-primary active:scale-95"
+            className="btn-sweep mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-primary/30 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-[1.02] active:scale-95"
           >
             Sipariş Ver
           </button>

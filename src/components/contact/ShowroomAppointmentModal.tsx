@@ -27,7 +27,7 @@ export default function ShowroomAppointmentModal() {
         <>
             <button
                 onClick={openModal}
-                className="mt-3 ml-4 inline-flex items-center gap-2 rounded-lg bg-secondary/5 px-3 py-1.5 font-body text-xs font-semibold text-secondary transition-colors hover:bg-primary hover:text-white"
+                className="btn-sweep mt-3 ml-4 inline-flex items-center gap-2 rounded-lg border border-primary/30 px-3 py-1.5 font-body text-xs font-semibold text-secondary"
             >
                 <FaCalendarAlt className="h-3 w-3" />
                 Randevu Al
@@ -68,7 +68,7 @@ export default function ShowroomAppointmentModal() {
                                     </p>
                                     <button
                                         onClick={closeModal}
-                                        className="mt-6 rounded-full bg-secondary px-8 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary"
+                                        className="btn-sweep mt-6 rounded-full border border-primary/30 px-8 py-2.5 text-sm font-semibold text-secondary"
                                     >
                                         Kapat
                                     </button>
@@ -126,7 +126,7 @@ export default function ShowroomAppointmentModal() {
                                     <button
                                         type="submit"
                                         disabled={formState === "submitting"}
-                                        className="w-full rounded-full bg-secondary py-3.5 mt-2 font-body text-sm font-semibold text-white transition-all duration-200 hover:bg-primary active:scale-95 disabled:opacity-60"
+                                        className="btn-sweep w-full rounded-full border border-primary/30 py-3.5 mt-2 font-body text-sm font-semibold text-secondary active:scale-95 disabled:opacity-60"
                                     >
                                         {formState === "submitting" ? "Gönderiliyor..." : "Randevu Talebi Gönder"}
                                     </button>

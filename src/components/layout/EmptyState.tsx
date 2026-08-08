@@ -9,7 +9,7 @@ export default function EmptyState({ message }: Props) {
       <p className="font-body text-base text-secondary-light">{message}</p>
       <Link
         href="/"
-        className="rounded-full bg-secondary px-7 py-3.5 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-primary active:scale-95"
+        className="btn-sweep rounded-full border border-primary/30 px-7 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-105 active:scale-95"
       >
         Ana Sayfaya Dön
       </Link>

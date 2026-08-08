@@ -78,7 +78,7 @@ export default function FeaturedProducts({ title, description, tabs, allHref, ba
               <h3 className="mt-1.5 font-display text-xl font-semibold leading-snug">
                 {banner.title}
               </h3>
-              <span className="mt-4 inline-block rounded-full bg-white px-5 py-2.5 font-body text-xs font-semibold text-secondary transition-all duration-200 group-hover:bg-primary group-hover:text-white">
+              <span className="btn-sweep mt-4 inline-block rounded-full px-5 py-2.5 font-body text-xs font-semibold text-secondary">
                 {banner.ctaLabel}
               </span>
             </div>

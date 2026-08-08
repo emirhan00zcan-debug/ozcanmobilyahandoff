@@ -210,7 +210,7 @@ function SignInForm({ callbackUrl }: { callbackUrl: string }) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-full bg-secondary py-3.5 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:bg-primary active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
+        className="btn-sweep w-full rounded-full border border-primary/30 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
       >
         {isPending ? "Giriş yapılıyor..." : "Giriş Yap"}
       </button>
@@ -233,7 +233,7 @@ function SignUpForm({ callbackUrl }: { callbackUrl: string }) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-full bg-secondary py-3.5 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:bg-primary active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
+        className="btn-sweep w-full rounded-full border border-primary/30 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
       >
         {isPending ? "Hesap oluşturuluyor..." : "Hesap Oluştur"}
       </button>

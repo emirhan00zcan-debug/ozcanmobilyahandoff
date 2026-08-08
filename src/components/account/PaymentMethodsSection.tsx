@@ -66,14 +66,14 @@ function AddPaymentMethodForm({ onDone }: { onDone: () => void }) {
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-full bg-secondary px-5 py-2.5 font-body text-xs font-semibold text-white transition-colors hover:bg-primary disabled:opacity-60"
+          className="btn-sweep rounded-full border border-primary/30 px-5 py-2.5 font-body text-xs font-semibold text-secondary disabled:opacity-60"
         >
           {isPending ? "Kaydediliyor..." : "Kaydet"}
         </button>
         <button
           type="button"
           onClick={onDone}
-          className="rounded-full border border-secondary/20 px-5 py-2.5 font-body text-xs font-semibold text-secondary transition-colors hover:border-primary hover:text-primary"
+          className="btn-sweep rounded-full border border-primary/30 px-5 py-2.5 font-body text-xs font-semibold text-secondary"
         >
           Vazgeç
         </button>
@@ -92,7 +92,7 @@ export default function PaymentMethodsSection({ methods }: { methods: AccountPay
         {!addingNew && (
           <button
             onClick={() => setAddingNew(true)}
-            className="rounded-full bg-secondary px-5 py-2 font-body text-xs font-semibold text-white transition-colors hover:bg-primary"
+            className="btn-sweep rounded-full border border-primary/30 px-5 py-2 font-body text-xs font-semibold text-secondary"
           >
             + Yöntem Ekle
           </button>

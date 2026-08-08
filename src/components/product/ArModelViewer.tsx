@@ -69,7 +69,7 @@ export default function ArModelViewer({
                 {/* Buton: AR modunu başlatıcı. (model-viewer 'ar' attribute'u ile bu butonu otomatik yakalar) */}
                 <button
                     slot="ar-button"
-                    className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center justify-center rounded-full bg-primary px-6 py-3 font-body text-sm font-semibold text-white shadow-xl ring-4 ring-primary/20 transition-transform focus:outline-none focus:ring-4 hover:scale-105 active:scale-95"
+                    className="btn-sweep absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center justify-center rounded-full border border-primary/30 px-6 py-3 font-body text-sm font-semibold text-secondary shadow-xl ring-4 ring-primary/20 focus:outline-none focus:ring-4 hover:scale-105 active:scale-95"
                 >
                     Odanızda Görün (AR)
                 </button>
@@ -80,7 +80,7 @@ export default function ArModelViewer({
                     <div className="pointer-events-auto flex w-full max-w-sm justify-between gap-4">
                         <button
                             onClick={onAddToCart}
-                            className="w-full rounded-full bg-emerald-600/90 py-3.5 font-body text-sm font-bold text-white shadow-2xl backdrop-blur-md transition-transform hover:scale-105"
+                            className="btn-sweep w-full rounded-full border border-primary/30 py-3.5 font-body text-sm font-bold text-secondary shadow-2xl hover:scale-105"
                         >
                             Sepete Ekle
                         </button>

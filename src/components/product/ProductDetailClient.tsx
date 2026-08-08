@@ -25,6 +25,7 @@ import { trackViewItem } from "@/lib/analytics";
 import type { ProductDetail } from "@/lib/data/products";
 import RoomFitCalculator from "./RoomFitCalculator";
 import SampleRequestModal from "./SampleRequestModal";
+import ArModelViewer from "./ArModelViewer";
 
 type Props = { product: ProductDetail };
 
@@ -77,6 +78,7 @@ export default function ProductDetailClient({ product }: Props) {
   const router = useRouter();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [galleryView, setGalleryView] = useState<"photos" | "ar">("photos");
   const [quantity, setQuantity] = useState(1);
   const [isFeaturesOpen, setIsFeaturesOpen] = useState(true); // "Ürünün Özellikleri" varsayılan açık
   const [isMaterialOpen, setIsMaterialOpen] = useState(false);
@@ -253,57 +255,104 @@ export default function ProductDetailClient({ product }: Props) {
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         {/* ================= SOL BLOK: GALERİ ================= */}
         <div className="flex flex-col gap-4">
-          <div className="flex gap-4">
-            {/* Dikey thumbnail şeridi */}
-            <div className="flex flex-col gap-3">
-              {product.images.map((img, i) => (
-                <button
-                  key={img}
-                  onClick={() => setActiveImageIndex(i)}
-                  aria-label={`Görsel ${i + 1}`}
-                  className={[
-                    "relative h-20 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors",
-                    i === activeImageIndex
-                      ? "border-secondary"
-                      : "border-secondary/10 hover:border-secondary/30",
-                  ].join(" ")}
-                >
-                  <Image
-                    src={img}
-                    alt={`${product.name} ${i + 1}`}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-
-            {/* Ana görsel */}
-            <div className="relative flex-1 overflow-hidden rounded-lg bg-secondary/[0.04] aspect-[4/5] sm:aspect-square lg:aspect-[4/5]">
+          {/* Fotoğraflar / 3D-AR sekmesi — yalnızca ürünün AR modeli varsa gösterilir
+              (bkz. scripts/ar-pipeline/, Product.glbUrl) */}
+          {product.glbUrl && (
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setIsFullscreen(true)}
-                aria-label="Görseli büyüt"
-                className="group absolute inset-0 w-full h-full cursor-zoom-in"
+                onClick={() => setGalleryView("photos")}
+                aria-pressed={galleryView === "photos"}
+                className={[
+                  "rounded-full border px-4 py-2 font-body text-xs font-semibold transition-colors",
+                  galleryView === "photos"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-secondary/20 text-secondary-light hover:border-secondary/40",
+                ].join(" ")}
               >
-                <Image
-                  key={activeImageIndex}
-                  src={product.images[activeImageIndex]}
-                  alt={product.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  priority
-                  className="animate-fade-in object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-300 group-hover:bg-black/5 group-hover:opacity-100">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-secondary shadow-lg">
-                    <FaSearchPlus className="h-5 w-5" />
-                  </span>
-                </div>
+                Fotoğraflar
+              </button>
+              <button
+                type="button"
+                onClick={() => setGalleryView("ar")}
+                aria-pressed={galleryView === "ar"}
+                className={[
+                  "rounded-full border px-4 py-2 font-body text-xs font-semibold transition-colors",
+                  galleryView === "ar"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-secondary/20 text-secondary-light hover:border-secondary/40",
+                ].join(" ")}
+              >
+                3D / Odanızda Görün
               </button>
             </div>
-          </div>
+          )}
+
+          {galleryView === "ar" && product.glbUrl ? (
+            <ArModelViewer
+              src={product.glbUrl}
+              iosSrc={product.usdzUrl ?? undefined}
+              alt={product.name}
+              dimensions={{
+                widthCm: displayDimensions[0]?.widthCm ?? "-",
+                heightCm: displayDimensions[0]?.heightCm ?? "-",
+                depthCm: displayDimensions[0]?.depthCm ?? "-",
+              }}
+              onAddToCart={handleAddToCart}
+            />
+          ) : (
+            <div className="flex gap-4">
+              {/* Dikey thumbnail şeridi */}
+              <div className="flex flex-col gap-3">
+                {product.images.map((img, i) => (
+                  <button
+                    key={img}
+                    onClick={() => setActiveImageIndex(i)}
+                    aria-label={`Görsel ${i + 1}`}
+                    className={[
+                      "relative h-20 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors",
+                      i === activeImageIndex
+                        ? "border-secondary"
+                        : "border-secondary/10 hover:border-secondary/30",
+                    ].join(" ")}
+                  >
+                    <Image
+                      src={img}
+                      alt={`${product.name} ${i + 1}`}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+
+              {/* Ana görsel */}
+              <div className="relative flex-1 overflow-hidden rounded-lg bg-secondary/[0.04] aspect-[4/5] sm:aspect-square lg:aspect-[4/5]">
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen(true)}
+                  aria-label="Görseli büyüt"
+                  className="group absolute inset-0 w-full h-full cursor-zoom-in"
+                >
+                  <Image
+                    key={activeImageIndex}
+                    src={product.images[activeImageIndex]}
+                    alt={product.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
+                    className="animate-fade-in object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-300 group-hover:bg-black/5 group-hover:opacity-100">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-secondary shadow-lg">
+                      <FaSearchPlus className="h-5 w-5" />
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ================= SAĞ BLOK: ÜRÜN BİLGİLERİ ================= */}
@@ -579,10 +628,10 @@ export default function ProductDetailClient({ product }: Props) {
               onClick={handleAddToCart}
               disabled={!effectiveInStock}
               className={[
-                "flex-1 rounded-full py-3.5 font-body text-sm font-semibold text-white transition-colors duration-200",
+                "flex-1 rounded-full border py-3.5 font-body text-sm font-semibold",
                 effectiveInStock
-                  ? "bg-primary hover:bg-primary-600"
-                  : "cursor-not-allowed bg-secondary-light",
+                  ? "btn-sweep border-primary/30 text-secondary"
+                  : "cursor-not-allowed border-transparent bg-secondary-light text-white",
               ].join(" ")}
             >
               {effectiveInStock ? "Sepete Ekle" : "Tükendi"}
@@ -594,7 +643,7 @@ export default function ProductDetailClient({ product }: Props) {
             <button
               type="button"
               onClick={handleBuyNow}
-              className="mt-3 w-full rounded-full bg-secondary/60 py-3.5 font-body text-sm font-semibold text-white transition-colors duration-200 hover:bg-secondary"
+              className="btn-sweep mt-3 w-full rounded-full border border-primary/30 py-3.5 font-body text-sm font-semibold text-secondary"
             >
               Hemen Satın Alın
             </button>

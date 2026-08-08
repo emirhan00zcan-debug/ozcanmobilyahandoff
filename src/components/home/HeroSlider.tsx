@@ -64,7 +64,7 @@ export default function HeroSlider({ slides }: Props) {
               </h1>
               <Link
                 href={slide.ctaHref}
-                className="mt-9 inline-block rounded-full bg-primary px-10 py-4 font-body text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-primary-600 active:scale-95"
+                className="btn-sweep mt-9 inline-block rounded-full px-10 py-4 font-body text-sm font-semibold text-secondary hover:scale-105 active:scale-95"
               >
                 {slide.ctaLabel}
               </Link>

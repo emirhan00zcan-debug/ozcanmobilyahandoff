@@ -20,7 +20,7 @@ const SEED_CATEGORIES: SeedTaxonomy[] = [
   { name: "Kahve Köşesi", slug: "kahve-kosesi", imageUrl: "/media/Gemini_Generated_Image_5oyd1r5oyd1r5oyd.png" },
   { name: "Oyuncu Masası", slug: "oyuncu-masasi", imageUrl: "/media/gorsel_2026-06-27_145006208.png" },
   { name: "Banyo Dolabı", slug: "banyo-dolabi", imageUrl: "/media/d4_pro_1769532928933.jpg" },
-  { name: "Çocuk Odası", slug: "cocuk-odasi" },
+  { name: "Çocuk Odası", slug: "cocuk-odasi", imageUrl: "/media/Gemini_Generated_Image_ci9bm4ci9bm4ci9b.png" },
   { name: "Dresuar", slug: "dresuar", imageUrl: "/media/d2_pro_1769513413217.jpg" },
   { name: "Makyaj Köşesi", slug: "makyaj-kosesi", imageUrl: "/media/9134f1b6-81e7-4e49-8914-9f9ae2af4137.jpg" },
   { name: "Modüler Mutfak Dolabı", slug: "moduler-mutfak-dolabi", imageUrl: "/media/premium-kitchen.jpg" },
@@ -30,7 +30,7 @@ const SEED_CATEGORIES: SeedTaxonomy[] = [
 const SEED_ROOMS: SeedTaxonomy[] = [
   { name: "Yatak Odası", slug: "yatak-odasi", imageUrl: "/media/gorsel_2026-07-09_230726761.png" },
   { name: "Giyinme Odası", slug: "giyinme-odasi", imageUrl: "/media/Gemini_Generated_Image_zfdnerzfdnerzfdn.jpg" },
-  { name: "Antre & Hol", slug: "antre-hol" },
+  { name: "Antre & Hol", slug: "antre-hol", imageUrl: "/media/d6_pro_1769532959772_57b19b7d-cba8-4c79-b9a7-df88d2e24087.jpg" },
   { name: "Salon & Oturma Odası", slug: "salon-oturma-odasi", imageUrl: "/media/Gemini_Generated_Image_xzuxo6xzuxo6xzux.png" },
   { name: "Mutfak", slug: "mutfak", imageUrl: "/media/premium-kitchen.jpg" },
   { name: "Banyo", slug: "banyo", imageUrl: "/media/gorsel_2026-07-09_233916617.png" },

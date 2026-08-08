@@ -47,7 +47,7 @@ export default function ProfileSection({ name, email, phone }: Props) {
           <button
             type="submit"
             disabled={isPending}
-            className="rounded-full bg-secondary px-6 py-3 font-body text-sm font-semibold text-white transition-colors hover:bg-primary disabled:opacity-60"
+            className="btn-sweep rounded-full border border-primary/30 px-6 py-3 font-body text-sm font-semibold text-secondary disabled:opacity-60"
           >
             {isPending ? "Kaydediliyor..." : "Bilgileri Kaydet"}
           </button>

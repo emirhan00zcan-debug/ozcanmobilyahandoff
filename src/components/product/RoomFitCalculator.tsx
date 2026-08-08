@@ -55,7 +55,7 @@ export default function RoomFitCalculator({ dimensions }: Props) {
             <button
                 type="button"
                 onClick={() => setIsOpen(true)}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-primary text-primary px-4 py-2.5 font-body text-[13px] font-semibold transition-colors hover:bg-primary/5"
+                className="btn-sweep mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-primary/30 px-4 py-2.5 font-body text-[13px] font-semibold text-secondary"
             >
                 <FaRulerCombined className="h-4 w-4" />
                 Odama Sığar Mı?
@@ -119,7 +119,7 @@ export default function RoomFitCalculator({ dimensions }: Props) {
                             <button
                                 onClick={handleCalculate}
                                 disabled={!roomW}
-                                className="w-full rounded-full bg-primary py-3.5 font-body text-sm font-semibold text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:bg-secondary-light"
+                                className="btn-sweep w-full rounded-full border border-primary/30 py-3.5 font-body text-sm font-semibold text-secondary disabled:cursor-not-allowed disabled:border-transparent disabled:bg-secondary-light disabled:text-white"
                             >
                                 Uyumu Kontrol Et
                             </button>

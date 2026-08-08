@@ -25,7 +25,7 @@ export default function ResendVerificationForm({ orderNumber }: Props) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-full bg-secondary py-3 font-body text-sm font-semibold text-white transition-colors hover:bg-primary disabled:opacity-60"
+        className="btn-sweep w-full rounded-full border border-primary/30 py-3 font-body text-sm font-semibold text-secondary disabled:opacity-60"
       >
         {isPending ? "Gönderiliyor..." : "Doğrulama Bağlantısını Yeniden Gönder"}
       </button>
