@@ -4,6 +4,7 @@ import Providers from "./providers";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import CookieConsentBanner from "@/components/analytics/CookieConsentBanner";
 import { SITE_URL } from "@/lib/seo";
+import { auth } from "@/lib/auth";
 import "./globals.css";
 
 const instrumentSans = Instrument_Sans({
@@ -33,18 +34,20 @@ export const viewport: Viewport = {
   themeColor: "#005A64",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+
   return (
     <html lang="tr">
       <body
         className={`${instrumentSans.variable} ${dancingScript.variable} font-body text-secondary antialiased`}
       >
         <GoogleAnalytics />
-        <Providers>{children}</Providers>
+        <Providers session={session}>{children}</Providers>
         <CookieConsentBanner />
       </body>
     </html>

@@ -36,7 +36,8 @@ export default async function HomePage() {
   // süresi geçmiş veya pasif kuponlarda banner hiç gösterilmez.
   const [activeCoupon, categories, rooms, featuredProducts] = await Promise.all([
     prisma.coupon.findFirst({
-      where: { code: "FLAS20", isActive: true, endsAt: { gt: new Date() } },
+      where: { isActive: true, endsAt: { gt: new Date() } },
+      orderBy: { createdAt: "desc" },
     }),
     getCategories(),
     getRooms(),
