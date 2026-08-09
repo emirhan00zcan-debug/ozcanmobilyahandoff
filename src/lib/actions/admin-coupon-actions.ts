@@ -108,6 +108,7 @@ export async function createCouponAction(
   const coupon = await prisma.coupon.create({ data: parsed.data });
 
   revalidatePath("/admin/kuponlar");
+  revalidatePath("/");
   redirect(`/admin/kuponlar/${coupon.id}`);
 }
 
@@ -129,6 +130,7 @@ export async function updateCouponAction(
 
   revalidatePath("/admin/kuponlar");
   revalidatePath(`/admin/kuponlar/${couponId}`);
+  revalidatePath("/");
   return { error: null };
 }
 
@@ -140,4 +142,5 @@ export async function toggleCouponActiveAction(formData: FormData) {
 
   await prisma.coupon.update({ where: { id: couponId }, data: { isActive: !currentlyActive } });
   revalidatePath("/admin/kuponlar");
+  revalidatePath("/");
 }

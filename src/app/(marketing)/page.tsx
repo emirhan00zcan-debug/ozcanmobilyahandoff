@@ -31,6 +31,12 @@ import {
 } from "@/lib/data/homepage-mock";
 import { getFeaturedProducts } from "@/lib/data/products";
 
+// Sayfa artık statik/ISR üretiliyor (bkz. layout.tsx'ten auth() kaldırılması) — kampanya
+// sayacı kuponu admin panelinden değiştiğinde revalidatePath("/") anında güncelliyor
+// (bkz. admin-coupon-actions.ts), ama endsAt süresi kendiliğinden dolduğunda banner'ın
+// kaybolması için bu 60sn'lik zaman bazlı revalidate güvenlik ağı olarak duruyor.
+export const revalidate = 60;
+
 export default async function HomePage() {
   // Kampanya sayacı, veritabanındaki aktif Coupon kaydının gerçek `endsAt` tarihine bağlı;
   // süresi geçmiş veya pasif kuponlarda banner hiç gösterilmez.
