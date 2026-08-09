@@ -23,6 +23,10 @@ export default function ArModelViewer({
 }: ArModelViewerProps) {
     const [scriptLoaded, setScriptLoaded] = useState(false);
     const modelViewerRef = useRef<any>(null);
+    // GEÇİCİ TEŞHİS: alert() bazı uygulama-içi tarayıcılarda (WhatsApp/Instagram) sessizce
+    // engelleniyor, bu yüzden sonucu sayfada doğrudan (alert'e ihtiyaç duymadan) gösteriyoruz.
+    // Sorun bulununca bu state + panel kaldırılacak.
+    const [diag, setDiag] = useState<string>("");
 
     useEffect(() => {
         // Load model-viewer script dynamically to avoid SSR issues
@@ -35,6 +39,11 @@ export default function ArModelViewer({
             document.head.appendChild(script);
         } else {
             setScriptLoaded(true);
+        }
+        if (typeof window !== "undefined") {
+            setDiag(
+                `UA: ${navigator.userAgent}\nreferrer: ${document.referrer || "(yok)"}\nwebkitHandlers: ${!!(window as any).webkit?.messageHandlers}\nstandalone: ${(navigator as any).standalone}`,
+            );
         }
     }, []);
 
@@ -75,30 +84,31 @@ export default function ArModelViewer({
                     slot="ar-button"
                     onClick={() => {
                         const el = modelViewerRef.current;
-                        // GEÇİCİ TEŞHİS: gerçek cihazda sessizce başarısız olan AR tetiklemesinin
-                        // asıl sebebini görmek için — kalıcı değil, sorun bulununca kaldırılacak.
+                        // GEÇİCİ TEŞHİS: bkz. yukarıdaki diag state açıklaması.
                         if (!el) {
-                            alert("Teşhis: model-viewer referansı yok (el=null)");
+                            setDiag((d) => d + "\n\n[TIKLAMA] el=null (model-viewer ref boş)");
                             return;
                         }
-                        if (typeof el.activateAR !== "function") {
-                            alert("Teşhis: activateAR fonksiyon değil, tip=" + typeof el.activateAR);
-                            return;
-                        }
-                        if (!el.canActivateAR) {
-                            alert("Teşhis: canActivateAR=false (model-viewer AR'ı desteklemediğini/hazır olmadığını düşünüyor). loaded=" + el.loaded + " arStatus=" + el.arStatus);
-                        }
+                        let result = `\n\n[TIKLAMA] canActivateAR=${el.canActivateAR} loaded=${el.loaded} arStatus=${el.arStatus} activateAR tipi=${typeof el.activateAR}`;
                         try {
                             el.activateAR();
-                            alert("Teşhis: activateAR() çağrıldı, hata fırlatmadı. canActivateAR=" + el.canActivateAR + " loaded=" + el.loaded);
+                            result += "\nactivateAR() çağrıldı, hata fırlatmadı.";
                         } catch (err) {
-                            alert("Teşhis: activateAR() hata fırlattı: " + (err instanceof Error ? err.message : String(err)));
+                            result += "\nactivateAR() HATA fırlattı: " + (err instanceof Error ? err.message : String(err));
                         }
+                        setDiag((d) => d + result);
                     }}
                     className="btn-sweep absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center justify-center rounded-full border border-primary/30 px-6 py-3 font-body text-sm font-semibold text-secondary shadow-xl ring-4 ring-primary/20 focus:outline-none focus:ring-4 hover:scale-105 active:scale-95"
                 >
                     Odanızda Görün (AR)
                 </button>
+
+                {/* GEÇİCİ TEŞHİS PANELİ: sorun netleşince kaldırılacak */}
+                {diag && (
+                    <div className="absolute inset-x-2 top-2 z-[60] max-h-[45%] overflow-y-auto whitespace-pre-wrap break-all rounded-lg bg-yellow-100 p-3 font-mono text-[10px] leading-tight text-black shadow-lg">
+                        {diag}
+                    </div>
+                )}
 
                 {/* DOM Overlay için UI (WebXR AR destekli cihazlarda gösterilir) */}
                 {/* Sepete Ekle - AR içinde yapışkan olarak kullanılır */}
