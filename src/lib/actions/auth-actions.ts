@@ -18,7 +18,6 @@ export async function registerAction(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const callbackUrl = String(formData.get("callbackUrl") ?? "/");
 
   if (!name || !email || !password) {
     return { error: "Lütfen tüm alanları doldurun." };
@@ -41,9 +40,10 @@ export async function registerAction(
   }
 
   try {
-    await signIn("credentials", { email, password, redirectTo: callbackUrl });
+    // redirect: false — yönlendirmeyi burada değil, client'ta (session'ı senkronize
+    // ettikten sonra) yapıyoruz; bkz. GirisClient.tsx.
+    await signIn("credentials", { email, password, redirect: false });
   } catch (err) {
-    // NEXT_REDIRECT, signIn başarılı olduğunda fırlatılan normal bir kontrol akışı hatasıdır — yeniden fırlat.
     if (err instanceof AuthError) return { error: "Hesap oluşturuldu ama giriş yapılamadı, lütfen giriş yapın." };
     throw err;
   }
@@ -57,14 +57,15 @@ export async function loginAction(
 ): Promise<AuthActionState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const callbackUrl = String(formData.get("callbackUrl") ?? "/");
 
   if (!email || !password) {
     return { error: "Lütfen e-posta ve şifrenizi girin." };
   }
 
   try {
-    await signIn("credentials", { email, password, redirectTo: callbackUrl });
+    // redirect: false — yönlendirmeyi burada değil, client'ta (session'ı senkronize
+    // ettikten sonra) yapıyoruz; bkz. GirisClient.tsx.
+    await signIn("credentials", { email, password, redirect: false });
   } catch (err) {
     if (err instanceof AuthError) {
       return { error: "E-posta veya şifre hatalı." };

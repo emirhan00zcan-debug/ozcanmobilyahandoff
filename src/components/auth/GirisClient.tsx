@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { FaGoogle, FaApple } from "react-icons/fa";
 import { loginAction, registerAction } from "@/lib/actions/auth-actions";
 
@@ -186,8 +187,30 @@ function FloatingField({
   );
 }
 
+// signIn() server action'ı artık kendi içinde redirect() çağırmıyor (redirect: false —
+// bkz. auth-actions.ts), bu yüzden action başarıyla dönünce SessionProvider'ın oturumu
+// haberdar olması için client'ta update() ile senkronize edip ardından yönlendiriyoruz.
+// Aksi halde Navbar'daki giriş durumu sayfa yenilenene kadar eskisi gibi kalıyordu.
+function useAuthRedirect(error: string | null, callbackUrl: string) {
+  const { update } = useSession();
+  const router = useRouter();
+  const isFirstRun = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    if (error === null) {
+      update().then(() => router.push(callbackUrl));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
+}
+
 function SignInForm({ callbackUrl }: { callbackUrl: string }) {
   const [state, formAction, isPending] = useActionState(loginAction, { error: null });
+  useAuthRedirect(state.error, callbackUrl);
 
   return (
     <form action={formAction} className="animate-fade-in space-y-4">
@@ -220,6 +243,7 @@ function SignInForm({ callbackUrl }: { callbackUrl: string }) {
 
 function SignUpForm({ callbackUrl }: { callbackUrl: string }) {
   const [state, formAction, isPending] = useActionState(registerAction, { error: null });
+  useAuthRedirect(state.error, callbackUrl);
 
   return (
     <form action={formAction} className="animate-fade-in space-y-4">
