@@ -1,4 +1,4 @@
-import type { PlannerModule } from "./types";
+import type { PlannerModule, Point } from "./types";
 
 export interface Rect {
   x: number;
@@ -28,4 +28,18 @@ export function overlaps(a: Rect, b: Rect): boolean {
 
 export function hasCollision(target: Rect, others: Rect[]): boolean {
   return others.some((o) => overlaps(target, o));
+}
+
+// Duvar çizerken dik açı dayatması (§Faz 1 kapsamı: yalnızca dikdörtgensel/
+// rektilineer oda biçimleri destekleniyor — serbest açılı duvarlar hem AABB
+// çarpışmasını hem de duvar-snap'ini geçersiz kılar). İki noktadan hangi eksen
+// baskınsa o eksene kilitler.
+export function orthoLock(from: Point, to: Point): Point {
+  const dx = Math.abs(to.x - from.x);
+  const dy = Math.abs(to.y - from.y);
+  return dx >= dy ? { x: to.x, y: from.y } : { x: from.x, y: to.y };
+}
+
+export function snapToGrid(p: Point, gridMm = 50): Point {
+  return { x: Math.round(p.x / gridMm) * gridMm, y: Math.round(p.y / gridMm) * gridMm };
 }

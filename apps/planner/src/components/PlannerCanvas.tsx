@@ -1,19 +1,29 @@
-import { useCallback, useEffect, useRef } from "react";
-import { moduleFootprint } from "../lib/geometry";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { moduleFootprint, orthoLock, snapToGrid } from "../lib/geometry";
 import { usePlannerStore } from "../lib/store";
+import type { Point } from "../lib/types";
 
 const SCALE = 0.15; // px / mm
 const MARGIN = 40; // px
 
+function nextDraftPoint(raw: Point, points: Point[]): Point {
+  if (points.length === 0) return snapToGrid(raw);
+  return snapToGrid(orthoLock(points[points.length - 1], raw));
+}
+
 export function PlannerCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
+  const [cursorMm, setCursorMm] = useState<Point | null>(null);
 
   const room = usePlannerStore((s) => s.room);
   const modules = usePlannerStore((s) => s.modules);
   const selectedModuleId = usePlannerStore((s) => s.selectedModuleId);
   const selectModule = usePlannerStore((s) => s.selectModule);
   const moveModule = usePlannerStore((s) => s.moveModule);
+  const drawMode = usePlannerStore((s) => s.drawMode);
+  const draftPoints = usePlannerStore((s) => s.draftPoints);
+  const addDraftPoint = usePlannerStore((s) => s.addDraftPoint);
 
   const width = room.dimensionsMm.width * SCALE + MARGIN * 2;
   const height = room.dimensionsMm.depth * SCALE + MARGIN * 2;
@@ -32,6 +42,7 @@ export function PlannerCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.strokeStyle = "#8a938e";
+    ctx.lineJoin = "round";
     for (const wall of room.walls) {
       ctx.lineWidth = wall.thicknessMm * SCALE;
       ctx.beginPath();
@@ -59,7 +70,26 @@ export function PlannerCanvas() {
       ctx.fillText(`${rect.w}×${rect.h} mm`, x + 6, y + 16);
       ctx.fillText(mod.meta.name, x + 6, y + h - 8);
     }
-  }, [room, modules, selectedModuleId, toPx, width, height]);
+
+    if (drawMode && draftPoints.length > 0) {
+      ctx.strokeStyle = "#1f5ca6";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(toPx(draftPoints[0].x), toPx(draftPoints[0].y));
+      for (const p of draftPoints.slice(1)) ctx.lineTo(toPx(p.x), toPx(p.y));
+      if (cursorMm) ctx.lineTo(toPx(cursorMm.x), toPx(cursorMm.y));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = "#1f5ca6";
+      for (const p of draftPoints) {
+        ctx.beginPath();
+        ctx.arc(toPx(p.x), toPx(p.y), 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }, [room, modules, selectedModuleId, drawMode, draftPoints, cursorMm, toPx, width, height]);
 
   const findModuleAt = useCallback(
     (mmX: number, mmY: number) => {
@@ -74,26 +104,38 @@ export function PlannerCanvas() {
     [modules],
   );
 
-  const pointerToMm = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const pointerToMm = (e: React.PointerEvent<HTMLCanvasElement>): Point => {
     const rect = canvasRef.current!.getBoundingClientRect();
     return { x: toMm(e.clientX - rect.left), y: toMm(e.clientY - rect.top) };
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const { x: mmX, y: mmY } = pointerToMm(e);
-    const hit = findModuleAt(mmX, mmY);
+    const raw = pointerToMm(e);
+
+    if (drawMode) {
+      addDraftPoint(nextDraftPoint(raw, draftPoints));
+      return;
+    }
+
+    const hit = findModuleAt(raw.x, raw.y);
     selectModule(hit ? hit.id : null);
     if (hit) {
-      dragRef.current = { id: hit.id, offsetX: mmX - hit.position.x, offsetY: mmY - hit.position.y };
+      dragRef.current = { id: hit.id, offsetX: raw.x - hit.position.x, offsetY: raw.y - hit.position.y };
       canvasRef.current!.setPointerCapture(e.pointerId);
     }
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const raw = pointerToMm(e);
+
+    if (drawMode) {
+      setCursorMm(nextDraftPoint(raw, draftPoints));
+      return;
+    }
+
     const drag = dragRef.current;
     if (!drag) return;
-    const { x: mmX, y: mmY } = pointerToMm(e);
-    moveModule(drag.id, mmX - drag.offsetX, mmY - drag.offsetY);
+    moveModule(drag.id, raw.x - drag.offsetX, raw.y - drag.offsetY);
   };
 
   const handlePointerUp = () => {
@@ -105,7 +147,13 @@ export function PlannerCanvas() {
       ref={canvasRef}
       width={width}
       height={height}
-      style={{ touchAction: "none", background: "#eef2f0", border: "1px solid #c6d0cb", display: "block" }}
+      style={{
+        touchAction: "none",
+        background: "#eef2f0",
+        border: "1px solid #c6d0cb",
+        display: "block",
+        cursor: drawMode ? "crosshair" : "default",
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

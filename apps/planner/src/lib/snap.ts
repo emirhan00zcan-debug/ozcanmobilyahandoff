@@ -1,27 +1,79 @@
 import type { Rect } from "./geometry";
-import type { Room } from "./types";
+import type { Point, Wall } from "./types";
 
 // Ekran-pikseli cinsinden sabit bir hedefleme eşiği (§3.3) — mm karşılığı
 // çağıran taraftan (zoom seviyesine göre) hesaplanıp geçirilir. Faz 0'da
 // zoom henüz yok, bu yüzden sabit bir mm değeriyle başlıyoruz.
 export const DEFAULT_SNAP_THRESHOLD_MM = 15;
 
-// Faz 0 kapsamı: oda dikdörtgen bir sınır kutusu olarak ele alınır ve modül
-// bu kutunun iç yüzeyine kilitlenir. Serbest biçimli duvar segmentlerine göre
-// kenetlenme (keyfi açılı/parçalı duvarlar) Faz 1'in "duvar çizimi" kapsamında.
-export function snapToWalls(rect: Rect, room: Room, thresholdMm = DEFAULT_SNAP_THRESHOLD_MM): Rect {
-  const wallThickness = room.walls[0]?.thicknessMm ?? 0;
+// Nokta-poligon testi (tek-çift kuralı / ray casting). `vertices` kapalı bir
+// döngü olarak ele alınır (son nokta ilkine dolanır).
+function pointInPolygon(point: Point, vertices: Point[]): boolean {
+  let inside = false;
+  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+    const vi = vertices[i];
+    const vj = vertices[j];
+    const crosses = vi.y > point.y !== vj.y > point.y;
+    if (crosses && point.x < ((vj.x - vi.x) * (point.y - vi.y)) / (vj.y - vi.y) + vi.x) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
 
-  const left = wallThickness;
-  const top = wallThickness;
-  const right = room.dimensionsMm.width - wallThickness - rect.w;
-  const bottom = room.dimensionsMm.depth - wallThickness - rect.h;
+// Bir duvar segmentinin "iç yüzü"nün hangi tarafta olduğunu belirler. Global
+// bir merkez noktasına (centroid) göre karar vermek dışbükey/simetrik odalarda
+// işe yarar ama L/T gibi içbükey biçimlerde merkez, bir duvarın yanlış
+// tarafında kalabilir. Bunun yerine duvarın ortasından her iki normal yönde
+// 1mm'lik bir "yoklama" noktası çıkarılıp hangisi poligonun içindeyse o taraf
+// iç mekan kabul edilir — herhangi bir basit rektilineer poligon için doğru
+// sonucu garanti eder.
+function inwardSign(wall: Wall, polygon: Point[], axis: "x" | "y"): 1 | -1 {
+  const midX = (wall.start.x + wall.end.x) / 2;
+  const midY = (wall.start.y + wall.end.y) / 2;
+  const probe: Point = axis === "y" ? { x: midX, y: midY + 1 } : { x: midX + 1, y: midY };
+  return pointInPolygon(probe, polygon) ? 1 : -1;
+}
 
+// Serbest çizilmiş, rektilineer (yalnızca dik açılı) bir duvar poligonuna göre
+// duvar-snap'i (§3.3). Yalnızca modülün o duvar boyunca gerçekten örtüştüğü
+// (dolayısıyla "karşısında" olduğu) duvarlar aday sayılır.
+export function snapToWalls(rect: Rect, walls: Wall[], thresholdMm = DEFAULT_SNAP_THRESHOLD_MM): Rect {
+  if (walls.length === 0) return rect;
+  const polygon = walls.map((w) => w.start);
   let { x, y } = rect;
-  if (Math.abs(rect.x - left) < thresholdMm) x = left;
-  if (Math.abs(rect.x - right) < thresholdMm) x = right;
-  if (Math.abs(rect.y - top) < thresholdMm) y = top;
-  if (Math.abs(rect.y - bottom) < thresholdMm) y = bottom;
+
+  for (const wall of walls) {
+    const isHorizontal = wall.start.y === wall.end.y;
+    const isVertical = wall.start.x === wall.end.x;
+    if (!isHorizontal && !isVertical) continue; // yalnızca dik açılı duvarlar destekleniyor
+
+    if (isHorizontal) {
+      const spanMin = Math.min(wall.start.x, wall.end.x);
+      const spanMax = Math.max(wall.start.x, wall.end.x);
+      const overlapsSpan = rect.x < spanMax && rect.x + rect.w > spanMin;
+      if (!overlapsSpan) continue;
+
+      const sign = inwardSign(wall, polygon, "y"); // +1: iç mekan aşağıda, -1: yukarıda
+      const innerFaceY = wall.start.y + sign * wall.thicknessMm;
+      const moduleEdge = sign > 0 ? rect.y : rect.y + rect.h;
+      if (Math.abs(moduleEdge - innerFaceY) < thresholdMm) {
+        y = sign > 0 ? innerFaceY : innerFaceY - rect.h;
+      }
+    } else {
+      const spanMin = Math.min(wall.start.y, wall.end.y);
+      const spanMax = Math.max(wall.start.y, wall.end.y);
+      const overlapsSpan = rect.y < spanMax && rect.y + rect.h > spanMin;
+      if (!overlapsSpan) continue;
+
+      const sign = inwardSign(wall, polygon, "x"); // +1: iç mekan sağda, -1: solda
+      const innerFaceX = wall.start.x + sign * wall.thicknessMm;
+      const moduleEdge = sign > 0 ? rect.x : rect.x + rect.w;
+      if (Math.abs(moduleEdge - innerFaceX) < thresholdMm) {
+        x = sign > 0 ? innerFaceX : innerFaceX - rect.w;
+      }
+    }
+  }
 
   return { ...rect, x, y };
 }

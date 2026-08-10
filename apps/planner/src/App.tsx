@@ -32,8 +32,23 @@ const DEMO_MODULES: PlannerModule[] = [
 
 type Status = "idle" | "loading" | "error" | "done";
 
+const toolbarButtonStyle = {
+  fontFamily: "Consolas, monospace",
+  fontSize: 12,
+  padding: "6px 10px",
+  border: "1px solid #1f5ca6",
+  color: "#1f5ca6",
+  background: "#fff",
+  cursor: "pointer",
+} as const;
+
 export default function App() {
   const addModule = usePlannerStore((s) => s.addModule);
+  const drawMode = usePlannerStore((s) => s.drawMode);
+  const draftPoints = usePlannerStore((s) => s.draftPoints);
+  const toggleDrawMode = usePlannerStore((s) => s.toggleDrawMode);
+  const finishRoom = usePlannerStore((s) => s.finishRoom);
+  const cancelDraft = usePlannerStore((s) => s.cancelDraft);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [bomOpen, setBomOpen] = useState(false);
@@ -88,25 +103,29 @@ export default function App() {
     <div style={{ padding: 16, maxWidth: 1200 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
         <h1 style={{ fontSize: 18, margin: 0 }}>Oda &amp; Mobilya Planlayıcı — Faz 1</h1>
-        <button
-          onClick={() => setBomOpen(true)}
-          style={{
-            fontFamily: "Consolas, monospace",
-            fontSize: 12,
-            padding: "6px 10px",
-            border: "1px solid #1f5ca6",
-            color: "#1f5ca6",
-            background: "#fff",
-            cursor: "pointer",
-          }}
-        >
-          BOM
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {!drawMode && <button style={toolbarButtonStyle} onClick={toggleDrawMode}>Duvar Çiz</button>}
+          {drawMode && (
+            <>
+              <button style={toolbarButtonStyle} onClick={cancelDraft}>İptal</button>
+              <button
+                style={{ ...toolbarButtonStyle, opacity: draftPoints.length < 3 ? 0.4 : 1 }}
+                disabled={draftPoints.length < 3}
+                onClick={finishRoom}
+              >
+                Bitir ({draftPoints.length} nokta)
+              </button>
+            </>
+          )}
+          <button style={toolbarButtonStyle} onClick={() => setBomOpen(true)}>BOM</button>
+        </div>
       </div>
       <p style={{ fontSize: 13, color: "#54635e", margin: "0 0 12px" }}>
-        {status === "loading" && "Ürün katalogdan yükleniyor…"}
-        {status === "error" && `Hata: ${error}`}
-        {status === "done" &&
+        {drawMode && "Oda köşelerini sırayla tıklayın (dik açıya kilitlenir, 50mm ızgaraya yapışır) — bitince Bitir'e basın."}
+        {!drawMode && status === "loading" && "Ürün katalogdan yükleniyor…"}
+        {!drawMode && status === "error" && `Hata: ${error}`}
+        {!drawMode &&
+          status === "done" &&
           "Modülü sürükleyerek duvara/diğer modüle yaklaştırın ya da seçip sağdaki panelden mm/rotasyon girin."}
       </p>
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
