@@ -37,6 +37,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# apps/* kendi bağımlılıklarını ve build çıktısını taşır (ayrı package.json'lar)
+apps/*/node_modules
+apps/*/dist
+
 # python (scripts/ar-pipeline/)
 __pycache__/
 *.pyc
