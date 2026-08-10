@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { CatalogProduct } from "./catalog";
 import { hasCollision, moduleFootprint, type Rect } from "./geometry";
 import { snapToNeighbors, snapToWalls } from "./snap";
 import type { Point, PlannerModule, Room, RotationDeg, Wall } from "./types";
@@ -21,6 +22,7 @@ interface PlannerState {
   modules: PlannerModule[];
   selectedModuleId: string | null;
   addModule: (m: PlannerModule) => void;
+  addModuleFromCatalog: (product: CatalogProduct) => void;
   selectModule: (id: string | null) => void;
   moveModule: (id: string, x: number, y: number) => void;
   setModulePosition: (id: string, x: number, y: number) => void;
@@ -42,6 +44,31 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
   draftPoints: [],
 
   addModule: (m) => set((s) => ({ modules: [...s.modules, m] })),
+
+  // Kütüphaneden "Ekle" — çakışmayı kesin bir kısıt olarak korumak için
+  // (§3.4) varsayılan konumdan başlayıp boş bir yer bulana kadar 50mm'lik
+  // adımlarla çapraz kaydırır (çoklu ekleme yığılmasın diye).
+  addModuleFromCatalog: (product) => {
+    const { modules } = get();
+    const others = modules.map(moduleFootprint);
+    const { w, d } = product.dimensionsMm;
+
+    let pos = { x: 150, y: 150 };
+    for (let i = 0; i < 40 && hasCollision({ ...pos, w, h: d }, others); i++) {
+      pos = { x: pos.x + 50, y: pos.y + 50 };
+    }
+
+    const newModule: PlannerModule = {
+      id: crypto.randomUUID(),
+      productId: product.productId,
+      productVariationId: product.variations[0]?.id ?? null,
+      position: { x: pos.x, y: pos.y, z: 0 },
+      rotationDeg: 0,
+      dimensionsMm: product.dimensionsMm,
+      meta: { name: product.name, colorHex: product.variations[0]?.hexColor ?? null },
+    };
+    set({ modules: [...modules, newModule] });
+  },
 
   selectModule: (id) => set({ selectedModuleId: id }),
 

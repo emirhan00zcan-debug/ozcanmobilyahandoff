@@ -11,12 +11,15 @@ export async function GET(req: NextRequest) {
     .map((id) => id.trim())
     .filter(Boolean);
 
-  if (ids.length === 0) {
-    return withCors(NextResponse.json([]));
-  }
+  // `ids` verilmemişse ürün kütüphanesi paneli için "gözat" modu: öne çıkan/
+  // en yeni aktif ürünlerden bir sayfa döner (bkz. Mimari Doküman §1.3, §6
+  // Faz 1 "ürün kütüphanesi").
+  const limitParam = Number(req.nextUrl.searchParams.get("limit"));
+  const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 60) : 24;
 
   const products = await prisma.product.findMany({
-    where: { id: { in: ids }, isActive: true },
+    where: ids.length > 0 ? { id: { in: ids }, isActive: true } : { isActive: true },
+    ...(ids.length === 0 && { take: limit, orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }] }),
     include: {
       images: { orderBy: { order: "asc" }, take: 1 },
       variations: {

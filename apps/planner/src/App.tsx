@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BomPanel } from "./components/BomPanel";
 import { ModuleInspector } from "./components/ModuleInspector";
 import { PlannerCanvas } from "./components/PlannerCanvas";
+import { ProductLibrary } from "./components/ProductLibrary";
 import { fetchCatalog } from "./lib/catalog";
 import { usePlannerStore } from "./lib/store";
 import type { PlannerModule } from "./lib/types";
@@ -52,6 +53,7 @@ export default function App() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [bomOpen, setBomOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   // React 19 StrictMode geliştirme modunda mount effect'ini iki kez çalıştırır;
   // `modules.length` gibi durum-tabanlı bir bekçi bunu yakalayamaz çünkü her
@@ -117,6 +119,7 @@ export default function App() {
               </button>
             </>
           )}
+          <button style={toolbarButtonStyle} onClick={() => setLibraryOpen(true)}>Ürünler</button>
           <button style={toolbarButtonStyle} onClick={() => setBomOpen(true)}>BOM</button>
         </div>
       </div>
@@ -133,6 +136,7 @@ export default function App() {
         <ModuleInspector />
       </div>
       {bomOpen && <BomPanel onClose={() => setBomOpen(false)} />}
+      {libraryOpen && <ProductLibrary onClose={() => setLibraryOpen(false)} />}
     </div>
   );
 }

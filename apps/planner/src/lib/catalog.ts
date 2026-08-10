@@ -30,3 +30,14 @@ export async function fetchCatalog(productIds: string[]): Promise<CatalogProduct
   }
   return res.json();
 }
+
+// Ürün kütüphanesi paneli için "gözat" modu — belirli id'ler yerine öne
+// çıkan/en yeni aktif ürünlerden bir sayfa ister.
+export async function fetchCatalogBrowse(limit = 24): Promise<CatalogProduct[]> {
+  const url = `${ANASITE_URL}/api/planner/catalog?limit=${limit}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Katalog isteği başarısız oldu (${res.status})`);
+  }
+  return res.json();
+}
