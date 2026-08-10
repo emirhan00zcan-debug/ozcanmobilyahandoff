@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { FaGoogle, FaApple } from "react-icons/fa";
-import { loginAction, registerAction } from "@/lib/actions/auth-actions";
+import { loginAction, registerAction, type AuthActionState } from "@/lib/actions/auth-actions";
 
 const TABS = [
   { id: "signin", label: "Giriş Yap" },
@@ -191,7 +191,13 @@ function FloatingField({
 // bkz. auth-actions.ts), bu yüzden action başarıyla dönünce SessionProvider'ın oturumu
 // haberdar olması için client'ta update() ile senkronize edip ardından yönlendiriyoruz.
 // Aksi halde Navbar'daki giriş durumu sayfa yenilenene kadar eskisi gibi kalıyordu.
-function useAuthRedirect(error: string | null, callbackUrl: string) {
+//
+// Dikkat: bağımlılık dizisinde state.error yerine state'in kendisi kullanılıyor — ilk
+// denemede başarılı girişte error hem öncesinde hem sonrasında null kalıyor (Object.is
+// null === null), state.error'a bağlı bir effect bu durumda hiç yeniden çalışmazdı.
+// useActionState her action tamamlandığında YENİ bir state referansı döndürdüğü için
+// (içerik aynı olsa bile) state'in kendisine bağlanmak bunu güvenilir şekilde yakalıyor.
+function useAuthRedirect(state: AuthActionState, callbackUrl: string) {
   const { update } = useSession();
   const router = useRouter();
   const isFirstRun = useRef(true);
@@ -201,16 +207,16 @@ function useAuthRedirect(error: string | null, callbackUrl: string) {
       isFirstRun.current = false;
       return;
     }
-    if (error === null) {
+    if (state.error === null) {
       update().then(() => router.push(callbackUrl));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [error]);
+  }, [state]);
 }
 
 function SignInForm({ callbackUrl }: { callbackUrl: string }) {
   const [state, formAction, isPending] = useActionState(loginAction, { error: null });
-  useAuthRedirect(state.error, callbackUrl);
+  useAuthRedirect(state, callbackUrl);
 
   return (
     <form action={formAction} className="animate-fade-in space-y-4">
@@ -243,7 +249,7 @@ function SignInForm({ callbackUrl }: { callbackUrl: string }) {
 
 function SignUpForm({ callbackUrl }: { callbackUrl: string }) {
   const [state, formAction, isPending] = useActionState(registerAction, { error: null });
-  useAuthRedirect(state.error, callbackUrl);
+  useAuthRedirect(state, callbackUrl);
 
   return (
     <form action={formAction} className="animate-fade-in space-y-4">
