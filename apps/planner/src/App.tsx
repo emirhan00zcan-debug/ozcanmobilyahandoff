@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { BomPanel } from "./components/BomPanel";
+import { ModuleInspector } from "./components/ModuleInspector";
 import { PlannerCanvas } from "./components/PlannerCanvas";
 import { fetchCatalog } from "./lib/catalog";
 import { usePlannerStore } from "./lib/store";
@@ -31,13 +33,21 @@ const DEMO_MODULES: PlannerModule[] = [
 type Status = "idle" | "loading" | "error" | "done";
 
 export default function App() {
-  const modules = usePlannerStore((s) => s.modules);
   const addModule = usePlannerStore((s) => s.addModule);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [bomOpen, setBomOpen] = useState(false);
+
+  // React 19 StrictMode geliştirme modunda mount effect'ini iki kez çalıştırır;
+  // `modules.length` gibi durum-tabanlı bir bekçi bunu yakalayamaz çünkü her
+  // iki çağrı da effect'in ilk render'daki (boş) kapanışını görür. Tohumlamanın
+  // tam olarak bir kez çalışmasını garantilemek için render'lar arası kalıcı
+  // bir ref kullanılıyor.
+  const seededRef = useRef(false);
 
   useEffect(() => {
-    if (modules.length > 0) return;
+    if (seededRef.current) return;
+    seededRef.current = true;
 
     const productId = new URLSearchParams(window.location.search).get("product_id");
     if (!productId) {
@@ -55,7 +65,7 @@ export default function App() {
           return;
         }
         addModule({
-          id: `mod_${product.productId}`,
+          id: crypto.randomUUID(),
           productId: product.productId,
           productVariationId: product.variations[0]?.id ?? null,
           position: { x: 150, y: 150, z: 0 },
@@ -72,17 +82,38 @@ export default function App() {
         setError(e instanceof Error ? e.message : "Katalog isteği başarısız oldu.");
         setStatus("error");
       });
-  }, [addModule, modules.length]);
+  }, [addModule]);
 
   return (
-    <div style={{ padding: 16, maxWidth: 960 }}>
-      <h1 style={{ fontSize: 18, margin: "0 0 4px" }}>Oda &amp; Mobilya Planlayıcı — Faz 0</h1>
+    <div style={{ padding: 16, maxWidth: 1200 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+        <h1 style={{ fontSize: 18, margin: 0 }}>Oda &amp; Mobilya Planlayıcı — Faz 1</h1>
+        <button
+          onClick={() => setBomOpen(true)}
+          style={{
+            fontFamily: "Consolas, monospace",
+            fontSize: 12,
+            padding: "6px 10px",
+            border: "1px solid #1f5ca6",
+            color: "#1f5ca6",
+            background: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          BOM
+        </button>
+      </div>
       <p style={{ fontSize: 13, color: "#54635e", margin: "0 0 12px" }}>
         {status === "loading" && "Ürün katalogdan yükleniyor…"}
         {status === "error" && `Hata: ${error}`}
-        {status === "done" && "Modülü sürükleyerek duvara veya diğer modüle yaklaştırın — 15mm eşikte kilitlenir."}
+        {status === "done" &&
+          "Modülü sürükleyerek duvara/diğer modüle yaklaştırın ya da seçip sağdaki panelden mm/rotasyon girin."}
       </p>
-      <PlannerCanvas />
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <PlannerCanvas />
+        <ModuleInspector />
+      </div>
+      {bomOpen && <BomPanel onClose={() => setBomOpen(false)} />}
     </div>
   );
 }

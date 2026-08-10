@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { hasCollision, moduleFootprint, type Rect } from "./geometry";
-import { snapToWalls } from "./snap";
-import type { PlannerModule, Room } from "./types";
+import { snapToNeighbors, snapToWalls } from "./snap";
+import type { PlannerModule, Room, RotationDeg } from "./types";
 
 const DEFAULT_ROOM: Room = {
   id: "demo-room",
@@ -21,6 +21,8 @@ interface PlannerState {
   addModule: (m: PlannerModule) => void;
   selectModule: (id: string | null) => void;
   moveModule: (id: string, x: number, y: number) => void;
+  setModulePosition: (id: string, x: number, y: number) => void;
+  rotateModule: (id: string) => void;
 }
 
 export const usePlannerStore = create<PlannerState>((set, get) => ({
@@ -41,7 +43,7 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
 
     const others = modules.filter((m) => m.id !== id).map(moduleFootprint);
     const desired: Rect = { ...moduleFootprint(target), x, y };
-    const snapped = snapToWalls(desired, room);
+    const snapped = snapToNeighbors(snapToWalls(desired, room), others);
 
     if (hasCollision(snapped, others)) return;
 
@@ -50,5 +52,34 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
         m.id === id ? { ...m, position: { ...m.position, x: snapped.x, y: snapped.y } } : m,
       ),
     });
+  },
+
+  // Sayısal panelden gelen giriş kesin bir komuttur — snap uygulanmaz (§3.4),
+  // yalnızca çarpışma hâlâ ihlal edilemez bir fiziksel kısıttır.
+  setModulePosition: (id, x, y) => {
+    const { modules } = get();
+    const target = modules.find((m) => m.id === id);
+    if (!target) return;
+
+    const others = modules.filter((m) => m.id !== id).map(moduleFootprint);
+    const rect: Rect = { ...moduleFootprint(target), x, y };
+    if (hasCollision(rect, others)) return;
+
+    set({
+      modules: modules.map((m) => (m.id === id ? { ...m, position: { ...m.position, x, y } } : m)),
+    });
+  },
+
+  rotateModule: (id) => {
+    const { modules } = get();
+    const target = modules.find((m) => m.id === id);
+    if (!target) return;
+
+    const nextRotation = (((target.rotationDeg + 90) % 360) as RotationDeg);
+    const rotated = { ...target, rotationDeg: nextRotation };
+    const others = modules.filter((m) => m.id !== id).map(moduleFootprint);
+    if (hasCollision(moduleFootprint(rotated), others)) return;
+
+    set({ modules: modules.map((m) => (m.id === id ? rotated : m)) });
   },
 }));

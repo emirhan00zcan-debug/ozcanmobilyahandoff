@@ -25,3 +25,27 @@ export function snapToWalls(rect: Rect, room: Room, thresholdMm = DEFAULT_SNAP_T
 
   return { ...rect, x, y };
 }
+
+// Modül-modül kenetlenmesi (§3.3): iki modül kenarı eşik altına yaklaşınca
+// kenar hizalanır. Yalnızca ilgili eksende "komşu" sayılacak kadar örtüşen
+// çiftler için uygulanır — aksi halde odanın öbür ucundaki bir modül bile
+// hizalama önerisi üretir.
+export function snapToNeighbors(rect: Rect, others: Rect[], thresholdMm = DEFAULT_SNAP_THRESHOLD_MM): Rect {
+  let { x, y } = rect;
+
+  for (const other of others) {
+    const verticallyAdjacent = rect.y < other.y + other.h && rect.y + rect.h > other.y;
+    const horizontallyAdjacent = rect.x < other.x + other.w && rect.x + rect.w > other.x;
+
+    if (verticallyAdjacent) {
+      if (Math.abs(rect.x + rect.w - other.x) < thresholdMm) x = other.x - rect.w; // sağ kenar -> komşunun sol kenarı
+      if (Math.abs(rect.x - (other.x + other.w)) < thresholdMm) x = other.x + other.w; // sol kenar -> komşunun sağ kenarı
+    }
+    if (horizontallyAdjacent) {
+      if (Math.abs(rect.y + rect.h - other.y) < thresholdMm) y = other.y - rect.h; // alt kenar -> komşunun üst kenarı
+      if (Math.abs(rect.y - (other.y + other.h)) < thresholdMm) y = other.y + other.h; // üst kenar -> komşunun alt kenarı
+    }
+  }
+
+  return { ...rect, x, y };
+}
