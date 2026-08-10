@@ -6,7 +6,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { FaGoogle, FaApple } from "react-icons/fa";
-import { loginAction, registerAction, type AuthActionState } from "@/lib/actions/auth-actions";
+import {
+  loginAction,
+  registerAction,
+  verifyRegisterCodeAction,
+  type AuthActionState,
+} from "@/lib/actions/auth-actions";
 
 const TABS = [
   { id: "signin", label: "Giriş Yap" },
@@ -161,11 +166,13 @@ function FloatingField({
   name,
   label,
   type = "text",
+  onChange,
 }: {
   id: string;
   name: string;
   label: string;
   type?: string;
+  onChange?: (value: string) => void;
 }) {
   return (
     <div className="relative">
@@ -175,6 +182,7 @@ function FloatingField({
         type={type}
         required
         placeholder=" "
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         className="peer w-full rounded-xl border border-secondary/15 bg-white px-4 pb-2.5 pt-5 font-body text-sm text-secondary placeholder-transparent transition-colors focus:border-primary focus:outline-none"
       />
       <label
@@ -248,15 +256,45 @@ function SignInForm({ callbackUrl }: { callbackUrl: string }) {
 }
 
 function SignUpForm({ callbackUrl }: { callbackUrl: string }) {
-  const [state, formAction, isPending] = useActionState(registerAction, { error: null });
-  useAuthRedirect(state, callbackUrl);
+  const [state, formAction, isPending] = useActionState(registerAction, { error: null, codeSent: false });
+  const [verifyState, verifyFormAction, isVerifyPending] = useActionState(verifyRegisterCodeAction, {
+    error: null,
+  });
+  // Kod doğrulama adımında signIn() için tekrar gerekiyor — e-posta/şifre burada,
+  // sadece bu form içinde (component state'te) tutuluyor, hiçbir yere persist edilmiyor.
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  useAuthRedirect(verifyState, callbackUrl);
+
+  if (state.codeSent) {
+    return (
+      <form action={verifyFormAction} className="animate-fade-in space-y-4">
+        <input type="hidden" name="email" value={email} />
+        <input type="hidden" name="password" value={password} />
+        <p className="font-body text-sm text-secondary-light">
+          <strong className="text-secondary">{email}</strong> adresine gönderdiğimiz 6 haneli kodu girin.
+        </p>
+        <FloatingField id="signup-code" name="code" label="Doğrulama Kodu" />
+
+        {verifyState.error && <p className="font-body text-xs font-medium text-red-600">{verifyState.error}</p>}
+
+        <button
+          type="submit"
+          disabled={isVerifyPending}
+          className="btn-sweep w-full rounded-full border border-primary/30 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
+        >
+          {isVerifyPending ? "Doğrulanıyor..." : "Doğrula ve Giriş Yap"}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form action={formAction} className="animate-fade-in space-y-4">
       <input type="hidden" name="callbackUrl" value={callbackUrl} />
       <FloatingField id="signup-name" name="name" label="Ad Soyad" />
-      <FloatingField id="signup-email" name="email" label="E-posta" type="email" />
-      <FloatingField id="signup-password" name="password" label="Şifre" type="password" />
+      <FloatingField id="signup-email" name="email" label="E-posta" type="email" onChange={setEmail} />
+      <FloatingField id="signup-password" name="password" label="Şifre" type="password" onChange={setPassword} />
 
       {state.error && <p className="font-body text-xs font-medium text-red-600">{state.error}</p>}
 
