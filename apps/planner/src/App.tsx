@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { BomPanel } from "./components/BomPanel";
 import { ModuleInspector } from "./components/ModuleInspector";
 import { PlannerCanvas } from "./components/PlannerCanvas";
@@ -6,6 +6,10 @@ import { ProductLibrary } from "./components/ProductLibrary";
 import { fetchCatalog } from "./lib/catalog";
 import { usePlannerStore } from "./lib/store";
 import type { PlannerModule } from "./lib/types";
+
+// Three.js yalnızca kullanıcı "3D" moduna geçtiğinde indirilir — 2D
+// (varsayılan/birincil) çalışma modu bu bundle'ı hiç yüklemez (§2.1).
+const Scene3D = lazy(() => import("./components/Scene3D"));
 
 // product_id verilmediğinde canvas'ı ağdan bağımsız test edilebilir kılan iki
 // örnek modül — biri diğerinin sürüklenip çakışma/duvar-snap davranışını
@@ -58,6 +62,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [bomOpen, setBomOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
 
   // React 19 StrictMode geliştirme modunda mount effect'ini iki kez çalıştırır;
   // `modules.length` gibi durum-tabanlı bir bekçi bunu yakalayamaz çünkü her
@@ -108,10 +113,10 @@ export default function App() {
   return (
     <div style={{ padding: 16, maxWidth: 1200 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-        <h1 style={{ fontSize: 18, margin: 0 }}>Oda &amp; Mobilya Planlayıcı — Faz 1</h1>
-        <div style={{ display: "flex", gap: 8 }}>
-          {!drawMode && <button style={toolbarButtonStyle} onClick={toggleDrawMode}>Duvar Çiz</button>}
-          {drawMode && (
+        <h1 style={{ fontSize: 18, margin: 0 }}>Oda &amp; Mobilya Planlayıcı — Faz 2</h1>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {viewMode === "2d" && !drawMode && <button style={toolbarButtonStyle} onClick={toggleDrawMode}>Duvar Çiz</button>}
+          {viewMode === "2d" && drawMode && (
             <>
               <button style={toolbarButtonStyle} onClick={cancelDraft}>İptal</button>
               <button
@@ -123,7 +128,7 @@ export default function App() {
               </button>
             </>
           )}
-          {!drawMode && (
+          {viewMode === "2d" && !drawMode && (
             <>
               <button
                 style={openingMode === "door" ? toolbarButtonActiveStyle : toolbarButtonStyle}
@@ -139,25 +144,42 @@ export default function App() {
               </button>
             </>
           )}
+          {!drawMode && (
+            <button
+              style={viewMode === "3d" ? toolbarButtonActiveStyle : toolbarButtonStyle}
+              onClick={() => setViewMode(viewMode === "2d" ? "3d" : "2d")}
+            >
+              {viewMode === "2d" ? "3D" : "2D"}
+            </button>
+          )}
           <button style={toolbarButtonStyle} onClick={() => setLibraryOpen(true)}>Ürünler</button>
           <button style={toolbarButtonStyle} onClick={() => setBomOpen(true)}>BOM</button>
         </div>
       </div>
       <p style={{ fontSize: 13, color: "#54635e", margin: "0 0 12px" }}>
-        {drawMode && "Oda köşelerini sırayla tıklayın (dik açıya kilitlenir, 50mm ızgaraya yapışır) — bitince Bitir'e basın."}
-        {!drawMode &&
+        {viewMode === "3d" && "Sürükleyerek çevirin, tekerlek/iki parmakla yakınlaştırın — düzenlemek için 2D'ye dönün."}
+        {viewMode === "2d" && drawMode && "Oda köşelerini sırayla tıklayın (dik açıya kilitlenir, 50mm ızgaraya yapışır) — bitince Bitir'e basın."}
+        {viewMode === "2d" &&
+          !drawMode &&
           openingMode &&
           `Bir duvara tıklayın: ${openingMode === "door" ? "kapı" : "pencere"} eklenir; mevcut bir açıklığa tıklayınca kaldırılır.`}
-        {!drawMode && !openingMode && status === "loading" && "Ürün katalogdan yükleniyor…"}
-        {!drawMode && !openingMode && status === "error" && `Hata: ${error}`}
-        {!drawMode &&
+        {viewMode === "2d" && !drawMode && !openingMode && status === "loading" && "Ürün katalogdan yükleniyor…"}
+        {viewMode === "2d" && !drawMode && !openingMode && status === "error" && `Hata: ${error}`}
+        {viewMode === "2d" &&
+          !drawMode &&
           !openingMode &&
           status === "done" &&
           "Modülü sürükleyerek duvara/diğer modüle yaklaştırın ya da seçip sağdaki panelden mm/rotasyon girin."}
       </p>
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-        <PlannerCanvas />
-        <ModuleInspector />
+        {viewMode === "2d" ? (
+          <PlannerCanvas />
+        ) : (
+          <Suspense fallback={<div style={{ width: "100%", maxWidth: 760, padding: 24, color: "#54635e" }}>3D görünüm yükleniyor…</div>}>
+            <Scene3D />
+          </Suspense>
+        )}
+        {viewMode === "2d" && <ModuleInspector />}
       </div>
       {bomOpen && <BomPanel onClose={() => setBomOpen(false)} />}
       {libraryOpen && <ProductLibrary onClose={() => setLibraryOpen(false)} />}
