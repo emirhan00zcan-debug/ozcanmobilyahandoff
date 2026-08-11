@@ -31,7 +31,7 @@ interface PlannerState {
   addModule: (m: PlannerModule) => void;
   addModuleFromCatalog: (product: CatalogProduct) => void;
   selectModule: (id: string | null) => void;
-  moveModule: (id: string, x: number, y: number) => void;
+  moveModule: (id: string, x: number, y: number, snapThresholdMm?: number) => void;
   setModulePosition: (id: string, x: number, y: number) => void;
   rotateModule: (id: string) => void;
 
@@ -85,15 +85,17 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
   selectModule: (id) => set({ selectedModuleId: id }),
 
   // Snap bir öneridir, çarpışma ise kesin bir kısıttır: kilitlenmiş konum
-  // başka bir modülle çakışıyorsa taşıma tamamen reddedilir (§3.4).
-  moveModule: (id, x, y) => {
+  // başka bir modülle çakışıyorsa taşıma tamamen reddedilir (§3.4). Eşik,
+  // zoom seviyesine göre çağıran taraftan (PlannerCanvas, ekran-pikseli
+  // sabit ≈8px karşılığı) geçirilir (§3.3); verilmezse varsayılan mm kullanılır.
+  moveModule: (id, x, y, snapThresholdMm) => {
     const { room, modules } = get();
     const target = modules.find((m) => m.id === id);
     if (!target) return;
 
     const others = modules.filter((m) => m.id !== id).map(moduleFootprint);
     const desired: Rect = { ...moduleFootprint(target), x, y };
-    const snapped = snapToNeighbors(snapToWalls(desired, room.walls), others);
+    const snapped = snapToNeighbors(snapToWalls(desired, room.walls, snapThresholdMm), others, snapThresholdMm);
 
     if (hasCollision(snapped, others)) return;
 
