@@ -43,6 +43,8 @@ const toolbarButtonStyle = {
   cursor: "pointer",
 } as const;
 
+const toolbarButtonActiveStyle = { ...toolbarButtonStyle, background: "#1f5ca6", color: "#fff" } as const;
+
 export default function App() {
   const addModule = usePlannerStore((s) => s.addModule);
   const drawMode = usePlannerStore((s) => s.drawMode);
@@ -50,6 +52,8 @@ export default function App() {
   const toggleDrawMode = usePlannerStore((s) => s.toggleDrawMode);
   const finishRoom = usePlannerStore((s) => s.finishRoom);
   const cancelDraft = usePlannerStore((s) => s.cancelDraft);
+  const openingMode = usePlannerStore((s) => s.openingMode);
+  const toggleOpeningMode = usePlannerStore((s) => s.toggleOpeningMode);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [bomOpen, setBomOpen] = useState(false);
@@ -119,15 +123,35 @@ export default function App() {
               </button>
             </>
           )}
+          {!drawMode && (
+            <>
+              <button
+                style={openingMode === "door" ? toolbarButtonActiveStyle : toolbarButtonStyle}
+                onClick={() => toggleOpeningMode("door")}
+              >
+                Kapı Ekle
+              </button>
+              <button
+                style={openingMode === "window" ? toolbarButtonActiveStyle : toolbarButtonStyle}
+                onClick={() => toggleOpeningMode("window")}
+              >
+                Pencere Ekle
+              </button>
+            </>
+          )}
           <button style={toolbarButtonStyle} onClick={() => setLibraryOpen(true)}>Ürünler</button>
           <button style={toolbarButtonStyle} onClick={() => setBomOpen(true)}>BOM</button>
         </div>
       </div>
       <p style={{ fontSize: 13, color: "#54635e", margin: "0 0 12px" }}>
         {drawMode && "Oda köşelerini sırayla tıklayın (dik açıya kilitlenir, 50mm ızgaraya yapışır) — bitince Bitir'e basın."}
-        {!drawMode && status === "loading" && "Ürün katalogdan yükleniyor…"}
-        {!drawMode && status === "error" && `Hata: ${error}`}
         {!drawMode &&
+          openingMode &&
+          `Bir duvara tıklayın: ${openingMode === "door" ? "kapı" : "pencere"} eklenir; mevcut bir açıklığa tıklayınca kaldırılır.`}
+        {!drawMode && !openingMode && status === "loading" && "Ürün katalogdan yükleniyor…"}
+        {!drawMode && !openingMode && status === "error" && `Hata: ${error}`}
+        {!drawMode &&
+          !openingMode &&
           status === "done" &&
           "Modülü sürükleyerek duvara/diğer modüle yaklaştırın ya da seçip sağdaki panelden mm/rotasyon girin."}
       </p>

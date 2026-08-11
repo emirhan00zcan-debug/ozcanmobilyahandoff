@@ -14,10 +14,24 @@ export interface Wall {
   thicknessMm: number;
 }
 
+export type OpeningType = "door" | "window";
+
+// offsetMm, wall.start'tan itibaren duvar boyunca mesafedir (bkz. §5 JSON şema).
+export interface Opening {
+  id: string;
+  wallId: string;
+  type: OpeningType;
+  offsetMm: number;
+  widthMm: number;
+  heightMm: number;
+  sillHeightMm: number;
+}
+
 export interface Room {
   id: string;
   dimensionsMm: { width: number; depth: number; height: number };
   walls: Wall[];
+  openings: Opening[];
 }
 
 export interface ModuleDimensionsMm {

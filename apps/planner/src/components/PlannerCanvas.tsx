@@ -5,6 +5,7 @@ import type { Point } from "../lib/types";
 
 const SCALE = 0.15; // px / mm
 const MARGIN = 40; // px
+const CANVAS_BG = "#eef2f0";
 
 function nextDraftPoint(raw: Point, points: Point[]): Point {
   if (points.length === 0) return snapToGrid(raw);
@@ -24,6 +25,8 @@ export function PlannerCanvas() {
   const drawMode = usePlannerStore((s) => s.drawMode);
   const draftPoints = usePlannerStore((s) => s.draftPoints);
   const addDraftPoint = usePlannerStore((s) => s.addDraftPoint);
+  const openingMode = usePlannerStore((s) => s.openingMode);
+  const placeOrRemoveOpening = usePlannerStore((s) => s.placeOrRemoveOpening);
 
   const width = room.dimensionsMm.width * SCALE + MARGIN * 2;
   const height = room.dimensionsMm.depth * SCALE + MARGIN * 2;
@@ -48,6 +51,36 @@ export function PlannerCanvas() {
       ctx.beginPath();
       ctx.moveTo(toPx(wall.start.x), toPx(wall.start.y));
       ctx.lineTo(toPx(wall.end.x), toPx(wall.end.y));
+      ctx.stroke();
+    }
+
+    // Kapı/pencere: önce duvarı arka plan rengiyle "keser", sonra tipe göre
+    // renkli bir çizgiyle işaretler. Basit ama etkili — duvarları açıklığa göre
+    // ayrı segmentlere bölmeye gerek kalmıyor.
+    for (const opening of room.openings) {
+      const wall = room.walls.find((w) => w.id === opening.wallId);
+      if (!wall) continue;
+      const len = Math.hypot(wall.end.x - wall.start.x, wall.end.y - wall.start.y) || 1;
+      const ux = (wall.end.x - wall.start.x) / len;
+      const uy = (wall.end.y - wall.start.y) / len;
+      const p1 = { x: wall.start.x + ux * opening.offsetMm, y: wall.start.y + uy * opening.offsetMm };
+      const p2 = {
+        x: wall.start.x + ux * (opening.offsetMm + opening.widthMm),
+        y: wall.start.y + uy * (opening.offsetMm + opening.widthMm),
+      };
+
+      ctx.strokeStyle = CANVAS_BG;
+      ctx.lineWidth = wall.thicknessMm * SCALE;
+      ctx.beginPath();
+      ctx.moveTo(toPx(p1.x), toPx(p1.y));
+      ctx.lineTo(toPx(p2.x), toPx(p2.y));
+      ctx.stroke();
+
+      ctx.strokeStyle = opening.type === "door" ? "#a84e29" : "#1f5ca6";
+      ctx.lineWidth = Math.max(2, wall.thicknessMm * SCALE * 0.4);
+      ctx.beginPath();
+      ctx.moveTo(toPx(p1.x), toPx(p1.y));
+      ctx.lineTo(toPx(p2.x), toPx(p2.y));
       ctx.stroke();
     }
 
@@ -117,6 +150,11 @@ export function PlannerCanvas() {
       return;
     }
 
+    if (openingMode) {
+      placeOrRemoveOpening(raw);
+      return;
+    }
+
     const hit = findModuleAt(raw.x, raw.y);
     selectModule(hit ? hit.id : null);
     if (hit) {
@@ -149,10 +187,10 @@ export function PlannerCanvas() {
       height={height}
       style={{
         touchAction: "none",
-        background: "#eef2f0",
+        background: CANVAS_BG,
         border: "1px solid #c6d0cb",
         display: "block",
-        cursor: drawMode ? "crosshair" : "default",
+        cursor: drawMode || openingMode ? "crosshair" : "default",
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

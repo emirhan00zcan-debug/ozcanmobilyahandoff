@@ -1,10 +1,16 @@
 import { create } from "zustand";
 import type { CatalogProduct } from "./catalog";
 import { hasCollision, moduleFootprint, type Rect } from "./geometry";
+import { closestPointOnWall, findOpeningAt, findWallAt, wallLength } from "./openings";
 import { snapToNeighbors, snapToWalls } from "./snap";
-import type { Point, PlannerModule, Room, RotationDeg, Wall } from "./types";
+import type { Opening, OpeningType, Point, PlannerModule, Room, RotationDeg, Wall } from "./types";
 
 const WALL_THICKNESS_MM = 100;
+
+const OPENING_DEFAULTS: Record<OpeningType, { widthMm: number; heightMm: number; sillHeightMm: number }> = {
+  door: { widthMm: 900, heightMm: 2100, sillHeightMm: 0 },
+  window: { widthMm: 1200, heightMm: 1200, sillHeightMm: 900 },
+};
 
 const DEFAULT_ROOM: Room = {
   id: "demo-room",
@@ -15,6 +21,7 @@ const DEFAULT_ROOM: Room = {
     { id: "w-bottom", start: { x: 3600, y: 4200 }, end: { x: 0, y: 4200 }, thicknessMm: WALL_THICKNESS_MM },
     { id: "w-left", start: { x: 0, y: 4200 }, end: { x: 0, y: 0 }, thicknessMm: WALL_THICKNESS_MM },
   ],
+  openings: [],
 };
 
 interface PlannerState {
@@ -34,6 +41,10 @@ interface PlannerState {
   addDraftPoint: (p: Point) => void;
   finishRoom: () => void;
   cancelDraft: () => void;
+
+  openingMode: OpeningType | null;
+  toggleOpeningMode: (type: OpeningType) => void;
+  placeOrRemoveOpening: (point: Point) => void;
 }
 
 export const usePlannerStore = create<PlannerState>((set, get) => ({
@@ -42,6 +53,7 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
   selectedModuleId: null,
   drawMode: false,
   draftPoints: [],
+  openingMode: null,
 
   addModule: (m) => set((s) => ({ modules: [...s.modules, m] })),
 
@@ -152,11 +164,40 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     const maxY = Math.max(...normalized.map((p) => p.y));
 
     set({
-      room: { id: "custom-room", dimensionsMm: { width: maxX, depth: maxY, height: 2500 }, walls },
+      room: { id: "custom-room", dimensionsMm: { width: maxX, depth: maxY, height: 2500 }, walls, openings: [] },
       modules: [],
       selectedModuleId: null,
       drawMode: false,
       draftPoints: [],
     });
+  },
+
+  toggleOpeningMode: (type) => set((s) => ({ openingMode: s.openingMode === type ? null : type })),
+
+  // Mevcut bir açıklığa tıklanırsa kaldırır; boş bir duvara tıklanırsa aktif
+  // moda (kapı/pencere) göre varsayılan ölçülerle, tıklanan noktayı ortalayacak
+  // şekilde yeni bir açıklık ekler. Duvarın uzunluğunu aşmayacak şekilde kenarlara
+  // kelepçelenir.
+  placeOrRemoveOpening: (point) => {
+    const { room, openingMode } = get();
+    if (!openingMode) return;
+
+    const existing = findOpeningAt(point, room, 150);
+    if (existing) {
+      set({ room: { ...room, openings: room.openings.filter((o) => o.id !== existing.id) } });
+      return;
+    }
+
+    const wall = findWallAt(point, room.walls, 150);
+    if (!wall) return;
+
+    const defaults = OPENING_DEFAULTS[openingMode];
+    const wallLen = wallLength(wall);
+    const { t } = closestPointOnWall(point, wall);
+    const rawOffset = t * wallLen - defaults.widthMm / 2;
+    const offsetMm = Math.max(0, Math.min(wallLen - defaults.widthMm, rawOffset));
+
+    const opening: Opening = { id: crypto.randomUUID(), wallId: wall.id, type: openingMode, offsetMm, ...defaults };
+    set({ room: { ...room, openings: [...room.openings, opening] } });
   },
 }));
