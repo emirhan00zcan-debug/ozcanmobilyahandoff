@@ -112,7 +112,7 @@ export default function App() {
 
   return (
     <div style={{ padding: 16, maxWidth: 1200 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
         <h1 style={{ fontSize: 18, margin: 0 }}>Oda &amp; Mobilya Planlayıcı — Faz 2</h1>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {viewMode === "2d" && !drawMode && <button style={toolbarButtonStyle} onClick={toggleDrawMode}>Duvar Çiz</button>}
