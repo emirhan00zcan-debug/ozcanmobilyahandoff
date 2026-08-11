@@ -47,6 +47,13 @@ type Gesture =
   | { type: "pan"; startClientX: number; startClientY: number; startPanX: number; startPanY: number }
   | { type: "pinch"; startDistance: number; startScale: number; mmUnderFinger: Point };
 
+interface MagnifierState {
+  screenPos: Point;
+  mm: Point;
+  blocked: boolean;
+  snapTarget: "wall" | "neighbor" | null;
+}
+
 export function PlannerCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -54,6 +61,7 @@ export function PlannerCanvas() {
   const gestureRef = useRef<Gesture>({ type: "idle" });
   const [cursorMm, setCursorMm] = useState<Point | null>(null);
   const [viewport, setViewport] = useState({ w: 640, h: 480 });
+  const [magnifier, setMagnifier] = useState<MagnifierState | null>(null);
 
   const room = usePlannerStore((s) => s.room);
   const modules = usePlannerStore((s) => s.modules);
@@ -314,13 +322,21 @@ export function PlannerCanvas() {
     }
 
     if (gesture.type === "drag-module") {
-      const mm = toMm(clientToLocalPx(e.clientX, e.clientY));
-      moveModule(gesture.id, mm.x - gesture.offsetX, mm.y - gesture.offsetY, SNAP_THRESHOLD_PX / camera.scale);
+      const localPx = clientToLocalPx(e.clientX, e.clientY);
+      const mm = toMm(localPx);
+      const result = moveModule(gesture.id, mm.x - gesture.offsetX, mm.y - gesture.offsetY, SNAP_THRESHOLD_PX / camera.scale);
+      if (result) {
+        setMagnifier({ screenPos: localPx, mm: { x: result.x, y: result.y }, blocked: result.blocked, snapTarget: result.snapTarget });
+      }
     }
   };
 
   const endPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
     pointersRef.current.delete(e.pointerId);
+
+    if (gestureRef.current.type === "drag-module") {
+      setMagnifier(null);
+    }
 
     if (pointersRef.current.size === 0) {
       gestureRef.current = { type: "idle" };
@@ -341,7 +357,7 @@ export function PlannerCanvas() {
   };
 
   return (
-    <div ref={containerRef} style={{ width: "100%", maxWidth: 760 }}>
+    <div ref={containerRef} style={{ width: "100%", maxWidth: 760, position: "relative" }}>
       <canvas
         ref={canvasRef}
         width={viewport.w}
@@ -361,6 +377,29 @@ export function PlannerCanvas() {
         onPointerCancel={endPointer}
         onPointerLeave={endPointer}
       />
+      {magnifier && (
+        <div
+          style={{
+            position: "absolute",
+            left: magnifier.screenPos.x,
+            top: magnifier.screenPos.y - 44,
+            transform: "translateX(-50%)",
+            background: magnifier.blocked ? "#a84e29" : "#182422",
+            color: "#fff",
+            padding: "5px 9px",
+            fontSize: 11,
+            fontFamily: "Consolas, monospace",
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            borderRadius: 2,
+          }}
+        >
+          {Math.round(magnifier.mm.x)}, {Math.round(magnifier.mm.y)} mm
+          {magnifier.blocked && " · çakışıyor"}
+          {!magnifier.blocked && magnifier.snapTarget === "wall" && " · duvara kilitli"}
+          {!magnifier.blocked && magnifier.snapTarget === "neighbor" && " · modüle kilitli"}
+        </div>
+      )}
     </div>
   );
 }

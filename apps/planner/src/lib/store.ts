@@ -24,6 +24,13 @@ const DEFAULT_ROOM: Room = {
   openings: [],
 };
 
+export interface MoveResult {
+  x: number;
+  y: number;
+  blocked: boolean;
+  snapTarget: "wall" | "neighbor" | null;
+}
+
 interface PlannerState {
   room: Room;
   modules: PlannerModule[];
@@ -31,7 +38,7 @@ interface PlannerState {
   addModule: (m: PlannerModule) => void;
   addModuleFromCatalog: (product: CatalogProduct) => void;
   selectModule: (id: string | null) => void;
-  moveModule: (id: string, x: number, y: number, snapThresholdMm?: number) => void;
+  moveModule: (id: string, x: number, y: number, snapThresholdMm?: number) => MoveResult | null;
   setModulePosition: (id: string, x: number, y: number) => void;
   rotateModule: (id: string) => void;
 
@@ -88,22 +95,35 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
   // başka bir modülle çakışıyorsa taşıma tamamen reddedilir (§3.4). Eşik,
   // zoom seviyesine göre çağıran taraftan (PlannerCanvas, ekran-pikseli
   // sabit ≈8px karşılığı) geçirilir (§3.3); verilmezse varsayılan mm kullanılır.
+  // Dönüş değeri, sürükleme büyüteci (§4.2) için canlı mm/snap-hedefi bilgisini taşır.
   moveModule: (id, x, y, snapThresholdMm) => {
     const { room, modules } = get();
     const target = modules.find((m) => m.id === id);
-    if (!target) return;
+    if (!target) return null;
 
     const others = modules.filter((m) => m.id !== id).map(moduleFootprint);
     const desired: Rect = { ...moduleFootprint(target), x, y };
-    const snapped = snapToNeighbors(snapToWalls(desired, room.walls, snapThresholdMm), others, snapThresholdMm);
+    const afterWallSnap = snapToWalls(desired, room.walls, snapThresholdMm);
+    const snapped = snapToNeighbors(afterWallSnap, others, snapThresholdMm);
+    const blocked = hasCollision(snapped, others);
 
-    if (hasCollision(snapped, others)) return;
+    if (!blocked) {
+      set({
+        modules: modules.map((m) =>
+          m.id === id ? { ...m, position: { ...m.position, x: snapped.x, y: snapped.y } } : m,
+        ),
+      });
+    }
 
-    set({
-      modules: modules.map((m) =>
-        m.id === id ? { ...m, position: { ...m.position, x: snapped.x, y: snapped.y } } : m,
-      ),
-    });
+    const wallSnapped = afterWallSnap.x !== desired.x || afterWallSnap.y !== desired.y;
+    const neighborSnapped = snapped.x !== afterWallSnap.x || snapped.y !== afterWallSnap.y;
+
+    return {
+      blocked,
+      x: blocked ? target.position.x : snapped.x,
+      y: blocked ? target.position.y : snapped.y,
+      snapTarget: blocked ? null : neighborSnapped ? "neighbor" : wallSnapped ? "wall" : null,
+    };
   },
 
   // Sayısal panelden gelen giriş kesin bir komuttur — snap uygulanmaz (§3.4),
