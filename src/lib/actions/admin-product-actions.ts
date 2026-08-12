@@ -136,10 +136,15 @@ function parseProductForm(formData: FormData, fallbackSlugSource: string): Parse
 function revalidateStorefront() {
   revalidatePath("/admin/urunler");
   revalidatePath("/");
-  revalidatePath("/kategori", "layout");
-  revalidatePath("/oda", "layout");
+  revalidatePath("/kategori");
+  revalidatePath("/kategori/[slug]", "page");
+  revalidatePath("/oda");
+  revalidatePath("/oda/[slug]", "page");
   revalidatePath("/koleksiyon");
-  revalidatePath("/urun", "layout");
+  // "/urun" segmentinin kendi layout.tsx'i yok (yalnızca /urun/[slug]/page.tsx var), bu yüzden
+  // eski "/urun", "layout" çağrısı hiçbir cache tag'iyle eşleşmiyordu ve ürünün kendi sayfası
+  // fiyat değişikliğinden sonra hiç güncellenmiyordu. Doğru dinamik segment kalıbı gerekiyor.
+  revalidatePath("/urun/[slug]", "page");
 }
 
 export async function createProductAction(
