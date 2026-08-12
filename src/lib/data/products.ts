@@ -246,6 +246,45 @@ export async function searchProducts(query: string): Promise<ProductDetail[]> {
   return products.map(mapToProductDetail);
 }
 
+export type ProductSuggestion = {
+  slug: string;
+  name: string;
+  imageUrl: string | null;
+  price: number;
+  compareAtPrice: number | null;
+};
+
+// Navbar'daki "yazarken ara" önerileri — searchProducts()'taki ağır include'lar
+// (varyasyonlar, materyal bilgisi, boyutlar...) dropdown'da gerekmiyor, bu yüzden
+// ayrı ve hafif bir sorgu kullanılıyor.
+export async function searchProductSuggestions(query: string, limit = 6): Promise<ProductSuggestion[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  const products = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      OR: [
+        { name: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+        { category: { name: { contains: q, mode: "insensitive" } } },
+        { room: { name: { contains: q, mode: "insensitive" } } },
+      ],
+    },
+    include: { images: { orderBy: { order: "asc" }, take: 1 } },
+    orderBy: { createdAt: "asc" },
+    take: limit,
+  });
+
+  return products.map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    imageUrl: p.images[0]?.url ?? null,
+    price: p.basePrice.toNumber(),
+    compareAtPrice: p.compareAtPrice?.toNumber() ?? null,
+  }));
+}
+
 // "İndirimdekiler" (/indirimler) ve "Kaçırılmayacak Fırsatlar" vitrini — üstü çizili
 // compareAtPrice'ı olan (yani gerçekten indirimde olan) ürünler.
 export async function getDiscountedProducts(): Promise<ProductDetail[]> {

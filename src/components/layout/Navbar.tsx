@@ -26,6 +26,80 @@ const MENU_LINKS = [
 // bileşen içinde useMemo ile hesaplanıyor, bkz. aşağı).
 const CATEGORY_PROMO = promoCards[0];
 
+type SearchSuggestion = {
+  slug: string;
+  name: string;
+  imageUrl: string | null;
+  price: number;
+  compareAtPrice: number | null;
+};
+
+function formatSuggestionPrice(value: number) {
+  return new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2 }).format(value) + "₺";
+}
+
+// Arama kutusunun altında açılan öneri paneli — hem masaüstü hem mobil arama
+// kutusu aynı içeriği (farklı konumlandırmayla) kullanıyor, bu yüzden ortak.
+function SearchSuggestionsPanel({
+  query,
+  suggestions,
+  isSearching,
+  onNavigate,
+}: {
+  query: string;
+  suggestions: SearchSuggestion[];
+  isSearching: boolean;
+  onNavigate: () => void;
+}) {
+  return (
+    <>
+      {suggestions.length > 0 ? (
+        <ul className="max-h-[420px] overflow-y-auto py-2">
+          {suggestions.map((p) => (
+            <li key={p.slug}>
+              <Link
+                href={`/urun/${p.slug}`}
+                onClick={onNavigate}
+                className="flex items-center gap-3 px-5 py-2.5 hover:bg-secondary/[0.04]"
+              >
+                <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-secondary/10 bg-secondary/[0.04]">
+                  {p.imageUrl ? (
+                    <Image src={p.imageUrl} alt={p.name} fill sizes="48px" className="object-cover" />
+                  ) : null}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-body text-sm font-medium text-secondary">{p.name}</span>
+                  <span className="mt-0.5 flex items-center gap-2">
+                    <span className="font-body text-xs font-semibold text-primary">
+                      {formatSuggestionPrice(p.price)}
+                    </span>
+                    {p.compareAtPrice != null && (
+                      <span className="font-body text-xs text-secondary-light line-through">
+                        {formatSuggestionPrice(p.compareAtPrice)}
+                      </span>
+                    )}
+                  </span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="px-5 py-4 font-body text-sm text-secondary-light">
+          {isSearching ? "Aranıyor..." : `"${query}" ile eşleşen ürün bulunamadı.`}
+        </p>
+      )}
+      <Link
+        href={`/arama?q=${encodeURIComponent(query)}`}
+        onClick={onNavigate}
+        className="block border-t border-secondary/10 px-5 py-3 text-center font-body text-xs font-semibold text-secondary hover:text-primary"
+      >
+        Tüm sonuçları gör
+      </Link>
+    </>
+  );
+}
+
 // "Odalara Göre" mega menu'sünde her odanın sağ panelinde gösterilecek kategoriler —
 // gerçek kategori verisinden (categories prop'u) odayla ilişkili anlamlı bir alt küme.
 const ROOM_CATEGORY_SLUGS: Record<string, string[]> = {
@@ -71,6 +145,11 @@ export default function Navbar({ categories, rooms }: Props) {
   const roomsOpenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const desktopSearchRef = useRef<HTMLDivElement | null>(null);
+  const mobileSearchRef = useRef<HTMLDivElement | null>(null);
   const cartCount = useCartTotalQuantity();
   const { data: session, status } = useSession();
   const pathname = usePathname();
@@ -82,6 +161,63 @@ export default function Navbar({ categories, rooms }: Props) {
     if (!q) return;
     router.push(`/arama?q=${encodeURIComponent(q)}`);
     setMobileSearchOpen(false);
+    setSuggestionsOpen(false);
+  };
+
+  const closeSuggestions = () => {
+    setSuggestionsOpen(false);
+    setMobileSearchOpen(false);
+  };
+
+  // Yazarken arama: kullanıcı yazmayı bıraktıktan 250ms sonra /api/search'e
+  // istek atılır; her yeni tuş vuruşunda önceki zamanlayıcı ve istek iptal edilir.
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setSuggestions([]);
+      setSuggestionsOpen(false);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
+        .then((res) => res.json())
+        .then((data: { products: SearchSuggestion[] }) => {
+          setSuggestions(data.products ?? []);
+          setSuggestionsOpen(true);
+        })
+        .catch((err) => {
+          if (err?.name !== "AbortError") setSuggestions([]);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setIsSearching(false);
+        });
+    }, 250);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [searchQuery]);
+
+  // Arama kutusunun/panelinin dışına tıklanınca öneri panelini kapat.
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (desktopSearchRef.current?.contains(target)) return;
+      if (mobileSearchRef.current?.contains(target)) return;
+      setSuggestionsOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      setSuggestionsOpen(false);
+      e.currentTarget.blur();
+    }
   };
 
   // Mega menu/hamburger içindeki bir linke tıklanıp sayfa değiştiğinde, Navbar
@@ -97,6 +233,7 @@ export default function Navbar({ categories, rooms }: Props) {
     setRoomsOpen(false);
     setMenuOpen(false);
     setMobileSearchOpen(false);
+    setSuggestionsOpen(false);
   }
 
   useEffect(() => {
@@ -206,26 +343,42 @@ export default function Navbar({ categories, rooms }: Props) {
           </span>
         </Link>
 
-        {/* Arama barı — masaüstünde her zaman görünür, /arama sonuç sayfasına gönderir */}
-        <form
-          onSubmit={submitSearch}
-          className="hidden flex-1 items-center rounded-full border border-secondary/15 bg-secondary/[0.03] px-6 py-3.5 md:flex"
-        >
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Ne arıyorsunuz?"
-            className="w-full bg-transparent font-body text-sm text-secondary placeholder:text-secondary-light focus:outline-none"
-          />
-          <button
-            type="submit"
-            aria-label="Ara"
-            className="ml-3 shrink-0 text-secondary-light transition-colors hover:text-primary"
+        {/* Arama barı — masaüstünde her zaman görünür, yazarken öneri panelini açar,
+            Enter'a basınca /arama sonuç sayfasına gönderir */}
+        <div ref={desktopSearchRef} className="relative hidden flex-1 md:block">
+          <form
+            onSubmit={submitSearch}
+            className="flex items-center rounded-full border border-secondary/15 bg-secondary/[0.03] px-6 py-3.5"
           >
-            <FaSearch className="h-4 w-4" />
-          </button>
-        </form>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => suggestions.length > 0 && setSuggestionsOpen(true)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Ne arıyorsunuz?"
+              className="w-full bg-transparent font-body text-sm text-secondary placeholder:text-secondary-light focus:outline-none"
+            />
+            <button
+              type="submit"
+              aria-label="Ara"
+              className="ml-3 shrink-0 text-secondary-light transition-colors hover:text-primary"
+            >
+              <FaSearch className="h-4 w-4" />
+            </button>
+          </form>
+
+          {suggestionsOpen && searchQuery.trim() && (
+            <div className="absolute inset-x-0 top-full z-40 mt-2 overflow-hidden rounded-2xl border border-secondary/10 bg-white shadow-lg">
+              <SearchSuggestionsPanel
+                query={searchQuery.trim()}
+                suggestions={suggestions}
+                isSearching={isSearching}
+                onNavigate={closeSuggestions}
+              />
+            </div>
+          )}
+        </div>
 
         {/* Kullanıcı araçları */}
         <div className="ml-auto flex shrink-0 items-center gap-5">
@@ -288,7 +441,7 @@ export default function Navbar({ categories, rooms }: Props) {
       {/* Mobil tam genişlikte arama katmanı — masaüstü arama kutusu md:hidden olduğu için
           mobil ziyaretçinin arama yapabildiği tek yer burası. */}
       {mobileSearchOpen && (
-        <div className="border-t border-secondary/10 bg-white px-4 py-4 sm:px-6 md:hidden">
+        <div ref={mobileSearchRef} className="border-t border-secondary/10 bg-white px-4 py-4 sm:px-6 md:hidden">
           <form
             onSubmit={submitSearch}
             className="flex items-center gap-3 rounded-full border border-secondary/15 bg-secondary/[0.03] px-5 py-3"
@@ -298,6 +451,7 @@ export default function Navbar({ categories, rooms }: Props) {
               autoFocus
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
               placeholder="Ne arıyorsunuz?"
               className="w-full bg-transparent font-body text-sm text-secondary placeholder:text-secondary-light focus:outline-none"
             />
@@ -313,6 +467,17 @@ export default function Navbar({ categories, rooms }: Props) {
               <FaTimes className="h-4 w-4" />
             </button>
           </form>
+
+          {suggestionsOpen && searchQuery.trim() && (
+            <div className="mt-2 overflow-hidden rounded-2xl border border-secondary/10 bg-white shadow-sm">
+              <SearchSuggestionsPanel
+                query={searchQuery.trim()}
+                suggestions={suggestions}
+                isSearching={isSearching}
+                onNavigate={closeSuggestions}
+              />
+            </div>
+          )}
         </div>
       )}
 
