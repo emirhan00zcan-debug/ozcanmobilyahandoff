@@ -4,6 +4,7 @@ import { ModuleInspector } from "./components/ModuleInspector";
 import { PlannerCanvas } from "./components/PlannerCanvas";
 import { ProductLibrary } from "./components/ProductLibrary";
 import { fetchCatalog } from "./lib/catalog";
+import { readHandoffToken } from "./lib/handoff";
 import { usePlannerStore } from "./lib/store";
 import type { PlannerModule } from "./lib/types";
 
@@ -63,6 +64,9 @@ export default function App() {
   const [bomOpen, setBomOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
+  // Ana siteden gelen devir token'ı (bkz. lib/handoff.ts) — URL sorgu
+  // parametreleri oturum boyunca değişmediğinden bir kez okunması yeterli.
+  const [handoffToken] = useState<string | null>(() => readHandoffToken());
 
   // React 19 StrictMode geliştirme modunda mount effect'ini iki kez çalıştırır;
   // `modules.length` gibi durum-tabanlı bir bekçi bunu yakalayamaz çünkü her
@@ -181,7 +185,7 @@ export default function App() {
         )}
         {viewMode === "2d" && <ModuleInspector />}
       </div>
-      {bomOpen && <BomPanel onClose={() => setBomOpen(false)} />}
+      {bomOpen && <BomPanel onClose={() => setBomOpen(false)} handoffToken={handoffToken} />}
       {libraryOpen && <ProductLibrary onClose={() => setLibraryOpen(false)} />}
     </div>
   );

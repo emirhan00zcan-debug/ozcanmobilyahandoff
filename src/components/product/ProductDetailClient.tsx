@@ -86,6 +86,8 @@ export default function ProductDetailClient({ product }: Props) {
   const [isInstallmentOpen, setIsInstallmentOpen] = useState(false);
   const [isSampleModalOpen, setIsSampleModalOpen] = useState(false);
   const [wantsInstallation, setWantsInstallation] = useState(false);
+  const [plannerLoading, setPlannerLoading] = useState(false);
+  const [plannerError, setPlannerError] = useState<string | null>(null);
 
   // Lightbox açıkken sayfa kaydırılmasını (scroll) önle
   useEffect(() => {
@@ -232,6 +234,29 @@ export default function ProductDetailClient({ product }: Props) {
       installationPrice: product.installationPrice ?? 0,
     });
     router.push(status === "authenticated" ? "/odeme" : "/giris?callbackUrl=%2Fodeme");
+  };
+
+  // "Odanda Tasarla" — planlayıcı SPA'sına (ayrı orijin) kısa ömürlü imzalı bir
+  // devir token'ıyla geçiş yapar (bkz. src/lib/planner-handoff.ts, Mimari
+  // Doküman §1.2). Oturumsuz kullanıcı, handleBuyNow ile aynı desende /giris'e
+  // dönüş adresiyle yönlendirilir — bu sayfaya geri gelip tekrar denesin diye.
+  const handleDesignInRoom = async () => {
+    if (status !== "authenticated") {
+      router.push(`/giris?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    setPlannerError(null);
+    setPlannerLoading(true);
+    try {
+      const res = await fetch(`/api/planner/handoff?product_slug=${encodeURIComponent(product.slug)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "İstek başarısız oldu");
+      const plannerBaseUrl = process.env.NEXT_PUBLIC_PLANNER_URL;
+      window.location.href = `${plannerBaseUrl}/planla?product_id=${data.productId}&handoff=${data.token}`;
+    } catch (e) {
+      setPlannerError(e instanceof Error ? e.message : "Planlayıcıya bağlanılamadı");
+      setPlannerLoading(false);
+    }
   };
 
   const handleShare = (platform: SharePlatform) => {
@@ -647,6 +672,23 @@ export default function ProductDetailClient({ product }: Props) {
             >
               Hemen Satın Alın
             </button>
+          )}
+
+          {/* Odanda Tasarla — planlayıcı henüz ayrı deploy edilmediği sürece
+              NEXT_PUBLIC_PLANNER_URL boş olacağından buton hiç görünmez
+              (bkz. .env.example). */}
+          {process.env.NEXT_PUBLIC_PLANNER_URL && (
+            <>
+              <button
+                type="button"
+                onClick={handleDesignInRoom}
+                disabled={plannerLoading}
+                className="btn-sweep mt-3 w-full rounded-full border border-primary/30 py-3.5 font-body text-sm font-semibold text-secondary disabled:opacity-60"
+              >
+                {plannerLoading ? "Yükleniyor…" : "Odanda Tasarla"}
+              </button>
+              {plannerError && <p className="mt-2 font-body text-xs text-red-600">{plannerError}</p>}
+            </>
           )}
 
           {/* Bilgi ikonları */}
