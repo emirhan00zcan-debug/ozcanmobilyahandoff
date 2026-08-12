@@ -48,22 +48,27 @@ export function BomPanel({ onClose, handoffToken }: { onClose: () => void; hando
       onClick={onClose}
     >
       <div
-        style={{ background: "#fff", border: "1px solid #c6d0cb", padding: 20, width: 420, maxWidth: "90vw" }}
+        className="panel"
+        style={{ padding: 22, width: 440, maxWidth: "90vw" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-          <h2 style={{ fontSize: 14, margin: 0 }}>Parça Listesi (BOM)</h2>
-          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", fontSize: 13 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--ink)" }}>Parça Listesi (BOM)</h2>
+          <button
+            onClick={onClose}
+            style={{ border: "none", background: "none", cursor: "pointer", fontSize: 13, color: "var(--ink-muted)" }}
+          >
             Kapat
           </button>
         </div>
         <pre
+          className="mono"
           style={{
-            fontFamily: "Consolas, monospace",
             fontSize: 12,
-            background: "#e4e9e6",
-            border: "1px solid #c6d0cb",
-            padding: 10,
+            background: "var(--surface-2)",
+            border: "1px solid var(--rule)",
+            borderRadius: "var(--radius-sm)",
+            padding: 12,
             maxHeight: 320,
             overflow: "auto",
           }}
@@ -71,39 +76,15 @@ export function BomPanel({ onClose, handoffToken }: { onClose: () => void; hando
           {json}
         </pre>
 
-        {error && <p style={{ color: "#a84e29", fontSize: 12, margin: "8px 0 0" }}>{error}</p>}
+        {error && <p style={{ color: "var(--warn)", fontSize: 12, margin: "10px 0 0" }}>{error}</p>}
 
-        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-          <button
-            onClick={handleDownload}
-            style={{
-              fontFamily: "Consolas, monospace",
-              fontSize: 12,
-              padding: "6px 10px",
-              border: "1px solid #1f5ca6",
-              color: "#1f5ca6",
-              background: "#fff",
-              cursor: "pointer",
-            }}
-          >
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <button className="btn" onClick={handleDownload}>
             bom.json indir
           </button>
 
           {handoffToken && (
-            <button
-              onClick={handleSendToCart}
-              disabled={sending || bom.length === 0}
-              style={{
-                fontFamily: "Consolas, monospace",
-                fontSize: 12,
-                padding: "6px 10px",
-                border: "1px solid #1f5ca6",
-                color: "#fff",
-                background: "#1f5ca6",
-                cursor: sending || bom.length === 0 ? "default" : "pointer",
-                opacity: sending || bom.length === 0 ? 0.6 : 1,
-              }}
-            >
+            <button className="btn btn-active" onClick={handleSendToCart} disabled={sending || bom.length === 0}>
               {sending ? "Gönderiliyor…" : "Sepete Gönder"}
             </button>
           )}

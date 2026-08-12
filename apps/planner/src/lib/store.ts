@@ -101,6 +101,13 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     const target = modules.find((m) => m.id === id);
     if (!target) return null;
 
+    // Gerçek kaynak veri her zaman tam sayı mm'dir (bkz. types.ts) — pointer'dan
+    // gelen px/scale bölmesi ondalıklı değer üretir, burada kesin olarak tamsayıya
+    // yuvarlanır (ör. "503,3190571mm" gibi göstergelerin nedeni buradaki yuvarlamanın
+    // eksik olmasıydı).
+    x = Math.round(x);
+    y = Math.round(y);
+
     const others = modules.filter((m) => m.id !== id).map(moduleFootprint);
     const desired: Rect = { ...moduleFootprint(target), x, y };
     const afterWallSnap = snapToWalls(desired, room.walls, snapThresholdMm);
@@ -129,6 +136,9 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
   // Sayısal panelden gelen giriş kesin bir komuttur — snap uygulanmaz (§3.4),
   // yalnızca çarpışma hâlâ ihlal edilemez bir fiziksel kısıttır.
   setModulePosition: (id, x, y) => {
+    x = Math.round(x);
+    y = Math.round(y);
+
     const { modules } = get();
     const target = modules.find((m) => m.id === id);
     if (!target) return;
@@ -217,7 +227,7 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     const wallLen = wallLength(wall);
     const { t } = closestPointOnWall(point, wall);
     const rawOffset = t * wallLen - defaults.widthMm / 2;
-    const offsetMm = Math.max(0, Math.min(wallLen - defaults.widthMm, rawOffset));
+    const offsetMm = Math.round(Math.max(0, Math.min(wallLen - defaults.widthMm, rawOffset)));
 
     const opening: Opening = { id: crypto.randomUUID(), wallId: wall.id, type: openingMode, offsetMm, ...defaults };
     set({ room: { ...room, openings: [...room.openings, opening] } });

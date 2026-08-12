@@ -38,18 +38,6 @@ const DEMO_MODULES: PlannerModule[] = [
 
 type Status = "idle" | "loading" | "error" | "done";
 
-const toolbarButtonStyle = {
-  fontFamily: "Consolas, monospace",
-  fontSize: 12,
-  padding: "6px 10px",
-  border: "1px solid #1f5ca6",
-  color: "#1f5ca6",
-  background: "#fff",
-  cursor: "pointer",
-} as const;
-
-const toolbarButtonActiveStyle = { ...toolbarButtonStyle, background: "#1f5ca6", color: "#fff" } as const;
-
 export default function App() {
   const addModule = usePlannerStore((s) => s.addModule);
   const drawMode = usePlannerStore((s) => s.drawMode);
@@ -115,19 +103,23 @@ export default function App() {
   }, [addModule]);
 
   return (
-    <div style={{ padding: 16, maxWidth: 1200 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
-        <h1 style={{ fontSize: 18, margin: 0 }}>Oda &amp; Mobilya Planlayıcı — Faz 2</h1>
+    <div style={{ padding: "20px 20px 40px", maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
+        <h1 style={{ fontSize: 19, fontWeight: 700, letterSpacing: "-0.01em", margin: 0 }}>
+          Oda &amp; Mobilya Planlayıcı
+        </h1>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {viewMode === "2d" && !drawMode && <button style={toolbarButtonStyle} onClick={toggleDrawMode}>Duvar Çiz</button>}
+          {viewMode === "2d" && !drawMode && (
+            <button className="btn" onClick={toggleDrawMode}>
+              Duvar Çiz
+            </button>
+          )}
           {viewMode === "2d" && drawMode && (
             <>
-              <button style={toolbarButtonStyle} onClick={cancelDraft}>İptal</button>
-              <button
-                style={{ ...toolbarButtonStyle, opacity: draftPoints.length < 3 ? 0.4 : 1 }}
-                disabled={draftPoints.length < 3}
-                onClick={finishRoom}
-              >
+              <button className="btn" onClick={cancelDraft}>
+                İptal
+              </button>
+              <button className="btn" disabled={draftPoints.length < 3} onClick={finishRoom}>
                 Bitir ({draftPoints.length} nokta)
               </button>
             </>
@@ -135,13 +127,13 @@ export default function App() {
           {viewMode === "2d" && !drawMode && (
             <>
               <button
-                style={openingMode === "door" ? toolbarButtonActiveStyle : toolbarButtonStyle}
+                className={openingMode === "door" ? "btn btn-active" : "btn"}
                 onClick={() => toggleOpeningMode("door")}
               >
                 Kapı Ekle
               </button>
               <button
-                style={openingMode === "window" ? toolbarButtonActiveStyle : toolbarButtonStyle}
+                className={openingMode === "window" ? "btn btn-active" : "btn"}
                 onClick={() => toggleOpeningMode("window")}
               >
                 Pencere Ekle
@@ -150,17 +142,21 @@ export default function App() {
           )}
           {!drawMode && (
             <button
-              style={viewMode === "3d" ? toolbarButtonActiveStyle : toolbarButtonStyle}
+              className={viewMode === "3d" ? "btn btn-active" : "btn"}
               onClick={() => setViewMode(viewMode === "2d" ? "3d" : "2d")}
             >
               {viewMode === "2d" ? "3D" : "2D"}
             </button>
           )}
-          <button style={toolbarButtonStyle} onClick={() => setLibraryOpen(true)}>Ürünler</button>
-          <button style={toolbarButtonStyle} onClick={() => setBomOpen(true)}>BOM</button>
+          <button className="btn" onClick={() => setLibraryOpen(true)}>
+            Ürünler
+          </button>
+          <button className="btn" onClick={() => setBomOpen(true)}>
+            BOM
+          </button>
         </div>
       </div>
-      <p style={{ fontSize: 13, color: "#54635e", margin: "0 0 12px" }}>
+      <p style={{ fontSize: 13, color: "var(--ink-muted)", margin: "0 0 16px", maxWidth: 640 }}>
         {viewMode === "3d" && "Sürükleyerek çevirin, tekerlek/iki parmakla yakınlaştırın — düzenlemek için 2D'ye dönün."}
         {viewMode === "2d" && drawMode && "Oda köşelerini sırayla tıklayın (dik açıya kilitlenir, 50mm ızgaraya yapışır) — bitince Bitir'e basın."}
         {viewMode === "2d" &&
@@ -175,11 +171,17 @@ export default function App() {
           status === "done" &&
           "Modülü sürükleyerek duvara/diğer modüle yaklaştırın ya da seçip sağdaki panelden mm/rotasyon girin."}
       </p>
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
         {viewMode === "2d" ? (
           <PlannerCanvas />
         ) : (
-          <Suspense fallback={<div style={{ width: "100%", maxWidth: 760, padding: 24, color: "#54635e" }}>3D görünüm yükleniyor…</div>}>
+          <Suspense
+            fallback={
+              <div className="panel" style={{ width: "100%", maxWidth: 760, padding: 24, color: "var(--ink-muted)" }}>
+                3D görünüm yükleniyor…
+              </div>
+            }
+          >
             <Scene3D />
           </Suspense>
         )}

@@ -3,11 +3,32 @@ import { moduleFootprint, orthoLock, snapToGrid } from "../lib/geometry";
 import { usePlannerStore } from "../lib/store";
 import type { Point, Room } from "../lib/types";
 
-const CANVAS_BG = "#eef2f0";
+const CANVAS_BG = "#eef1f0";
+const FLOOR = "#ffffff";
+const WALL = "#7c8884";
+const GRID = "rgba(21,33,31,0.07)";
+const ACCENT = "#1f5ca6";
+const INK = "#15211f";
+const FONT_SANS = '-apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+const FONT_MONO = '"Cascadia Code", Consolas, "SF Mono", "Roboto Mono", monospace';
+const GRID_STEP_MM = 500;
 const PADDING = 40; // px — oda ilk sığdırıldığında kenarlarda bırakılan boşluk
 const MIN_SCALE = 0.015; // px / mm
 const MAX_SCALE = 0.8;
 const SNAP_THRESHOLD_PX = 8; // §3.3 — ekran-pikseli cinsinden sabit hedefleme eşiği
+
+// WCAG bağıl parlaklık — modül rengine göre okunur (beyaz/koyu) etiket rengi
+// seçmek için (bkz. §UX geri bildirimi: sabit koyu metin koyu renkli
+// modüllerde okunmuyordu).
+function relativeLuminance(hex: string): number {
+  const clean = hex.replace("#", "");
+  if (clean.length !== 6) return 1;
+  const toLinear = (v: number) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+  const r = toLinear(parseInt(clean.slice(0, 2), 16) / 255);
+  const g = toLinear(parseInt(clean.slice(2, 4), 16) / 255);
+  const b = toLinear(parseInt(clean.slice(4, 6), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
 
 interface Camera {
   scale: number;
@@ -99,7 +120,16 @@ export function PlannerCanvas() {
   }, [room.id, viewport.w, viewport.h]);
 
   const toPx = useCallback((p: Point): Point => ({ x: p.x * camera.scale + camera.panX, y: p.y * camera.scale + camera.panY }), [camera]);
-  const toMm = useCallback((p: Point): Point => ({ x: (p.x - camera.panX) / camera.scale, y: (p.y - camera.panY) / camera.scale }), [camera]);
+  // Gerçek kaynak veri her zaman tam sayı mm'dir (bkz. types.ts) — px/scale
+  // bölmesi kaçınılmaz olarak ondalıklı üretir, burada kesin yuvarlanır ki
+  // sürükleme/tıklamadan doğan HİÇBİR mm değeri ondalıklı sızmasın.
+  const toMm = useCallback(
+    (p: Point): Point => ({
+      x: Math.round((p.x - camera.panX) / camera.scale),
+      y: Math.round((p.y - camera.panY) / camera.scale),
+    }),
+    [camera],
+  );
 
   // Masaüstünde fare tekerleği ile imlecin altındaki mm noktası sabit kalacak
   // şekilde yakınlaştırma. React'in sentetik onWheel'i pasif dinleyici olduğu
@@ -132,8 +162,54 @@ export function PlannerCanvas() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx.strokeStyle = "#8a938e";
+    // Zemin: dış canvas arka planından ayrışan düz bir yüzey — "içerisi" ile
+    // "dışarısı" arasında net bir figür-zemin ayrımı kurar (bkz. §UX geri
+    // bildirimi: duvar ve zemin öncesinde aynı tondaydı, oda okunmuyordu).
+    const floorPts = room.walls.map((w) => toPx(w.start));
+    if (floorPts.length > 0) {
+      ctx.beginPath();
+      ctx.moveTo(floorPts[0].x, floorPts[0].y);
+      for (const p of floorPts.slice(1)) ctx.lineTo(p.x, p.y);
+      ctx.closePath();
+      ctx.fillStyle = FLOOR;
+      ctx.fill();
+
+      // Izgara: yalnızca anlamlı bir yakınlıkta, zemin poligonuna kırpılmış
+      // (L-şekilli odalarda da doğru çalışır).
+      if (camera.scale * GRID_STEP_MM > 12) {
+        ctx.save();
+        ctx.clip();
+        ctx.strokeStyle = GRID;
+        ctx.lineWidth = 1;
+        const xs = room.walls.map((w) => w.start.x);
+        const ys = room.walls.map((w) => w.start.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        for (let gx = Math.ceil(minX / GRID_STEP_MM) * GRID_STEP_MM; gx <= maxX; gx += GRID_STEP_MM) {
+          const a = toPx({ x: gx, y: minY });
+          const b = toPx({ x: gx, y: maxY });
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+        for (let gy = Math.ceil(minY / GRID_STEP_MM) * GRID_STEP_MM; gy <= maxY; gy += GRID_STEP_MM) {
+          const a = toPx({ x: minX, y: gy });
+          const b = toPx({ x: maxX, y: gy });
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
+    ctx.strokeStyle = WALL;
     ctx.lineJoin = "round";
+    ctx.lineCap = "round";
     for (const wall of room.walls) {
       ctx.lineWidth = Math.max(1, wall.thicknessMm * camera.scale);
       const p1 = toPx(wall.start);
@@ -144,7 +220,7 @@ export function PlannerCanvas() {
       ctx.stroke();
     }
 
-    // Kapı/pencere: önce duvarı arka plan rengiyle "keser", sonra tipe göre
+    // Kapı/pencere: önce duvarı zemin rengiyle "keser", sonra tipe göre
     // renkli bir çizgiyle işaretler.
     for (const opening of room.openings) {
       const wall = room.walls.find((w) => w.id === opening.wallId);
@@ -158,14 +234,14 @@ export function PlannerCanvas() {
         y: wall.start.y + uy * (opening.offsetMm + opening.widthMm),
       });
 
-      ctx.strokeStyle = CANVAS_BG;
+      ctx.strokeStyle = FLOOR;
       ctx.lineWidth = Math.max(1, wall.thicknessMm * camera.scale);
       ctx.beginPath();
       ctx.moveTo(p1.x, p1.y);
       ctx.lineTo(p2.x, p2.y);
       ctx.stroke();
 
-      ctx.strokeStyle = opening.type === "door" ? "#a84e29" : "#1f5ca6";
+      ctx.strokeStyle = opening.type === "door" ? "#a84e29" : ACCENT;
       ctx.lineWidth = Math.max(2, wall.thicknessMm * camera.scale * 0.4);
       ctx.beginPath();
       ctx.moveTo(p1.x, p1.y);
@@ -179,23 +255,39 @@ export function PlannerCanvas() {
       const w = rect.w * camera.scale;
       const h = rect.h * camera.scale;
       const selected = mod.id === selectedModuleId;
+      const color = mod.meta.colorHex ?? "#c9d2cf";
+      const textColor = relativeLuminance(color) > 0.45 ? INK : "#ffffff";
+      const radius = Math.max(0, Math.min(8, w / 4, h / 4));
 
-      ctx.fillStyle = mod.meta.colorHex ?? "#c9d2cf";
-      ctx.fillRect(x, y, w, h);
-      ctx.strokeStyle = selected ? "#1f5ca6" : "#4b5854";
-      ctx.lineWidth = selected ? 2 : 1;
-      ctx.strokeRect(x, y, w, h);
+      ctx.save();
+      ctx.shadowColor = "rgba(21,33,31,0.22)";
+      ctx.shadowBlur = selected ? 12 : 6;
+      ctx.shadowOffsetY = 2;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, radius);
+      ctx.fill();
+      ctx.restore();
 
-      if (w > 50 && h > 24) {
-        ctx.fillStyle = "#12201c";
-        ctx.font = "11px monospace";
-        ctx.fillText(`${rect.w}×${rect.h} mm`, x + 6, y + 16);
-        ctx.fillText(mod.meta.name, x + 6, y + h - 8);
+      ctx.strokeStyle = selected ? ACCENT : "rgba(21,33,31,0.22)";
+      ctx.lineWidth = selected ? 2.5 : 1;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, radius);
+      ctx.stroke();
+
+      if (w > 56 && h > 30) {
+        ctx.fillStyle = textColor;
+        ctx.font = `600 12px ${FONT_SANS}`;
+        ctx.fillText(mod.meta.name, x + 8, y + 18, w - 16);
+        ctx.font = `11px ${FONT_MONO}`;
+        ctx.globalAlpha = 0.82;
+        ctx.fillText(`${rect.w}×${rect.h} mm`, x + 8, y + h - 9, w - 16);
+        ctx.globalAlpha = 1;
       }
     }
 
     if (drawMode && draftPoints.length > 0) {
-      ctx.strokeStyle = "#1f5ca6";
+      ctx.strokeStyle = ACCENT;
       ctx.lineWidth = 2;
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
@@ -212,12 +304,15 @@ export function PlannerCanvas() {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = "#1f5ca6";
       for (const p of draftPoints) {
         const px = toPx(p);
         ctx.beginPath();
-        ctx.arc(px.x, px.y, 4, 0, Math.PI * 2);
+        ctx.arc(px.x, px.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
         ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = ACCENT;
+        ctx.stroke();
       }
     }
   }, [room, modules, selectedModuleId, drawMode, draftPoints, cursorMm, camera, toPx, viewport]);
@@ -365,7 +460,8 @@ export function PlannerCanvas() {
         style={{
           touchAction: "none",
           background: CANVAS_BG,
-          border: "1px solid #c6d0cb",
+          border: "1px solid #dbe1de",
+          borderRadius: 10,
           display: "block",
           width: "100%",
           height: "auto",
@@ -384,14 +480,16 @@ export function PlannerCanvas() {
             left: magnifier.screenPos.x,
             top: magnifier.screenPos.y - 44,
             transform: "translateX(-50%)",
-            background: magnifier.blocked ? "#a84e29" : "#182422",
+            background: magnifier.blocked ? "#b5502a" : "#15211f",
             color: "#fff",
-            padding: "5px 9px",
+            padding: "6px 10px",
             fontSize: 11,
-            fontFamily: "Consolas, monospace",
+            fontFamily: "var(--font-mono)",
+            fontVariantNumeric: "tabular-nums",
             whiteSpace: "nowrap",
             pointerEvents: "none",
-            borderRadius: 2,
+            borderRadius: 6,
+            boxShadow: "0 4px 12px rgba(21,33,31,0.28)",
           }}
         >
           {Math.round(magnifier.mm.x)}, {Math.round(magnifier.mm.y)} mm

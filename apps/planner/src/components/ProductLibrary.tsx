@@ -36,50 +36,52 @@ export function ProductLibrary({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        style={{ background: "#fff", border: "1px solid #c6d0cb", padding: 20, width: 640, maxWidth: "90vw", maxHeight: "80vh", overflow: "auto" }}
+        className="panel"
+        style={{ padding: 22, width: 660, maxWidth: "90vw", maxHeight: "80vh", overflow: "auto" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-          <h2 style={{ fontSize: 14, margin: 0 }}>Ürün Kütüphanesi</h2>
-          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", fontSize: 13 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--ink)" }}>Ürün Kütüphanesi</h2>
+          <button
+            onClick={onClose}
+            style={{ border: "none", background: "none", cursor: "pointer", fontSize: 13, color: "var(--ink-muted)" }}
+          >
             Kapat
           </button>
         </div>
 
-        {status === "loading" && <p style={{ color: "#54635e", fontSize: 13 }}>Yükleniyor…</p>}
-        {status === "error" && <p style={{ color: "#54635e", fontSize: 13 }}>Hata: {error}</p>}
+        {status === "loading" && <p style={{ color: "var(--ink-muted)", fontSize: 13 }}>Yükleniyor…</p>}
+        {status === "error" && <p style={{ color: "var(--ink-muted)", fontSize: 13 }}>Hata: {error}</p>}
         {status === "done" && products.length === 0 && (
-          <p style={{ color: "#54635e", fontSize: 13 }}>Ürün bulunamadı.</p>
+          <p style={{ color: "var(--ink-muted)", fontSize: 13 }}>Ürün bulunamadı.</p>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 12 }}>
           {products.map((p) => (
-            <div key={p.productId} style={{ border: "1px solid #c6d0cb", padding: 8, fontSize: 12 }}>
+            <div
+              key={p.productId}
+              className="panel"
+              style={{ padding: 10, fontSize: 12, boxShadow: "none" }}
+            >
               {p.images[0] ? (
-                <img src={p.images[0]} alt={p.name} style={{ width: "100%", height: 90, objectFit: "cover", marginBottom: 6 }} />
+                <img
+                  src={p.images[0]}
+                  alt={p.name}
+                  style={{ width: "100%", height: 96, objectFit: "cover", borderRadius: "var(--radius-sm)", marginBottom: 8 }}
+                />
               ) : (
-                <div style={{ width: "100%", height: 90, background: "#e4e9e6", marginBottom: 6 }} />
+                <div
+                  style={{ width: "100%", height: 96, background: "var(--surface-2)", borderRadius: "var(--radius-sm)", marginBottom: 8 }}
+                />
               )}
-              <div style={{ fontWeight: 600, marginBottom: 2 }}>{p.name}</div>
-              <div style={{ color: "#54635e", marginBottom: 2, fontFamily: "Consolas, monospace" }}>
+              <div style={{ fontWeight: 600, marginBottom: 4, color: "var(--ink)" }}>{p.name}</div>
+              <div className="mono" style={{ color: "var(--ink-muted)", marginBottom: 2, fontSize: 11.5 }}>
                 {p.dimensionsMm.w}×{p.dimensionsMm.h}×{p.dimensionsMm.d} mm
               </div>
-              <div style={{ color: "#54635e", marginBottom: 6, fontFamily: "Consolas, monospace" }}>
+              <div className="mono" style={{ color: "var(--ink)", marginBottom: 8, fontSize: 13, fontWeight: 600 }}>
                 {p.basePrice.toLocaleString("tr-TR")} ₺
               </div>
-              <button
-                onClick={() => addModuleFromCatalog(p)}
-                style={{
-                  width: "100%",
-                  fontFamily: "Consolas, monospace",
-                  fontSize: 12,
-                  padding: "5px 8px",
-                  border: "1px solid #1f5ca6",
-                  color: "#1f5ca6",
-                  background: "#fff",
-                  cursor: "pointer",
-                }}
-              >
+              <button className="btn" style={{ width: "100%" }} onClick={() => addModuleFromCatalog(p)}>
                 Ekle
               </button>
             </div>
