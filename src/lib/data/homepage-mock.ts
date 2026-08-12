@@ -103,7 +103,7 @@ export const featuredProductsBanner: FeaturedBanner = {
   eyebrow: "Evinize Özel Ölçü",
   title: "Gardrop Çözümlerinde Yeni Sezon",
   ctaLabel: "Keşfet",
-  ctaHref: "/iletisim",
+  ctaHref: "/kategori/gardirop",
   imageUrl: "/media/premium-bedroom.jpg",
 };
 
