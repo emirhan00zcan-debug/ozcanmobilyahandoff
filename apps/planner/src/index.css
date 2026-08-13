@@ -156,6 +156,34 @@ body {
   margin: 2px auto 12px;
 }
 
+/* PrintPlan (Faz 4): yalnızca .print-plan-sheet yazdırılır — standart
+   "yalnızca bu öğeyi yazdır" tekniği (display:none yerine visibility, ki
+   sabit/mutlak konumlu üst kapsayıcılar yazdırma sayfa düzeninde kırpmasın). */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-plan-sheet,
+  .print-plan-sheet * {
+    visibility: visible;
+  }
+  .print-plan-sheet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-shadow: none;
+    border: none;
+  }
+  .print-hide {
+    display: none !important;
+  }
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+}
+
 @media (min-width: 700px) {
   .inspector {
     position: static;

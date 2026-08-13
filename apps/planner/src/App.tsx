@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { BomPanel } from "./components/BomPanel";
 import { ModuleInspector } from "./components/ModuleInspector";
 import { PlannerCanvas } from "./components/PlannerCanvas";
+import { PrintPlan } from "./components/PrintPlan";
 import { ProductLibrary } from "./components/ProductLibrary";
 import { fetchCatalog } from "./lib/catalog";
 import { readHandoffToken } from "./lib/handoff";
@@ -51,6 +52,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [bomOpen, setBomOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [printOpen, setPrintOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
   // Ana siteden gelen devir token'ı (bkz. lib/handoff.ts) — URL sorgu
   // parametreleri oturum boyunca değişmediğinden bir kez okunması yeterli.
@@ -154,6 +156,9 @@ export default function App() {
           <button className="btn" onClick={() => setBomOpen(true)}>
             BOM
           </button>
+          <button className="btn" onClick={() => setPrintOpen(true)}>
+            PDF
+          </button>
         </div>
       </div>
       <p style={{ fontSize: 13, color: "var(--ink-muted)", margin: "0 0 16px", maxWidth: 640 }}>
@@ -189,6 +194,7 @@ export default function App() {
       </div>
       {bomOpen && <BomPanel onClose={() => setBomOpen(false)} handoffToken={handoffToken} />}
       {libraryOpen && <ProductLibrary onClose={() => setLibraryOpen(false)} />}
+      {printOpen && <PrintPlan onClose={() => setPrintOpen(false)} />}
     </div>
   );
 }
