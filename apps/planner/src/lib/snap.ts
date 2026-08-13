@@ -28,7 +28,7 @@ function pointInPolygon(point: Point, vertices: Point[]): boolean {
 // 1mm'lik bir "yoklama" noktası çıkarılıp hangisi poligonun içindeyse o taraf
 // iç mekan kabul edilir — herhangi bir basit rektilineer poligon için doğru
 // sonucu garanti eder.
-function inwardSign(wall: Wall, polygon: Point[], axis: "x" | "y"): 1 | -1 {
+export function inwardSign(wall: Wall, polygon: Point[], axis: "x" | "y"): 1 | -1 {
   const midX = (wall.start.x + wall.end.x) / 2;
   const midY = (wall.start.y + wall.end.y) / 2;
   const probe: Point = axis === "y" ? { x: midX, y: midY + 1 } : { x: midX + 1, y: midY };

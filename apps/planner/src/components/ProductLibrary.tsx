@@ -6,9 +6,34 @@ type Status = "loading" | "error" | "done";
 
 export function ProductLibrary({ onClose }: { onClose: () => void }) {
   const addModuleFromCatalog = usePlannerStore((s) => s.addModuleFromCatalog);
+  const autoArrangeProducts = usePlannerStore((s) => s.autoArrangeProducts);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [status, setStatus] = useState<Status>("loading");
   const [error, setError] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [arrangeMessage, setArrangeMessage] = useState<string | null>(null);
+
+  const toggleSelected = (productId: string) => {
+    setArrangeMessage(null);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  };
+
+  const handleAutoArrange = () => {
+    const selected = products.filter((p) => selectedIds.has(p.productId));
+    if (selected.length === 0) return;
+    const { placedCount, unplacedCount } = autoArrangeProducts(selected);
+    setSelectedIds(new Set());
+    setArrangeMessage(
+      unplacedCount === 0
+        ? `${placedCount} ürün duvarlara yerleştirildi.`
+        : `${placedCount} ürün yerleştirildi, ${unplacedCount} ürün için uygun boş duvar bulunamadı (elle yerleştirebilirsiniz).`,
+    );
+  };
 
   useEffect(() => {
     fetchCatalogBrowse(24)
@@ -40,15 +65,28 @@ export function ProductLibrary({ onClose }: { onClose: () => void }) {
         style={{ padding: 22, width: 660, maxWidth: "90vw", maxHeight: "80vh", overflow: "auto" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8, gap: 10, flexWrap: "wrap" }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--ink)" }}>Ürün Kütüphanesi</h2>
-          <button
-            onClick={onClose}
-            style={{ border: "none", background: "none", cursor: "pointer", fontSize: 13, color: "var(--ink-muted)" }}
-          >
-            Kapat
-          </button>
+          <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+            {selectedIds.size > 0 && (
+              <button className="btn" onClick={handleAutoArrange}>
+                Seçilenleri Otomatik Yerleştir ({selectedIds.size})
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              style={{ border: "none", background: "none", cursor: "pointer", fontSize: 13, color: "var(--ink-muted)" }}
+            >
+              Kapat
+            </button>
+          </div>
         </div>
+        <p style={{ fontSize: 12, color: "var(--ink-muted)", margin: "0 0 14px" }}>
+          Duvarlara otomatik yerleştirmek için ürün(ler) seçin, ya da tek tek "Ekle" ile elle yerleştirin.
+        </p>
+        {arrangeMessage && (
+          <p style={{ fontSize: 12, color: "var(--ink)", margin: "0 0 14px", fontWeight: 600 }}>{arrangeMessage}</p>
+        )}
 
         {status === "loading" && <p style={{ color: "var(--ink-muted)", fontSize: 13 }}>Yükleniyor…</p>}
         {status === "error" && <p style={{ color: "var(--ink-muted)", fontSize: 13 }}>Hata: {error}</p>}
@@ -63,6 +101,14 @@ export function ProductLibrary({ onClose }: { onClose: () => void }) {
               className="panel"
               style={{ padding: 10, fontSize: 12, boxShadow: "none" }}
             >
+              <label style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, color: "var(--ink-muted)", fontSize: 11 }}>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(p.productId)}
+                  onChange={() => toggleSelected(p.productId)}
+                />
+                Otomatik yerleştir için seç
+              </label>
               {p.images[0] ? (
                 <img
                   src={p.images[0]}

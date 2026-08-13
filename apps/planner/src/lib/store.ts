@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { autoPlaceProducts } from "./autoLayout";
 import type { CatalogProduct } from "./catalog";
 import { hasCollision, moduleFootprint, type Rect } from "./geometry";
 import { closestPointOnWall, findOpeningAt, findWallAt, wallLength } from "./openings";
@@ -37,6 +38,7 @@ interface PlannerState {
   selectedModuleId: string | null;
   addModule: (m: PlannerModule) => void;
   addModuleFromCatalog: (product: CatalogProduct) => void;
+  autoArrangeProducts: (products: CatalogProduct[]) => { placedCount: number; unplacedCount: number };
   selectModule: (id: string | null) => void;
   moveModule: (id: string, x: number, y: number, snapThresholdMm?: number) => MoveResult | null;
   setModulePosition: (id: string, x: number, y: number) => void;
@@ -87,6 +89,15 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
       meta: { name: product.name, colorHex: product.variations[0]?.hexColor ?? null },
     };
     set({ modules: [...modules, newModule] });
+  },
+
+  // Seçili katalog ürünlerini boş duvarlara otomatik yerleştirir (bkz.
+  // autoLayout.ts) — deterministik geometri, üretken/görsel AI değil.
+  autoArrangeProducts: (products) => {
+    const { room, modules } = get();
+    const { placed, unplaced } = autoPlaceProducts(room, modules, products);
+    if (placed.length > 0) set({ modules: [...modules, ...placed] });
+    return { placedCount: placed.length, unplacedCount: unplaced.length };
   },
 
   selectModule: (id) => set({ selectedModuleId: id }),
