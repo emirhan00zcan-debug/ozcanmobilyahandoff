@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { usePlannerStore } from "../lib/store";
 
 const STEP_MM = 10;
+const COLLISION_WARNING = "Bu konum başka bir modülle veya duvarla çakışıyor — konum değiştirilmedi.";
 
 export function ModuleInspector() {
   const modules = usePlannerStore((s) => s.modules);
@@ -8,8 +10,15 @@ export function ModuleInspector() {
   const selectModule = usePlannerStore((s) => s.selectModule);
   const setModulePosition = usePlannerStore((s) => s.setModulePosition);
   const rotateModule = usePlannerStore((s) => s.rotateModule);
+  const [warning, setWarning] = useState(false);
 
   const selected = modules.find((m) => m.id === selectedModuleId);
+
+  // Modül değişince (ya da seçim kapanınca) önceki modüle ait uyarı yeni
+  // seçime taşınmasın.
+  useEffect(() => {
+    setWarning(false);
+  }, [selectedModuleId]);
 
   if (!selected) {
     return (
@@ -20,8 +29,13 @@ export function ModuleInspector() {
     );
   }
 
-  const stepX = (delta: number) => setModulePosition(selected.id, selected.position.x + delta, selected.position.y);
-  const stepY = (delta: number) => setModulePosition(selected.id, selected.position.x, selected.position.y + delta);
+  // Sayısal panelden gelen konum kesin bir komuttur (§3.4) — çakışırsa
+  // önceden sessizce yok sayılıyordu (input eski değere geri dönüyordu ama
+  // neden belli değildi). Artık ret durumu görünür bir uyarıya çevriliyor.
+  const applyPosition = (x: number, y: number) => setWarning(!setModulePosition(selected.id, x, y));
+
+  const stepX = (delta: number) => applyPosition(selected.position.x + delta, selected.position.y);
+  const stepY = (delta: number) => applyPosition(selected.position.x, selected.position.y + delta);
 
   return (
     <aside className="inspector open">
@@ -58,7 +72,7 @@ export function ModuleInspector() {
             type="number"
             className="field-input"
             value={selected.position.x}
-            onChange={(e) => setModulePosition(selected.id, Number(e.target.value), selected.position.y)}
+            onChange={(e) => applyPosition(Number(e.target.value), selected.position.y)}
           />
           <button className="btn-step" onClick={() => stepX(STEP_MM)}>
             +
@@ -76,13 +90,17 @@ export function ModuleInspector() {
             type="number"
             className="field-input"
             value={selected.position.y}
-            onChange={(e) => setModulePosition(selected.id, selected.position.x, Number(e.target.value))}
+            onChange={(e) => applyPosition(selected.position.x, Number(e.target.value))}
           />
           <button className="btn-step" onClick={() => stepY(STEP_MM)}>
             +
           </button>
         </div>
       </label>
+
+      {warning && (
+        <p style={{ fontSize: 12, color: "var(--warn)", margin: "0 0 12px", lineHeight: 1.4 }}>{COLLISION_WARNING}</p>
+      )}
 
       <div style={{ marginBottom: 12 }}>
         <span className="field-label">Rotasyon</span>

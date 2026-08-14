@@ -9,6 +9,7 @@ const WALL = "#7c8884";
 const GRID = "rgba(21,33,31,0.07)";
 const ACCENT = "#1f5ca6";
 const INK = "#15211f";
+const WARN = "#b5502a";
 const FONT_SANS = '-apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const FONT_MONO = '"Cascadia Code", Consolas, "SF Mono", "Roboto Mono", monospace';
 const GRID_STEP_MM = 500;
@@ -73,6 +74,8 @@ interface MagnifierState {
   mm: Point;
   blocked: boolean;
   snapTarget: "wall" | "neighbor" | null;
+  moduleId: string;
+  attempted: Point;
 }
 
 export function PlannerCanvas() {
@@ -286,6 +289,31 @@ export function PlannerCanvas() {
       }
     }
 
+    // Çakışma uyarısı (§Faz 4): sürüklenen modül çarpışma nedeniyle
+    // engellendiğinde, modül son geçerli konumunda kalır ama kullanıcının
+    // bırakmaya çalıştığı yerde kırmızı, kesikli bir "olmuyor" hayaleti
+    // gösterilir — önceden görsel hiçbir geri bildirim yoktu (yalnızca
+    // büyüteçteki küçük metin).
+    if (magnifier?.blocked) {
+      const draggedModule = modules.find((m) => m.id === magnifier.moduleId);
+      if (draggedModule) {
+        const footprint = moduleFootprint(draggedModule);
+        const { x, y } = toPx(magnifier.attempted);
+        const w = footprint.w * camera.scale;
+        const h = footprint.h * camera.scale;
+        ctx.save();
+        ctx.setLineDash([6, 4]);
+        ctx.fillStyle = "rgba(181,80,42,0.16)";
+        ctx.strokeStyle = WARN;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, Math.max(0, Math.min(8, w / 4, h / 4)));
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
     if (drawMode && draftPoints.length > 0) {
       ctx.strokeStyle = ACCENT;
       ctx.lineWidth = 2;
@@ -315,7 +343,7 @@ export function PlannerCanvas() {
         ctx.stroke();
       }
     }
-  }, [room, modules, selectedModuleId, drawMode, draftPoints, cursorMm, camera, toPx, viewport]);
+  }, [room, modules, selectedModuleId, drawMode, draftPoints, cursorMm, camera, toPx, viewport, magnifier]);
 
   const findModuleAt = useCallback(
     (mmX: number, mmY: number) => {
@@ -421,7 +449,14 @@ export function PlannerCanvas() {
       const mm = toMm(localPx);
       const result = moveModule(gesture.id, mm.x - gesture.offsetX, mm.y - gesture.offsetY, SNAP_THRESHOLD_PX / camera.scale);
       if (result) {
-        setMagnifier({ screenPos: localPx, mm: { x: result.x, y: result.y }, blocked: result.blocked, snapTarget: result.snapTarget });
+        setMagnifier({
+          screenPos: localPx,
+          mm: { x: result.x, y: result.y },
+          blocked: result.blocked,
+          snapTarget: result.snapTarget,
+          moduleId: gesture.id,
+          attempted: { x: result.attemptedX, y: result.attemptedY },
+        });
       }
     }
   };

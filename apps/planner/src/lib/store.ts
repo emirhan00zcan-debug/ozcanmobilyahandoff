@@ -30,6 +30,11 @@ export interface MoveResult {
   y: number;
   blocked: boolean;
   snapTarget: "wall" | "neighbor" | null;
+  // Kullanıcının bırakmaya çalıştığı, snap/çakışma öncesi ham mm konumu —
+  // engellendiğinde çakışma uyarı arayüzünün (§Faz 4) "buraya koymaya
+  // çalıştın ama olmuyor" hayalet dikdörtgenini çizebilmesi için.
+  attemptedX: number;
+  attemptedY: number;
 }
 
 interface PlannerState {
@@ -41,7 +46,8 @@ interface PlannerState {
   autoArrangeProducts: (products: CatalogProduct[]) => { placedCount: number; unplacedCount: number };
   selectModule: (id: string | null) => void;
   moveModule: (id: string, x: number, y: number, snapThresholdMm?: number) => MoveResult | null;
-  setModulePosition: (id: string, x: number, y: number) => void;
+  // true: konum uygulandı. false: çarpışma nedeniyle reddedildi (§Faz 4 çakışma uyarısı bunu kullanır).
+  setModulePosition: (id: string, x: number, y: number) => boolean;
   rotateModule: (id: string) => void;
 
   drawMode: boolean;
@@ -141,26 +147,31 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
       x: blocked ? target.position.x : snapped.x,
       y: blocked ? target.position.y : snapped.y,
       snapTarget: blocked ? null : neighborSnapped ? "neighbor" : wallSnapped ? "wall" : null,
+      attemptedX: x,
+      attemptedY: y,
     };
   },
 
   // Sayısal panelden gelen giriş kesin bir komuttur — snap uygulanmaz (§3.4),
-  // yalnızca çarpışma hâlâ ihlal edilemez bir fiziksel kısıttır.
+  // yalnızca çarpışma hâlâ ihlal edilemez bir fiziksel kısıttır. Dönüş değeri
+  // arayüzün (ModuleInspector) reddi kullanıcıya göstermesini sağlar — önceden
+  // sessizce yok sayılıyordu.
   setModulePosition: (id, x, y) => {
     x = Math.round(x);
     y = Math.round(y);
 
     const { modules } = get();
     const target = modules.find((m) => m.id === id);
-    if (!target) return;
+    if (!target) return false;
 
     const others = modules.filter((m) => m.id !== id).map(moduleFootprint);
     const rect: Rect = { ...moduleFootprint(target), x, y };
-    if (hasCollision(rect, others)) return;
+    if (hasCollision(rect, others)) return false;
 
     set({
       modules: modules.map((m) => (m.id === id ? { ...m, position: { ...m.position, x, y } } : m)),
     });
+    return true;
   },
 
   rotateModule: (id) => {
