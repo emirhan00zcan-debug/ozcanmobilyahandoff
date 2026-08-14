@@ -6,25 +6,51 @@ const COLLISION_WARNING = "Bu konum başka bir modülle veya duvarla çakışıy
 
 export function ModuleInspector() {
   const modules = usePlannerStore((s) => s.modules);
-  const selectedModuleId = usePlannerStore((s) => s.selectedModuleId);
+  const selectedModuleIds = usePlannerStore((s) => s.selectedModuleIds);
   const selectModule = usePlannerStore((s) => s.selectModule);
   const setModulePosition = usePlannerStore((s) => s.setModulePosition);
   const rotateModule = usePlannerStore((s) => s.rotateModule);
   const [warning, setWarning] = useState(false);
 
-  const selected = modules.find((m) => m.id === selectedModuleId);
+  const selectedList = modules.filter((m) => selectedModuleIds.includes(m.id));
+  const selected = selectedList.length === 1 ? selectedList[0] : undefined;
 
-  // Modül değişince (ya da seçim kapanınca) önceki modüle ait uyarı yeni
-  // seçime taşınmasın.
+  // Seçim değişince (modül, grup ya da kapanış) önceki uyarı yeni duruma taşınmasın.
   useEffect(() => {
     setWarning(false);
-  }, [selectedModuleId]);
+  }, [selectedModuleIds]);
 
-  if (!selected) {
+  if (selectedList.length === 0) {
     return (
       <aside className="inspector">
         <div className="inspector-handle" />
-        <p style={{ color: "var(--ink-muted)", fontSize: 13, margin: 0 }}>Düzenlemek için bir modül seçin.</p>
+        <p style={{ color: "var(--ink-muted)", fontSize: 13, margin: 0 }}>
+          Düzenlemek için bir modül seçin. Birden fazla modülü birlikte taşımak için Shift+tıklayarak seçime ekleyin.
+        </p>
+      </aside>
+    );
+  }
+
+  // Grup taşıma (§Faz 4): 2+ modül seçiliyken tek bir modülün X/Y/rotasyonunu
+  // düzenlemek anlamsız (hangisi?) — bunun yerine sadeleştirilmiş bir özet
+  // gösterilir, taşıma canvas'ta sürükleyerek yapılır (bkz. PlannerCanvas
+  // moveModuleGroup).
+  if (!selected) {
+    return (
+      <aside className="inspector open">
+        <div className="inspector-handle" />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: "var(--ink)" }}>{selectedList.length} modül seçili</h2>
+          <button
+            onClick={() => selectModule(null)}
+            style={{ border: "none", background: "none", cursor: "pointer", fontSize: 13, color: "var(--ink-muted)", padding: 4 }}
+          >
+            Kapat
+          </button>
+        </div>
+        <p style={{ color: "var(--ink-muted)", fontSize: 13, margin: 0 }}>
+          Birlikte taşımak için canvas'ta herhangi birini sürükleyin. Tek tek düzenlemek için Shift+tıklayarak seçimi daraltın.
+        </p>
       </aside>
     );
   }

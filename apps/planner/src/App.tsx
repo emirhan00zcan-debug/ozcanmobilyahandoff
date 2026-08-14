@@ -174,7 +174,7 @@ export default function App() {
           !drawMode &&
           !openingMode &&
           status === "done" &&
-          "Modülü sürükleyerek duvara/diğer modüle yaklaştırın ya da seçip sağdaki panelden mm/rotasyon girin."}
+          "Modülü sürükleyerek duvara/diğer modüle yaklaştırın ya da seçip sağdaki panelden mm/rotasyon girin. Shift+tık ile birden fazla modül seçip birlikte taşıyabilirsiniz."}
       </p>
       <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
         {viewMode === "2d" ? (

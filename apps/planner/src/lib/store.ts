@@ -40,12 +40,16 @@ export interface MoveResult {
 interface PlannerState {
   room: Room;
   modules: PlannerModule[];
-  selectedModuleId: string | null;
+  selectedModuleIds: string[];
   addModule: (m: PlannerModule) => void;
   addModuleFromCatalog: (product: CatalogProduct) => void;
   autoArrangeProducts: (products: CatalogProduct[]) => { placedCount: number; unplacedCount: number };
   selectModule: (id: string | null) => void;
+  toggleSelectModule: (id: string) => void;
   moveModule: (id: string, x: number, y: number, snapThresholdMm?: number) => MoveResult | null;
+  // Birden fazla modül seçiliyken (§Faz 4 grup taşıma) herhangi birini (anchorId)
+  // sürüklemek tüm grubu aynı delta kadar katı bir cisim gibi kaydırır.
+  moveModuleGroup: (anchorId: string, x: number, y: number, snapThresholdMm?: number) => MoveResult | null;
   // true: konum uygulandı. false: çarpışma nedeniyle reddedildi (§Faz 4 çakışma uyarısı bunu kullanır).
   setModulePosition: (id: string, x: number, y: number) => boolean;
   rotateModule: (id: string) => void;
@@ -65,7 +69,7 @@ interface PlannerState {
 export const usePlannerStore = create<PlannerState>((set, get) => ({
   room: DEFAULT_ROOM,
   modules: [],
-  selectedModuleId: null,
+  selectedModuleIds: [],
   drawMode: false,
   draftPoints: [],
   openingMode: null,
@@ -106,7 +110,16 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     return { placedCount: placed.length, unplacedCount: unplaced.length };
   },
 
-  selectModule: (id) => set({ selectedModuleId: id }),
+  selectModule: (id) => set({ selectedModuleIds: id ? [id] : [] }),
+
+  // Shift+tık: tekli seçimi bozmadan bir modülü seçime ekler/çıkarır (§Faz 4
+  // grup taşıma) — mevcut tek-tık davranışı (selectModule) değişmeden kalır.
+  toggleSelectModule: (id) =>
+    set((s) => ({
+      selectedModuleIds: s.selectedModuleIds.includes(id)
+        ? s.selectedModuleIds.filter((x) => x !== id)
+        : [...s.selectedModuleIds, id],
+    })),
 
   // Snap bir öneridir, çarpışma ise kesin bir kısıttır: kilitlenmiş konum
   // başka bir modülle çakışıyorsa taşıma tamamen reddedilir (§3.4). Eşik,
@@ -146,6 +159,60 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
       blocked,
       x: blocked ? target.position.x : snapped.x,
       y: blocked ? target.position.y : snapped.y,
+      snapTarget: blocked ? null : neighborSnapped ? "neighbor" : wallSnapped ? "wall" : null,
+      attemptedX: x,
+      attemptedY: y,
+    };
+  },
+
+  // Grup taşıma (§Faz 4): birden fazla modül seçiliyse, herhangi birini
+  // (anchor) sürüklemek tüm grubu aynı miktar (delta) kaydırır — göreli
+  // yerleşim korunur. Snap yalnızca anchor'a uygulanır (grup üyelerine karşı
+  // değil, aksi halde grup kendi kendine tuhaf şekilde yapışır); sonuçtaki
+  // delta tüm üyelere aynen uygulanır. Çarpışma testi grup-dışı her modüle
+  // karşı ayrı ayrı ama atomik yapılır — biri bile çakışırsa TÜM grup
+  // reddedilir, kısmi taşıma yok (moveModule'daki "çarpışma kesin bir
+  // kısıttır" ilkesiyle aynı, §3.4).
+  moveModuleGroup: (anchorId, x, y, snapThresholdMm) => {
+    const { room, modules, selectedModuleIds } = get();
+    const anchor = modules.find((m) => m.id === anchorId);
+    if (!anchor) return null;
+
+    x = Math.round(x);
+    y = Math.round(y);
+
+    const groupIds = new Set(selectedModuleIds.includes(anchorId) ? selectedModuleIds : [anchorId]);
+    const others = modules.filter((m) => !groupIds.has(m.id)).map(moduleFootprint);
+
+    const desired: Rect = { ...moduleFootprint(anchor), x, y };
+    const afterWallSnap = snapToWalls(desired, room.walls, snapThresholdMm);
+    const snapped = snapToNeighbors(afterWallSnap, others, snapThresholdMm);
+
+    const dx = snapped.x - anchor.position.x;
+    const dy = snapped.y - anchor.position.y;
+
+    const groupMembers = modules.filter((m) => groupIds.has(m.id));
+    const translated = groupMembers.map((m) => {
+      const fp = moduleFootprint(m);
+      return { ...fp, x: fp.x + dx, y: fp.y + dy };
+    });
+    const blocked = translated.some((rect) => hasCollision(rect, others));
+
+    if (!blocked && (dx !== 0 || dy !== 0)) {
+      set({
+        modules: modules.map((m) =>
+          groupIds.has(m.id) ? { ...m, position: { ...m.position, x: m.position.x + dx, y: m.position.y + dy } } : m,
+        ),
+      });
+    }
+
+    const wallSnapped = afterWallSnap.x !== desired.x || afterWallSnap.y !== desired.y;
+    const neighborSnapped = snapped.x !== afterWallSnap.x || snapped.y !== afterWallSnap.y;
+
+    return {
+      blocked,
+      x: blocked ? anchor.position.x : anchor.position.x + dx,
+      y: blocked ? anchor.position.y : anchor.position.y + dy,
       snapTarget: blocked ? null : neighborSnapped ? "neighbor" : wallSnapped ? "wall" : null,
       attemptedX: x,
       attemptedY: y,
@@ -220,7 +287,7 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     set({
       room: { id: "custom-room", dimensionsMm: { width: maxX, depth: maxY, height: 2500 }, walls, openings: [] },
       modules: [],
-      selectedModuleId: null,
+      selectedModuleIds: [],
       drawMode: false,
       draftPoints: [],
     });

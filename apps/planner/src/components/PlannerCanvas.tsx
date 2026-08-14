@@ -66,6 +66,7 @@ function nextDraftPoint(raw: Point, points: Point[]): Point {
 type Gesture =
   | { type: "idle" }
   | { type: "drag-module"; id: string; offsetX: number; offsetY: number }
+  | { type: "drag-group"; anchorId: string; offsetX: number; offsetY: number }
   | { type: "pan"; startClientX: number; startClientY: number; startPanX: number; startPanY: number }
   | { type: "pinch"; startDistance: number; startScale: number; mmUnderFinger: Point };
 
@@ -89,9 +90,11 @@ export function PlannerCanvas() {
 
   const room = usePlannerStore((s) => s.room);
   const modules = usePlannerStore((s) => s.modules);
-  const selectedModuleId = usePlannerStore((s) => s.selectedModuleId);
+  const selectedModuleIds = usePlannerStore((s) => s.selectedModuleIds);
   const selectModule = usePlannerStore((s) => s.selectModule);
+  const toggleSelectModule = usePlannerStore((s) => s.toggleSelectModule);
   const moveModule = usePlannerStore((s) => s.moveModule);
+  const moveModuleGroup = usePlannerStore((s) => s.moveModuleGroup);
   const drawMode = usePlannerStore((s) => s.drawMode);
   const draftPoints = usePlannerStore((s) => s.draftPoints);
   const addDraftPoint = usePlannerStore((s) => s.addDraftPoint);
@@ -257,7 +260,7 @@ export function PlannerCanvas() {
       const { x, y } = toPx({ x: rect.x, y: rect.y });
       const w = rect.w * camera.scale;
       const h = rect.h * camera.scale;
-      const selected = mod.id === selectedModuleId;
+      const selected = selectedModuleIds.includes(mod.id);
       const color = mod.meta.colorHex ?? "#c9d2cf";
       const textColor = relativeLuminance(color) > 0.45 ? INK : "#ffffff";
       const radius = Math.max(0, Math.min(8, w / 4, h / 4));
@@ -289,27 +292,34 @@ export function PlannerCanvas() {
       }
     }
 
-    // Çakışma uyarısı (§Faz 4): sürüklenen modül çarpışma nedeniyle
-    // engellendiğinde, modül son geçerli konumunda kalır ama kullanıcının
-    // bırakmaya çalıştığı yerde kırmızı, kesikli bir "olmuyor" hayaleti
-    // gösterilir — önceden görsel hiçbir geri bildirim yoktu (yalnızca
-    // büyüteçteki küçük metin).
+    // Çakışma uyarısı (§Faz 4): sürüklenen modül (veya grup taşımada tüm
+    // grup) çarpışma nedeniyle engellendiğinde, gerçek modül(ler) son geçerli
+    // konumunda kalır ama kullanıcının bırakmaya çalıştığı yerde kırmızı,
+    // kesikli bir "olmuyor" hayaleti gösterilir — önceden görsel hiçbir geri
+    // bildirim yoktu (yalnızca büyüteçteki küçük metin).
     if (magnifier?.blocked) {
-      const draggedModule = modules.find((m) => m.id === magnifier.moduleId);
-      if (draggedModule) {
-        const footprint = moduleFootprint(draggedModule);
-        const { x, y } = toPx(magnifier.attempted);
-        const w = footprint.w * camera.scale;
-        const h = footprint.h * camera.scale;
+      const anchorModule = modules.find((m) => m.id === magnifier.moduleId);
+      if (anchorModule) {
+        const dx = magnifier.attempted.x - anchorModule.position.x;
+        const dy = magnifier.attempted.y - anchorModule.position.y;
+        const isGroupDrag = selectedModuleIds.length > 1 && selectedModuleIds.includes(magnifier.moduleId);
+        const ghostTargets = isGroupDrag ? modules.filter((m) => selectedModuleIds.includes(m.id)) : [anchorModule];
+
         ctx.save();
         ctx.setLineDash([6, 4]);
         ctx.fillStyle = "rgba(181,80,42,0.16)";
         ctx.strokeStyle = WARN;
         ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(x, y, w, h, Math.max(0, Math.min(8, w / 4, h / 4)));
-        ctx.fill();
-        ctx.stroke();
+        for (const mod of ghostTargets) {
+          const footprint = moduleFootprint(mod);
+          const { x, y } = toPx({ x: footprint.x + dx, y: footprint.y + dy });
+          const w = footprint.w * camera.scale;
+          const h = footprint.h * camera.scale;
+          ctx.beginPath();
+          ctx.roundRect(x, y, w, h, Math.max(0, Math.min(8, w / 4, h / 4)));
+          ctx.fill();
+          ctx.stroke();
+        }
         ctx.restore();
       }
     }
@@ -343,7 +353,7 @@ export function PlannerCanvas() {
         ctx.stroke();
       }
     }
-  }, [room, modules, selectedModuleId, drawMode, draftPoints, cursorMm, camera, toPx, viewport, magnifier]);
+  }, [room, modules, selectedModuleIds, drawMode, draftPoints, cursorMm, camera, toPx, viewport, magnifier]);
 
   const findModuleAt = useCallback(
     (mmX: number, mmY: number) => {
@@ -403,10 +413,28 @@ export function PlannerCanvas() {
 
     // Tek parmak: seçili nesne üstündeyse taşı, değilse kamerayı kaydır (§4.1).
     const hit = findModuleAt(mm.x, mm.y);
-    selectModule(hit ? hit.id : null);
-    gestureRef.current = hit
-      ? { type: "drag-module", id: hit.id, offsetX: mm.x - hit.position.x, offsetY: mm.y - hit.position.y }
-      : { type: "pan", startClientX: e.clientX, startClientY: e.clientY, startPanX: camera.panX, startPanY: camera.panY };
+
+    if (!hit) {
+      selectModule(null);
+      gestureRef.current = { type: "pan", startClientX: e.clientX, startClientY: e.clientY, startPanX: camera.panX, startPanY: camera.panY };
+      return;
+    }
+
+    // Shift+tık (§Faz 4 grup taşıma): mevcut seçimi bozmadan modülü seçime
+    // ekler/çıkarır — sürükleme başlatmaz, yalnızca seçimi değiştirir.
+    if (e.shiftKey) {
+      toggleSelectModule(hit.id);
+      gestureRef.current = { type: "idle" };
+      return;
+    }
+
+    // Tıklanan modül zaten çoklu seçimin bir parçasıysa (2+ modül seçiliyken),
+    // seçimi tek modüle daraltmadan grup sürüklemesi başlatılır.
+    const isGroupDrag = selectedModuleIds.length > 1 && selectedModuleIds.includes(hit.id);
+    if (!isGroupDrag) selectModule(hit.id);
+    gestureRef.current = isGroupDrag
+      ? { type: "drag-group", anchorId: hit.id, offsetX: mm.x - hit.position.x, offsetY: mm.y - hit.position.y }
+      : { type: "drag-module", id: hit.id, offsetX: mm.x - hit.position.x, offsetY: mm.y - hit.position.y };
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -458,13 +486,30 @@ export function PlannerCanvas() {
           attempted: { x: result.attemptedX, y: result.attemptedY },
         });
       }
+      return;
+    }
+
+    if (gesture.type === "drag-group") {
+      const localPx = clientToLocalPx(e.clientX, e.clientY);
+      const mm = toMm(localPx);
+      const result = moveModuleGroup(gesture.anchorId, mm.x - gesture.offsetX, mm.y - gesture.offsetY, SNAP_THRESHOLD_PX / camera.scale);
+      if (result) {
+        setMagnifier({
+          screenPos: localPx,
+          mm: { x: result.x, y: result.y },
+          blocked: result.blocked,
+          snapTarget: result.snapTarget,
+          moduleId: gesture.anchorId,
+          attempted: { x: result.attemptedX, y: result.attemptedY },
+        });
+      }
     }
   };
 
   const endPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
     pointersRef.current.delete(e.pointerId);
 
-    if (gestureRef.current.type === "drag-module") {
+    if (gestureRef.current.type === "drag-module" || gestureRef.current.type === "drag-group") {
       setMagnifier(null);
     }
 
