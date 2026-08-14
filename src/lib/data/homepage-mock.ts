@@ -376,6 +376,7 @@ export const footerColumns = [
       { label: "Kategoriler", href: "/kategori" },
       { label: "Odalara Göre", href: "/oda" },
       { label: "Yeni Gelenler", href: "/koleksiyon/yeni-gelenler" },
+      { label: "Oda Planlayıcı", href: "/planlayici" },
     ],
   },
   {

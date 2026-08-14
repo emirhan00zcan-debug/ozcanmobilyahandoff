@@ -11,6 +11,7 @@ const STATIC_ROUTES = [
   "iletisim",
   "kategori",
   "oda",
+  "planlayici",
   "koleksiyon",
   "indirimler",
   "gizlilik-politikasi",
