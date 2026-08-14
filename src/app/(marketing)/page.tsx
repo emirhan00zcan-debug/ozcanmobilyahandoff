@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Reveal from "@/components/ui/Reveal";
 import CategoryCircles from "@/components/layout/CategoryCircles";
 import HeroSlider from "@/components/home/HeroSlider";
+import DesignFurnitureButton from "@/components/home/DesignFurnitureButton";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 import CountdownBar from "@/components/home/CountdownBar";
 import ShowcaseGrid from "@/components/home/ShowcaseGrid";
@@ -52,6 +53,8 @@ export default async function HomePage() {
 
   return (
     <>
+      <DesignFurnitureButton />
+
       {/* 2. Kategori çemberi navigasyonu */}
       <CategoryCircles items={categories} basePath="/kategori" size="sm" />
 
