@@ -1,0 +1,8 @@
+{
+  "demo-1": [
+    { "id": "right_snap", "type": "modular_joint", "position": [450, 0, 0], "rotation": [0, 0, 0] }
+  ],
+  "demo-2": [
+    { "id": "left_snap", "type": "modular_joint", "position": [-300, 0, 0], "rotation": [0, 0, 0] }
+  ]
+}

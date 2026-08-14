@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { anchorWorldPosition, getAnchors } from "../lib/anchors";
 import { moduleFootprint, orthoLock, snapToGrid } from "../lib/geometry";
 import { usePlannerStore } from "../lib/store";
 import type { Point, Room } from "../lib/types";
@@ -74,7 +75,7 @@ interface MagnifierState {
   screenPos: Point;
   mm: Point;
   blocked: boolean;
-  snapTarget: "wall" | "neighbor" | null;
+  snapTarget: "wall" | "neighbor" | "anchor" | null;
   moduleId: string;
   attempted: Point;
 }
@@ -289,6 +290,20 @@ export function PlannerCanvas() {
         ctx.globalAlpha = 0.82;
         ctx.fillText(`${rect.w}×${rect.h} mm`, x + 8, y + h - 9, w - 16);
         ctx.globalAlpha = 1;
+      }
+
+      // Akıllı montaj noktaları (§Faz 4): ürünün anchors.ts'te tanımlı montaj
+      // noktaları varsa küçük noktalarla işaretlenir — ekran-pikseli sabit
+      // boyutta (mm'ye göre ölçeklenmez) ki uzak zoomda kaybolmasın.
+      for (const anchorPoint of getAnchors(mod.productId)) {
+        const p = toPx(anchorWorldPosition(mod, anchorPoint));
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = ACCENT;
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
       }
     }
 
@@ -576,6 +591,7 @@ export function PlannerCanvas() {
           {magnifier.blocked && " · çakışıyor"}
           {!magnifier.blocked && magnifier.snapTarget === "wall" && " · duvara kilitli"}
           {!magnifier.blocked && magnifier.snapTarget === "neighbor" && " · modüle kilitli"}
+          {!magnifier.blocked && magnifier.snapTarget === "anchor" && " · bağlantı noktasına kilitli"}
         </div>
       )}
     </div>

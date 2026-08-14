@@ -3,7 +3,7 @@ import { autoPlaceProducts } from "./autoLayout";
 import type { CatalogProduct } from "./catalog";
 import { hasCollision, moduleFootprint, type Rect } from "./geometry";
 import { closestPointOnWall, findOpeningAt, findWallAt, wallLength } from "./openings";
-import { snapToNeighbors, snapToWalls } from "./snap";
+import { snapToAnchors, snapToNeighbors, snapToWalls } from "./snap";
 import type { Opening, OpeningType, Point, PlannerModule, Room, RotationDeg, Wall } from "./types";
 
 const WALL_THICKNESS_MM = 100;
@@ -29,7 +29,7 @@ export interface MoveResult {
   x: number;
   y: number;
   blocked: boolean;
-  snapTarget: "wall" | "neighbor" | null;
+  snapTarget: "wall" | "neighbor" | "anchor" | null;
   // Kullanıcının bırakmaya çalıştığı, snap/çakışma öncesi ham mm konumu —
   // engellendiğinde çakışma uyarı arayüzünün (§Faz 4) "buraya koymaya
   // çalıştın ama olmuyor" hayalet dikdörtgenini çizebilmesi için.
@@ -138,10 +138,16 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     x = Math.round(x);
     y = Math.round(y);
 
-    const others = modules.filter((m) => m.id !== id).map(moduleFootprint);
+    const otherModules = modules.filter((m) => m.id !== id);
+    const others = otherModules.map(moduleFootprint);
     const desired: Rect = { ...moduleFootprint(target), x, y };
     const afterWallSnap = snapToWalls(desired, room.walls, snapThresholdMm);
-    const snapped = snapToNeighbors(afterWallSnap, others, snapThresholdMm);
+    const afterNeighborSnap = snapToNeighbors(afterWallSnap, others, snapThresholdMm);
+    // Anchor snap'i en son ve en kesin adım: kenar-hizalamadan (neighbor) daha
+    // dar bir eşleşme (aynı `type`) gerektirir, bu yüzden onu geçersiz kılması
+    // doğru (§Faz 4 akıllı montaj noktaları — bkz. snap.ts).
+    const anchorSnap = snapToAnchors(afterNeighborSnap, target, otherModules, snapThresholdMm);
+    const snapped: Rect = anchorSnap.snapped ? { ...afterNeighborSnap, x: anchorSnap.x, y: anchorSnap.y } : afterNeighborSnap;
     const blocked = hasCollision(snapped, others);
 
     if (!blocked) {
@@ -153,13 +159,13 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     }
 
     const wallSnapped = afterWallSnap.x !== desired.x || afterWallSnap.y !== desired.y;
-    const neighborSnapped = snapped.x !== afterWallSnap.x || snapped.y !== afterWallSnap.y;
+    const neighborSnapped = afterNeighborSnap.x !== afterWallSnap.x || afterNeighborSnap.y !== afterWallSnap.y;
 
     return {
       blocked,
       x: blocked ? target.position.x : snapped.x,
       y: blocked ? target.position.y : snapped.y,
-      snapTarget: blocked ? null : neighborSnapped ? "neighbor" : wallSnapped ? "wall" : null,
+      snapTarget: blocked ? null : anchorSnap.snapped ? "anchor" : neighborSnapped ? "neighbor" : wallSnapped ? "wall" : null,
       attemptedX: x,
       attemptedY: y,
     };
@@ -175,21 +181,28 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
   // kısıttır" ilkesiyle aynı, §3.4).
   moveModuleGroup: (anchorId, x, y, snapThresholdMm) => {
     const { room, modules, selectedModuleIds } = get();
-    const anchor = modules.find((m) => m.id === anchorId);
-    if (!anchor) return null;
+    // "grabbed": sürüklenen elle tutulan modül — akıllı montaj noktası
+    // (anchors.ts) kavramıyla isim çakışmasın diye "anchor" değil bu adı kullanıyor.
+    const grabbed = modules.find((m) => m.id === anchorId);
+    if (!grabbed) return null;
 
     x = Math.round(x);
     y = Math.round(y);
 
     const groupIds = new Set(selectedModuleIds.includes(anchorId) ? selectedModuleIds : [anchorId]);
-    const others = modules.filter((m) => !groupIds.has(m.id)).map(moduleFootprint);
+    const otherModules = modules.filter((m) => !groupIds.has(m.id));
+    const others = otherModules.map(moduleFootprint);
 
-    const desired: Rect = { ...moduleFootprint(anchor), x, y };
+    const desired: Rect = { ...moduleFootprint(grabbed), x, y };
     const afterWallSnap = snapToWalls(desired, room.walls, snapThresholdMm);
-    const snapped = snapToNeighbors(afterWallSnap, others, snapThresholdMm);
+    const afterNeighborSnap = snapToNeighbors(afterWallSnap, others, snapThresholdMm);
+    // Akıllı montaj noktası snap'i (§Faz 4) yalnızca tutulan modülün kendi
+    // anchor'larına bakılarak uygulanır — grup üyeleri delta'yı takip eder.
+    const anchorSnap = snapToAnchors(afterNeighborSnap, grabbed, otherModules, snapThresholdMm);
+    const snapped: Rect = anchorSnap.snapped ? { ...afterNeighborSnap, x: anchorSnap.x, y: anchorSnap.y } : afterNeighborSnap;
 
-    const dx = snapped.x - anchor.position.x;
-    const dy = snapped.y - anchor.position.y;
+    const dx = snapped.x - grabbed.position.x;
+    const dy = snapped.y - grabbed.position.y;
 
     const groupMembers = modules.filter((m) => groupIds.has(m.id));
     const translated = groupMembers.map((m) => {
@@ -207,13 +220,13 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     }
 
     const wallSnapped = afterWallSnap.x !== desired.x || afterWallSnap.y !== desired.y;
-    const neighborSnapped = snapped.x !== afterWallSnap.x || snapped.y !== afterWallSnap.y;
+    const neighborSnapped = afterNeighborSnap.x !== afterWallSnap.x || afterNeighborSnap.y !== afterWallSnap.y;
 
     return {
       blocked,
-      x: blocked ? anchor.position.x : anchor.position.x + dx,
-      y: blocked ? anchor.position.y : anchor.position.y + dy,
-      snapTarget: blocked ? null : neighborSnapped ? "neighbor" : wallSnapped ? "wall" : null,
+      x: blocked ? grabbed.position.x : grabbed.position.x + dx,
+      y: blocked ? grabbed.position.y : grabbed.position.y + dy,
+      snapTarget: blocked ? null : anchorSnap.snapped ? "anchor" : neighborSnapped ? "neighbor" : wallSnapped ? "wall" : null,
       attemptedX: x,
       attemptedY: y,
     };

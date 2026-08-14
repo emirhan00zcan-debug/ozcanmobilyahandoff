@@ -1,5 +1,6 @@
+import { anchorWorldPosition, getAnchors } from "./anchors";
 import type { Rect } from "./geometry";
-import type { Point, Wall } from "./types";
+import type { Point, PlannerModule, Wall } from "./types";
 
 // Ekran-pikseli cinsinden sabit bir hedefleme eşiği (§3.3) — mm karşılığı
 // çağıran taraftan (zoom seviyesine göre) hesaplanıp geçirilir. Faz 0'da
@@ -76,6 +77,44 @@ export function snapToWalls(rect: Rect, walls: Wall[], thresholdMm = DEFAULT_SNA
   }
 
   return { ...rect, x, y };
+}
+
+export interface AnchorSnapResult {
+  x: number;
+  y: number;
+  snapped: boolean;
+}
+
+// Akıllı montaj noktaları (§Faz 4): sürüklenen modülün her anchor'ı (bkz.
+// anchors.ts), aynı `type`'a sahip bir komşu anchor'a eşik mesafesi içine
+// girerse, modül iki anchor TAM ÇAKIŞACAK şekilde kaydırılır — bu, kenar
+// hizalamadan (snapToNeighbors) daha kesin bir "fiziksel bağlantı" snap'i.
+// İlk eşleşen çift kazanır (deterministik, "en yakını" aramak gibi ek bir
+// karmaşıklık v1'de yok). Anchor'ı olmayan modüller/ürünler için bu no-op'tur
+// — mevcut davranışı hiç değiştirmez.
+export function snapToAnchors(rect: Rect, draggedModule: PlannerModule, others: PlannerModule[], thresholdMm = DEFAULT_SNAP_THRESHOLD_MM): AnchorSnapResult {
+  const draggedAnchors = getAnchors(draggedModule.productId);
+  if (draggedAnchors.length === 0) return { x: rect.x, y: rect.y, snapped: false };
+
+  const candidateModule: PlannerModule = { ...draggedModule, position: { ...draggedModule.position, x: rect.x, y: rect.y } };
+
+  for (const other of others) {
+    const otherAnchors = getAnchors(other.productId);
+    if (otherAnchors.length === 0) continue;
+
+    for (const a of draggedAnchors) {
+      const aPos = anchorWorldPosition(candidateModule, a);
+      for (const b of otherAnchors) {
+        if (a.type !== b.type) continue;
+        const bPos = anchorWorldPosition(other, b);
+        if (Math.hypot(aPos.x - bPos.x, aPos.y - bPos.y) < thresholdMm) {
+          return { x: rect.x + (bPos.x - aPos.x), y: rect.y + (bPos.y - aPos.y), snapped: true };
+        }
+      }
+    }
+  }
+
+  return { x: rect.x, y: rect.y, snapped: false };
 }
 
 // Modül-modül kenetlenmesi (§3.3): iki modül kenarı eşik altına yaklaşınca
