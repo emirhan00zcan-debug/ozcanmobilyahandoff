@@ -521,6 +521,15 @@ export default function Navbar({ categories, rooms }: Props) {
                     {link.label}
                   </Link>
                 </li>
+              ) : link.label === "Mobilyanı Tasarla" ? (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="inline-block rounded-md bg-[#FFDB00] px-3 py-1 font-semibold text-primary transition-colors hover:bg-[#E6C500]"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
               ) : (
                 <li key={link.label}>
                   <Link
@@ -696,7 +705,11 @@ export default function Navbar({ categories, rooms }: Props) {
               <Link
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="relative inline-block py-1 transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-0 after:bg-secondary after:transition-transform after:duration-300 after:ease-out hover:text-primary hover:after:scale-x-100"
+                className={
+                  link.label === "Mobilyanı Tasarla"
+                    ? "inline-block rounded-md bg-[#FFDB00] px-3 py-1 font-semibold text-primary transition-colors hover:bg-[#E6C500]"
+                    : "relative inline-block py-1 transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-[1.5px] after:origin-left after:scale-x-0 after:bg-secondary after:transition-transform after:duration-300 after:ease-out hover:text-primary hover:after:scale-x-100"
+                }
               >
                 {link.label}
               </Link>
