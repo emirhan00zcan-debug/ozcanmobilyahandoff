@@ -1,21 +1,23 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { BomPanel } from "./components/BomPanel";
 import { ModuleInspector } from "./components/ModuleInspector";
-import { PlannerCanvas } from "./components/PlannerCanvas";
 import { PrintPlan } from "./components/PrintPlan";
 import { ProductLibrary } from "./components/ProductLibrary";
+import { RoomTemplatePicker } from "./components/RoomTemplatePicker";
 import { fetchCatalog } from "./lib/catalog";
 import { readHandoffToken } from "./lib/handoff";
 import { usePlannerStore } from "./lib/store";
 import type { PlannerModule } from "./lib/types";
 
-// Three.js yalnızca kullanıcı "3D" moduna geçtiğinde indirilir — 2D
-// (varsayılan/birincil) çalışma modu bu bundle'ı hiç yüklemez (§2.1).
+// IKEA Kreativ modeli (bkz. planner.md): "her şey 3D üzerinden" — 2D canvas
+// (PlannerCanvas) tamamen kaldırıldı, Scene3D artık tek/birincil çalışma
+// alanı. Yine de tembel yükleniyor: ilk boyama, oda şablonu seçilene kadar
+// Three.js'in ~472KB'lık chunk'ını hiç indirmez.
 const Scene3D = lazy(() => import("./components/Scene3D"));
 
-// product_id verilmediğinde canvas'ı ağdan bağımsız test edilebilir kılan iki
-// örnek modül — biri diğerinin sürüklenip çakışma/duvar-snap davranışını
-// gözlemleyebileceği bir komşu olarak konumlandırıldı.
+// product_id verilmediğinde sahneyi ağdan bağımsız test edilebilir kılan iki
+// örnek modül — biri diğerinin sürüklenip çakışma/duvar-snap/anchor
+// davranışını gözlemleyebileceği bir komşu olarak konumlandırıldı.
 const DEMO_MODULES: PlannerModule[] = [
   {
     id: "demo-1",
@@ -41,11 +43,6 @@ type Status = "idle" | "loading" | "error" | "done";
 
 export default function App() {
   const addModule = usePlannerStore((s) => s.addModule);
-  const drawMode = usePlannerStore((s) => s.drawMode);
-  const draftPoints = usePlannerStore((s) => s.draftPoints);
-  const toggleDrawMode = usePlannerStore((s) => s.toggleDrawMode);
-  const finishRoom = usePlannerStore((s) => s.finishRoom);
-  const cancelDraft = usePlannerStore((s) => s.cancelDraft);
   const openingMode = usePlannerStore((s) => s.openingMode);
   const toggleOpeningMode = usePlannerStore((s) => s.toggleOpeningMode);
   const [status, setStatus] = useState<Status>("idle");
@@ -53,7 +50,7 @@ export default function App() {
   const [bomOpen, setBomOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
+  const [roomPickerOpen, setRoomPickerOpen] = useState(false);
   // Ana siteden gelen devir token'ı (bkz. lib/handoff.ts) — URL sorgu
   // parametreleri oturum boyunca değişmediğinden bir kez okunması yeterli.
   const [handoffToken] = useState<string | null>(() => readHandoffToken());
@@ -111,45 +108,21 @@ export default function App() {
           Oda &amp; Mobilya Planlayıcı
         </h1>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {viewMode === "2d" && !drawMode && (
-            <button className="btn" onClick={toggleDrawMode}>
-              Duvar Çiz
-            </button>
-          )}
-          {viewMode === "2d" && drawMode && (
-            <>
-              <button className="btn" onClick={cancelDraft}>
-                İptal
-              </button>
-              <button className="btn-primary" disabled={draftPoints.length < 3} onClick={finishRoom}>
-                Bitir ({draftPoints.length} nokta)
-              </button>
-            </>
-          )}
-          {viewMode === "2d" && !drawMode && (
-            <>
-              <button
-                className={openingMode === "door" ? "btn btn-active" : "btn"}
-                onClick={() => toggleOpeningMode("door")}
-              >
-                Kapı Ekle
-              </button>
-              <button
-                className={openingMode === "window" ? "btn btn-active" : "btn"}
-                onClick={() => toggleOpeningMode("window")}
-              >
-                Pencere Ekle
-              </button>
-            </>
-          )}
-          {!drawMode && (
-            <button
-              className={viewMode === "3d" ? "btn btn-active" : "btn"}
-              onClick={() => setViewMode(viewMode === "2d" ? "3d" : "2d")}
-            >
-              {viewMode === "2d" ? "3D" : "2D"}
-            </button>
-          )}
+          <button className="btn" onClick={() => setRoomPickerOpen(true)}>
+            Oda Boyutu
+          </button>
+          <button
+            className={openingMode === "door" ? "btn btn-active" : "btn"}
+            onClick={() => toggleOpeningMode("door")}
+          >
+            Kapı Ekle
+          </button>
+          <button
+            className={openingMode === "window" ? "btn btn-active" : "btn"}
+            onClick={() => toggleOpeningMode("window")}
+          >
+            Pencere Ekle
+          </button>
           <button className="btn" onClick={() => setLibraryOpen(true)}>
             Ürünler
           </button>
@@ -162,39 +135,29 @@ export default function App() {
         </div>
       </div>
       <p style={{ fontSize: 13, color: "var(--ink-muted)", margin: "0 0 16px", maxWidth: 640 }}>
-        {viewMode === "3d" && "Sürükleyerek çevirin, tekerlek/iki parmakla yakınlaştırın — düzenlemek için 2D'ye dönün."}
-        {viewMode === "2d" && drawMode && "Oda köşelerini sırayla tıklayın (dik açıya kilitlenir, 50mm ızgaraya yapışır) — bitince Bitir'e basın."}
-        {viewMode === "2d" &&
-          !drawMode &&
-          openingMode &&
-          `Bir duvara tıklayın: ${openingMode === "door" ? "kapı" : "pencere"} eklenir; mevcut bir açıklığa tıklayınca kaldırılır.`}
-        {viewMode === "2d" && !drawMode && !openingMode && status === "loading" && "Ürün katalogdan yükleniyor…"}
-        {viewMode === "2d" && !drawMode && !openingMode && status === "error" && `Hata: ${error}`}
-        {viewMode === "2d" &&
-          !drawMode &&
-          !openingMode &&
+        {openingMode && `Bir duvara tıklayın: ${openingMode === "door" ? "kapı" : "pencere"} eklenir; mevcut bir açıklığa tıklayınca kaldırılır.`}
+        {!openingMode && status === "loading" && "Ürün katalogdan yükleniyor…"}
+        {!openingMode && status === "error" && `Hata: ${error}`}
+        {!openingMode &&
           status === "done" &&
-          "Modülü sürükleyerek duvara/diğer modüle yaklaştırın ya da seçip sağdaki panelden mm/rotasyon girin. Shift+tık ile birden fazla modül seçip birlikte taşıyabilirsiniz."}
+          "Sahnede sürükleyerek taşıyın, tıklayıp seçin, Shift+tık ile birden fazlasını birlikte taşıyın. Boş yeri sürükleyerek kamerayı döndürün, tekerlek/iki parmakla yakınlaştırın."}
       </p>
       <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-        {viewMode === "2d" ? (
-          <PlannerCanvas />
-        ) : (
-          <Suspense
-            fallback={
-              <div className="panel" style={{ width: "100%", maxWidth: 760, padding: 24, color: "var(--ink-muted)" }}>
-                3D görünüm yükleniyor…
-              </div>
-            }
-          >
-            <Scene3D />
-          </Suspense>
-        )}
-        {viewMode === "2d" && <ModuleInspector />}
+        <Suspense
+          fallback={
+            <div className="panel" style={{ width: "100%", maxWidth: 760, aspectRatio: "760 / 547", padding: 24, color: "var(--ink-muted)" }}>
+              3D sahne yükleniyor…
+            </div>
+          }
+        >
+          <Scene3D />
+        </Suspense>
+        <ModuleInspector />
       </div>
       {bomOpen && <BomPanel onClose={() => setBomOpen(false)} handoffToken={handoffToken} />}
       {libraryOpen && <ProductLibrary onClose={() => setLibraryOpen(false)} />}
       {printOpen && <PrintPlan onClose={() => setPrintOpen(false)} />}
+      {roomPickerOpen && <RoomTemplatePicker onClose={() => setRoomPickerOpen(false)} />}
     </div>
   );
 }

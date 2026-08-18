@@ -4,7 +4,7 @@ import type { CatalogProduct } from "./catalog";
 import { hasCollision, moduleFootprint, type Rect } from "./geometry";
 import { closestPointOnWall, findOpeningAt, findWallAt, wallLength } from "./openings";
 import { snapToAnchors, snapToNeighbors, snapToWalls } from "./snap";
-import type { Opening, OpeningType, Point, PlannerModule, Room, RotationDeg, Wall } from "./types";
+import type { Opening, OpeningType, Point, PlannerModule, Room, RotationDeg } from "./types";
 
 const WALL_THICKNESS_MM = 100;
 
@@ -13,17 +13,25 @@ const OPENING_DEFAULTS: Record<OpeningType, { widthMm: number; heightMm: number;
   window: { widthMm: 1200, heightMm: 1200, sillHeightMm: 900 },
 };
 
-const DEFAULT_ROOM: Room = {
-  id: "demo-room",
-  dimensionsMm: { width: 3600, depth: 4200, height: 2500 },
-  walls: [
-    { id: "w-top", start: { x: 0, y: 0 }, end: { x: 3600, y: 0 }, thicknessMm: WALL_THICKNESS_MM },
-    { id: "w-right", start: { x: 3600, y: 0 }, end: { x: 3600, y: 4200 }, thicknessMm: WALL_THICKNESS_MM },
-    { id: "w-bottom", start: { x: 3600, y: 4200 }, end: { x: 0, y: 4200 }, thicknessMm: WALL_THICKNESS_MM },
-    { id: "w-left", start: { x: 0, y: 4200 }, end: { x: 0, y: 0 }, thicknessMm: WALL_THICKNESS_MM },
-  ],
-  openings: [],
-};
+// Serbest el duvar çizimi yerine (IKEA Kreativ modeli: "Şablon odalar...
+// tercih edilmeli" — bkz. planner.md) dikdörtgen bir oda şablonu üretir.
+// Hem varsayılan başlangıç odası hem de RoomTemplatePicker'ın seçenekleri
+// bu tek fonksiyondan geçer.
+function buildRectRoom(id: string, widthMm: number, depthMm: number, heightMm: number): Room {
+  return {
+    id,
+    dimensionsMm: { width: widthMm, depth: depthMm, height: heightMm },
+    walls: [
+      { id: "w-top", start: { x: 0, y: 0 }, end: { x: widthMm, y: 0 }, thicknessMm: WALL_THICKNESS_MM },
+      { id: "w-right", start: { x: widthMm, y: 0 }, end: { x: widthMm, y: depthMm }, thicknessMm: WALL_THICKNESS_MM },
+      { id: "w-bottom", start: { x: widthMm, y: depthMm }, end: { x: 0, y: depthMm }, thicknessMm: WALL_THICKNESS_MM },
+      { id: "w-left", start: { x: 0, y: depthMm }, end: { x: 0, y: 0 }, thicknessMm: WALL_THICKNESS_MM },
+    ],
+    openings: [],
+  };
+}
+
+const DEFAULT_ROOM: Room = buildRectRoom("demo-room", 3600, 4200, 2500);
 
 export interface MoveResult {
   x: number;
@@ -50,20 +58,15 @@ interface PlannerState {
   // Birden fazla modül seçiliyken (§Faz 4 grup taşıma) herhangi birini (anchorId)
   // sürüklemek tüm grubu aynı delta kadar katı bir cisim gibi kaydırır.
   moveModuleGroup: (anchorId: string, x: number, y: number, snapThresholdMm?: number) => MoveResult | null;
-  // true: konum uygulandı. false: çarpışma nedeniyle reddedildi (§Faz 4 çakışma uyarısı bunu kullanır).
-  setModulePosition: (id: string, x: number, y: number) => boolean;
   rotateModule: (id: string) => void;
   // Yerleştirilmiş bir modülün renk/kulp/ayak varyasyonunu değiştirir (PAX
   // tarzı "rengini seç" adımının bu katalogdaki karşılığı — bkz. ModuleInspector).
   // Ölçü/konum değişmediği için snap/çarpışma yeniden değerlendirilmez.
   setModuleVariation: (id: string, variationId: string, colorHex: string | null) => void;
 
-  drawMode: boolean;
-  draftPoints: Point[];
-  toggleDrawMode: () => void;
-  addDraftPoint: (p: Point) => void;
-  finishRoom: () => void;
-  cancelDraft: () => void;
+  // Oda şablonu seçimi (IKEA Kreativ modeli — bkz. buildRectRoom): sahneyi
+  // temizleyip yeni boyutlarda dikdörtgen bir oda kurar.
+  setRoomTemplate: (widthMm: number, depthMm: number, heightMm?: number) => void;
 
   openingMode: OpeningType | null;
   toggleOpeningMode: (type: OpeningType) => void;
@@ -74,8 +77,6 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
   room: DEFAULT_ROOM,
   modules: [],
   selectedModuleIds: [],
-  drawMode: false,
-  draftPoints: [],
   openingMode: null,
 
   addModule: (m) => set((s) => ({ modules: [...s.modules, m] })),
@@ -236,28 +237,6 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     };
   },
 
-  // Sayısal panelden gelen giriş kesin bir komuttur — snap uygulanmaz (§3.4),
-  // yalnızca çarpışma hâlâ ihlal edilemez bir fiziksel kısıttır. Dönüş değeri
-  // arayüzün (ModuleInspector) reddi kullanıcıya göstermesini sağlar — önceden
-  // sessizce yok sayılıyordu.
-  setModulePosition: (id, x, y) => {
-    x = Math.round(x);
-    y = Math.round(y);
-
-    const { modules } = get();
-    const target = modules.find((m) => m.id === id);
-    if (!target) return false;
-
-    const others = modules.filter((m) => m.id !== id).map(moduleFootprint);
-    const rect: Rect = { ...moduleFootprint(target), x, y };
-    if (hasCollision(rect, others)) return false;
-
-    set({
-      modules: modules.map((m) => (m.id === id ? { ...m, position: { ...m.position, x, y } } : m)),
-    });
-    return true;
-  },
-
   setModuleVariation: (id, variationId, colorHex) => {
     const { modules } = get();
     set({
@@ -280,42 +259,12 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     set({ modules: modules.map((m) => (m.id === id ? rotated : m)) });
   },
 
-  toggleDrawMode: () => set((s) => ({ drawMode: !s.drawMode, draftPoints: [] })),
-
-  addDraftPoint: (p) => set((s) => ({ draftPoints: [...s.draftPoints, p] })),
-
-  cancelDraft: () => set({ drawMode: false, draftPoints: [] }),
-
-  // Taslak noktaları kapalı bir poligona (son nokta -> ilk nokta) çevirir ve
-  // duvarları oluşturur. Poligon (0,0)'a normalize edilir — mm koordinat
-  // sisteminin her yerde odanın sol-üst köşesinden başladığı varsayımı
-  // (modül snap'i, canvas boyutlandırması) böylece korunur. Yeni oda eski
-  // modüllerle uyumsuz olabileceğinden (farklı boyut/şekil) sahne temizlenir.
-  finishRoom: () => {
-    const { draftPoints } = get();
-    if (draftPoints.length < 3) return;
-
-    const minX = Math.min(...draftPoints.map((p) => p.x));
-    const minY = Math.min(...draftPoints.map((p) => p.y));
-    const normalized = draftPoints.map((p) => ({ x: p.x - minX, y: p.y - minY }));
-    const closedLoop = [...normalized, normalized[0]];
-
-    const walls: Wall[] = closedLoop.slice(0, -1).map((start, i) => ({
-      id: `wall-${i}`,
-      start,
-      end: closedLoop[i + 1],
-      thicknessMm: WALL_THICKNESS_MM,
-    }));
-
-    const maxX = Math.max(...normalized.map((p) => p.x));
-    const maxY = Math.max(...normalized.map((p) => p.y));
-
+  // Yeni oda eski modüllerle uyumsuz olabileceğinden (farklı boyut) sahne temizlenir.
+  setRoomTemplate: (widthMm, depthMm, heightMm = 2500) => {
     set({
-      room: { id: "custom-room", dimensionsMm: { width: maxX, depth: maxY, height: 2500 }, walls, openings: [] },
+      room: buildRectRoom("template-room", widthMm, depthMm, heightMm),
       modules: [],
       selectedModuleIds: [],
-      drawMode: false,
-      draftPoints: [],
     });
   },
 
