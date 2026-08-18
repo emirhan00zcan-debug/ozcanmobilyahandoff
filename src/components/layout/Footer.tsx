@@ -1,10 +1,19 @@
 "use client";
 
+import { useActionState } from "react";
 import Link from "next/link";
-import { FaFacebookF, FaInstagram } from "react-icons/fa";
+import { FaFacebookF, FaInstagram, FaCheck } from "react-icons/fa";
 import { footerColumns, socialLinks } from "@/lib/data/homepage-mock";
+import {
+  subscribeNewsletterAction,
+  type NewsletterActionState,
+} from "@/lib/actions/newsletter-actions";
+
+const initialState: NewsletterActionState = { success: false, error: null };
 
 export default function Footer() {
+  const [state, formAction, isPending] = useActionState(subscribeNewsletterAction, initialState);
+
   return (
     <footer className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 gap-10 border-t border-secondary/10 pt-12 md:grid-cols-[1fr_1px_repeat(3,minmax(0,140px))] md:gap-8">
@@ -16,22 +25,41 @@ export default function Footer() {
           <p className="mt-2 font-body text-sm text-secondary-light">
             E-bültenimize kaydolun ve anında %10 indirim sizin olsun
           </p>
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="mt-4 flex overflow-hidden rounded-full border border-secondary/15"
-          >
-            <input
-              type="email"
-              placeholder="E-posta adresiniz"
-              className="w-full bg-transparent px-5 py-3 font-body text-sm text-secondary placeholder:text-secondary-light focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="btn-sweep shrink-0 border-l border-primary/30 px-6 font-body text-sm font-semibold text-secondary active:scale-95"
-            >
-              Kaydol
-            </button>
-          </form>
+
+          {state.success ? (
+            <div className="mt-4 flex items-center gap-3 rounded-full border border-primary/30 bg-primary/5 px-5 py-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-white">
+                <FaCheck className="h-3 w-3" />
+              </span>
+              <p className="font-body text-sm text-secondary">
+                Teşekkürler! İndirim kodunuz:{" "}
+                <span className="font-semibold text-primary">{state.couponCode}</span>
+              </p>
+            </div>
+          ) : (
+            <>
+              <form action={formAction} className="mt-4 flex overflow-hidden rounded-full border border-secondary/15">
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="E-posta adresiniz"
+                  className="w-full bg-transparent px-5 py-3 font-body text-sm text-secondary placeholder:text-secondary-light focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="btn-sweep shrink-0 border-l border-primary/30 px-6 font-body text-sm font-semibold text-secondary active:scale-95 disabled:opacity-60"
+                >
+                  {isPending ? "..." : "Kaydol"}
+                </button>
+              </form>
+              {state.error && (
+                <p className="mt-2 font-body text-xs font-medium text-red-600">{state.error}</p>
+              )}
+            </>
+          )}
+
           <p className="mt-3 font-body text-xs text-secondary-light">
             Abone olarak{" "}
             <Link href="/hizmet-sartlari" className="underline">
