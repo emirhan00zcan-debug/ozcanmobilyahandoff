@@ -19,6 +19,7 @@ const MENU_LINKS = [
   { label: "Blog", href: "/blog" },
   { label: "Hakkımızda", href: "/hakkimizda" },
   { label: "İletişim", href: "/iletisim" },
+  { label: "Mobilyanı Tasarla", href: "/planlayici" },
 ];
 
 // "Kategoriler" mega menu'sündeki promosyon kartı — sabit veri olduğu için modül
