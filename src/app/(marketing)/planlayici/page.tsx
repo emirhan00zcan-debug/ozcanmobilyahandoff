@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { FaRulerCombined, FaCube, FaMagic, FaShoppingBag } from "react-icons/fa";
-import AboutHero from "@/components/layout/AboutHero";
 import TrustMarquee from "@/components/layout/TrustMarquee";
 import { absoluteUrl, truncateForMeta } from "@/lib/seo";
 
@@ -56,16 +55,44 @@ const PLANNER_URL = process.env.NEXT_PUBLIC_PLANNER_URL;
 export default function PlanlayiciPage() {
   return (
     <>
-      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <nav className="mb-6 flex items-center gap-2 font-body text-xs text-secondary-light">
-          <Link href="/" className="font-medium text-secondary hover:text-primary">
-            Ana sayfa
-          </Link>
-          <span>|</span>
-          <span className="text-secondary-light">Planlayıcı</span>
-        </nav>
+      <div className="bg-[#FFDB00]">
+        <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+          <nav className="mb-6 flex items-center gap-2 font-body text-xs text-primary/70">
+            <Link href="/" className="font-medium text-primary hover:underline">
+              Ana sayfa
+            </Link>
+            <span>|</span>
+            <span>Planlayıcı</span>
+          </nav>
+        </div>
 
-        <AboutHero title="Odanızı Satın Almadan Önce Görün" imageUrl="/media/premium-bedroom.jpg" />
+        <div className="mx-auto max-w-3xl px-4 pb-16 pt-4 text-center sm:px-6 lg:px-8 lg:pb-24">
+          <p className="font-body text-xs font-semibold uppercase tracking-[0.3em] text-primary/70">
+            Ücretsiz Planlayıcı
+          </p>
+          <h1 className="mt-4 font-display text-4xl font-bold uppercase leading-[1.05] tracking-tight text-primary sm:text-5xl lg:text-6xl">
+            Odanızı Satın Almadan Önce Görün
+          </h1>
+          <p className="mx-auto mt-5 max-w-xl font-body text-base leading-relaxed text-primary/80">
+            Gerçek ölçülerinizle mobilyalarınızı milimetrik hassasiyette yerleştirin, saniyeler içinde üç boyutlu
+            önizleyin.
+          </p>
+
+          {PLANNER_URL ? (
+            <a
+              href={PLANNER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-block rounded-full bg-primary px-10 py-3.5 font-body text-sm font-bold uppercase tracking-wide text-[#FFDB00] transition-colors hover:bg-primary-600"
+            >
+              Planlayıcıyı Aç
+            </a>
+          ) : (
+            <span className="mt-8 inline-block cursor-not-allowed rounded-full border-2 border-primary/40 px-10 py-3.5 font-body text-sm font-bold uppercase tracking-wide text-primary">
+              Çok Yakında
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Giriş */}
