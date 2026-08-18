@@ -4,12 +4,12 @@ import { moduleFootprint, orthoLock, snapToGrid } from "../lib/geometry";
 import { usePlannerStore } from "../lib/store";
 import type { Point, Room } from "../lib/types";
 
-const CANVAS_BG = "#eef1f0";
+const CANVAS_BG = "#f5f4f2";
 const FLOOR = "#ffffff";
-const WALL = "#7c8884";
-const GRID = "rgba(21,33,31,0.07)";
-const ACCENT = "#1f5ca6";
-const INK = "#15211f";
+const WALL = "#8f8a82";
+const GRID = "rgba(17,17,17,0.06)";
+const ACCENT = "#0058a3";
+const INK = "#111111";
 const WARN = "#b5502a";
 const FONT_SANS = '-apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const FONT_MONO = '"Cascadia Code", Consolas, "SF Mono", "Roboto Mono", monospace';
@@ -267,7 +267,7 @@ export function PlannerCanvas() {
       const radius = Math.max(0, Math.min(8, w / 4, h / 4));
 
       ctx.save();
-      ctx.shadowColor = "rgba(21,33,31,0.22)";
+      ctx.shadowColor = "rgba(17,17,17,0.18)";
       ctx.shadowBlur = selected ? 12 : 6;
       ctx.shadowOffsetY = 2;
       ctx.fillStyle = color;
@@ -276,7 +276,7 @@ export function PlannerCanvas() {
       ctx.fill();
       ctx.restore();
 
-      ctx.strokeStyle = selected ? ACCENT : "rgba(21,33,31,0.22)";
+      ctx.strokeStyle = selected ? ACCENT : "rgba(17,17,17,0.18)";
       ctx.lineWidth = selected ? 2.5 : 1;
       ctx.beginPath();
       ctx.roundRect(x, y, w, h, radius);
@@ -555,7 +555,7 @@ export function PlannerCanvas() {
         style={{
           touchAction: "none",
           background: CANVAS_BG,
-          border: "1px solid #dbe1de",
+          border: "1px solid var(--rule)",
           borderRadius: 10,
           display: "block",
           width: "100%",
@@ -575,7 +575,7 @@ export function PlannerCanvas() {
             left: magnifier.screenPos.x,
             top: magnifier.screenPos.y - 44,
             transform: "translateX(-50%)",
-            background: magnifier.blocked ? "#b5502a" : "#15211f",
+            background: magnifier.blocked ? "#b5502a" : "#111111",
             color: "#fff",
             padding: "6px 10px",
             fontSize: 11,
@@ -584,7 +584,7 @@ export function PlannerCanvas() {
             whiteSpace: "nowrap",
             pointerEvents: "none",
             borderRadius: 6,
-            boxShadow: "0 4px 12px rgba(21,33,31,0.28)",
+            boxShadow: "0 4px 12px rgba(17,17,17,0.24)",
           }}
         >
           {Math.round(magnifier.mm.x)}, {Math.round(magnifier.mm.y)} mm

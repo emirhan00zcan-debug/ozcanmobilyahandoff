@@ -121,7 +121,7 @@ export default function App() {
               <button className="btn" onClick={cancelDraft}>
                 İptal
               </button>
-              <button className="btn" disabled={draftPoints.length < 3} onClick={finishRoom}>
+              <button className="btn-primary" disabled={draftPoints.length < 3} onClick={finishRoom}>
                 Bitir ({draftPoints.length} nokta)
               </button>
             </>

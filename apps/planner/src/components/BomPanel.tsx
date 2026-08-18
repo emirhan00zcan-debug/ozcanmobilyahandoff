@@ -39,7 +39,7 @@ export function BomPanel({ onClose, handoffToken }: { onClose: () => void; hando
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(24,36,34,0.35)",
+        background: "rgba(17,17,17,0.4)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -84,7 +84,7 @@ export function BomPanel({ onClose, handoffToken }: { onClose: () => void; hando
           </button>
 
           {handoffToken && (
-            <button className="btn btn-active" onClick={handleSendToCart} disabled={sending || bom.length === 0}>
+            <button className="btn-primary" onClick={handleSendToCart} disabled={sending || bom.length === 0}>
               {sending ? "Gönderiliyor…" : "Sepete Gönder"}
             </button>
           )}

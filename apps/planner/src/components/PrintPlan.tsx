@@ -12,11 +12,11 @@ import type { PlannerModule, Room } from "../lib/types";
 // Mimari Doküman §2: bundle boyutu önceliği) gerçek, keskin vektör bir PDF
 // üretir.
 
-const WALL_COLOR = "#7c8884";
+const WALL_COLOR = "#8f8a82";
 const FLOOR_COLOR = "#ffffff";
-const ACCENT = "#1f5ca6";
+const ACCENT = "#0058a3";
 const DOOR_COLOR = "#a84e29";
-const INK = "#15211f";
+const INK = "#111111";
 
 function relativeLuminance(hex: string): number {
   const clean = hex.replace("#", "");
@@ -106,7 +106,7 @@ function FloorPlanSvg({ room, modules }: { room: Room; modules: PlannerModule[] 
         const labelFits = rect.w > unit * 0.1 && rect.h > unit * 0.06;
         return (
           <g key={mod.id}>
-            <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h} fill={color} stroke="rgba(21,33,31,0.35)" strokeWidth={unit * 0.0015} />
+            <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h} fill={color} stroke="rgba(17,17,17,0.3)" strokeWidth={unit * 0.0015} />
             {labelFits && (
               <text
                 x={rect.x + rect.w / 2}
@@ -165,7 +165,7 @@ export function PrintPlan({ onClose }: { onClose: () => void }) {
   return (
     <div
       className="print-plan-overlay"
-      style={{ position: "fixed", inset: 0, background: "rgba(24,36,34,0.35)", display: "flex", justifyContent: "center", zIndex: 20, overflowY: "auto", padding: "24px 12px" }}
+      style={{ position: "fixed", inset: 0, background: "rgba(17,17,17,0.4)", display: "flex", justifyContent: "center", zIndex: 20, overflowY: "auto", padding: "24px 12px" }}
       onClick={onClose}
     >
       <div
@@ -174,7 +174,7 @@ export function PrintPlan({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="print-hide" style={{ display: "flex", justifyContent: "space-between", marginBottom: 18 }}>
-          <button className="btn btn-active" onClick={() => window.print()}>
+          <button className="btn-primary" onClick={() => window.print()}>
             Yazdır / PDF Olarak Kaydet
           </button>
           <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", fontSize: 13, color: "var(--ink-muted)" }}>

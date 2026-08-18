@@ -24,8 +24,8 @@ function createMatcapTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext("2d")!;
   const gradient = ctx.createRadialGradient(size * 0.35, size * 0.32, size * 0.04, size * 0.5, size * 0.5, size * 0.62);
   gradient.addColorStop(0, "#ffffff");
-  gradient.addColorStop(0.55, "#aeb4b1");
-  gradient.addColorStop(1, "#4c5652");
+  gradient.addColorStop(0.55, "#b3aea3");
+  gradient.addColorStop(1, "#56504a");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, size, size);
   const texture = new THREE.CanvasTexture(canvas);
@@ -47,7 +47,7 @@ function buildFloor(room: Room): THREE.Mesh {
   const w = room.dimensionsMm.width * MM_TO_M;
   const d = room.dimensionsMm.depth * MM_TO_M;
   const geometry = new THREE.PlaneGeometry(w, d);
-  const material = new THREE.MeshBasicMaterial({ color: "#dfe4e1" });
+  const material = new THREE.MeshBasicMaterial({ color: "#eae7e1" });
   const floor = new THREE.Mesh(geometry, material);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(w / 2, 0, d / 2);
@@ -57,7 +57,7 @@ function buildFloor(room: Room): THREE.Mesh {
 function buildWalls(room: Room): THREE.Group {
   const group = new THREE.Group();
   const heightM = room.dimensionsMm.height * MM_TO_M;
-  const material = new THREE.MeshBasicMaterial({ color: "#8a938e" });
+  const material = new THREE.MeshBasicMaterial({ color: "#948d80" });
 
   for (const wall of room.walls) {
     const dx = wall.end.x - wall.start.x;
@@ -172,7 +172,7 @@ export default function Scene3D() {
     if (!container) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#eef2f0");
+    scene.background = new THREE.Color("#f5f4f2");
 
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -313,7 +313,7 @@ export default function Scene3D() {
   return (
     <div
       ref={containerRef}
-      style={{ width: "100%", maxWidth: 760, touchAction: "none", cursor: "grab", border: "1px solid #c6d0cb", lineHeight: 0 }}
+      style={{ width: "100%", maxWidth: 760, touchAction: "none", cursor: "grab", border: "1px solid var(--rule)", lineHeight: 0 }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={endPointer}

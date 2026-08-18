@@ -52,7 +52,7 @@ export function ProductLibrary({ onClose }: { onClose: () => void }) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(24,36,34,0.35)",
+        background: "rgba(17,17,17,0.4)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -62,14 +62,14 @@ export function ProductLibrary({ onClose }: { onClose: () => void }) {
     >
       <div
         className="panel"
-        style={{ padding: 22, width: 660, maxWidth: "90vw", maxHeight: "80vh", overflow: "auto" }}
+        style={{ padding: 24, width: 700, maxWidth: "90vw", maxHeight: "85vh", overflow: "auto" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8, gap: 10, flexWrap: "wrap" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--ink)" }}>Ürün Kütüphanesi</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--ink)", letterSpacing: "-0.01em" }}>Ürün Kütüphanesi</h2>
           <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
             {selectedIds.size > 0 && (
-              <button className="btn" onClick={handleAutoArrange}>
+              <button className="btn-primary" onClick={handleAutoArrange}>
                 Seçilenleri Otomatik Yerleştir ({selectedIds.size})
               </button>
             )}
@@ -94,14 +94,35 @@ export function ProductLibrary({ onClose }: { onClose: () => void }) {
           <p style={{ color: "var(--ink-muted)", fontSize: 13 }}>Ürün bulunamadı.</p>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
           {products.map((p) => (
-            <div
-              key={p.productId}
-              className="panel"
-              style={{ padding: 10, fontSize: 12, boxShadow: "none" }}
-            >
-              <label style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, color: "var(--ink-muted)", fontSize: 11 }}>
+            <div key={p.productId} className="product-card" style={{ fontSize: 12 }}>
+              {p.images[0] ? (
+                <img
+                  src={p.images[0]}
+                  alt={p.name}
+                  style={{
+                    width: "100%",
+                    height: 150,
+                    objectFit: "contain",
+                    background: "var(--surface-2)",
+                    borderRadius: "var(--radius-sm)",
+                    marginBottom: 10,
+                  }}
+                />
+              ) : (
+                <div
+                  style={{ width: "100%", height: 150, background: "var(--surface-2)", borderRadius: "var(--radius-sm)", marginBottom: 10 }}
+                />
+              )}
+              <div style={{ fontWeight: 600, marginBottom: 4, color: "var(--ink)", lineHeight: 1.3 }}>{p.name}</div>
+              <div className="mono" style={{ color: "var(--ink-muted)", marginBottom: 6, fontSize: 11.5 }}>
+                {p.dimensionsMm.w}×{p.dimensionsMm.h}×{p.dimensionsMm.d} mm
+              </div>
+              <div className="mono" style={{ color: "var(--ink)", marginBottom: 10, fontSize: 16, fontWeight: 700 }}>
+                {p.basePrice.toLocaleString("tr-TR")} ₺
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, color: "var(--ink-muted)", fontSize: 11 }}>
                 <input
                   type="checkbox"
                   checked={selectedIds.has(p.productId)}
@@ -109,25 +130,7 @@ export function ProductLibrary({ onClose }: { onClose: () => void }) {
                 />
                 Otomatik yerleştir için seç
               </label>
-              {p.images[0] ? (
-                <img
-                  src={p.images[0]}
-                  alt={p.name}
-                  style={{ width: "100%", height: 96, objectFit: "cover", borderRadius: "var(--radius-sm)", marginBottom: 8 }}
-                />
-              ) : (
-                <div
-                  style={{ width: "100%", height: 96, background: "var(--surface-2)", borderRadius: "var(--radius-sm)", marginBottom: 8 }}
-                />
-              )}
-              <div style={{ fontWeight: 600, marginBottom: 4, color: "var(--ink)" }}>{p.name}</div>
-              <div className="mono" style={{ color: "var(--ink-muted)", marginBottom: 2, fontSize: 11.5 }}>
-                {p.dimensionsMm.w}×{p.dimensionsMm.h}×{p.dimensionsMm.d} mm
-              </div>
-              <div className="mono" style={{ color: "var(--ink)", marginBottom: 8, fontSize: 13, fontWeight: 600 }}>
-                {p.basePrice.toLocaleString("tr-TR")} ₺
-              </div>
-              <button className="btn" style={{ width: "100%" }} onClick={() => addModuleFromCatalog(p)}>
+              <button className="btn-primary" style={{ width: "100%" }} onClick={() => addModuleFromCatalog(p)}>
                 Ekle
               </button>
             </div>

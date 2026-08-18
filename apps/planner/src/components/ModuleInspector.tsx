@@ -74,7 +74,7 @@ export function ModuleInspector() {
               height: 14,
               borderRadius: 4,
               background: selected.meta.colorHex ?? "#c9d2cf",
-              border: "1px solid rgba(21,33,31,0.15)",
+              border: "1px solid rgba(17,17,17,0.12)",
               flex: "0 0 auto",
             }}
           />
