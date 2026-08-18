@@ -55,6 +55,7 @@ const PLANNER_URL = process.env.NEXT_PUBLIC_PLANNER_URL;
 export default function PlanlayiciPage() {
   return (
     <>
+      {/* Hero — IKEA sarısı zemin, logo renginde başlık/CTA */}
       <div className="bg-[#FFDB00]">
         <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
           <nav className="mb-6 flex items-center gap-2 font-body text-xs text-primary/70">
@@ -97,6 +98,7 @@ export default function PlanlayiciPage() {
 
       {/* Giriş */}
       <section className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
+        <span className="mx-auto mb-5 block h-1 w-12 bg-[#FFDB00]" />
         <h2 className="font-display text-2xl font-bold leading-snug text-secondary sm:text-3xl">
           Hayalinizdeki odayı kendi gözlerinizle görün.
         </h2>
@@ -113,7 +115,7 @@ export default function PlanlayiciPage() {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((feature) => (
             <div key={feature.title}>
-              <div className="grid h-12 w-12 place-items-center rounded-full bg-primary-50">
+              <div className="grid h-12 w-12 place-items-center rounded-lg bg-[#FFDB00]">
                 <feature.icon className="h-5 w-5 text-primary" />
               </div>
               <h3 className="mt-4 font-display text-base font-semibold text-secondary">{feature.title}</h3>
@@ -129,7 +131,7 @@ export default function PlanlayiciPage() {
         <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-3">
           {STEPS.map((step, i) => (
             <div key={step.title} className="text-center">
-              <span className="mx-auto grid h-10 w-10 place-items-center rounded-full border border-primary/30 font-display text-sm font-semibold text-primary">
+              <span className="mx-auto grid h-11 w-11 place-items-center rounded-lg bg-[#FFDB00] font-display text-base font-bold text-primary">
                 {i + 1}
               </span>
               <h3 className="mt-4 font-display text-base font-semibold text-secondary">{step.title}</h3>
@@ -139,31 +141,31 @@ export default function PlanlayiciPage() {
         </div>
       </section>
 
-      {/* CTA banner */}
-      <section className="bg-primary-50 py-16">
+      {/* CTA banner — hero'nun tersi renk düzeni: teal zemin, sarı buton */}
+      <section className="bg-primary py-16">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="font-display text-2xl font-semibold text-secondary sm:text-3xl">
+          <h2 className="font-display text-2xl font-bold uppercase tracking-tight text-white sm:text-3xl">
             Şimdi Kendi Odanızı Tasarlamaya Başlayın
           </h2>
-          <p className="mt-3 font-body text-sm text-secondary-light">Ücretsiz, kayıt gerektirmeden deneyebilirsiniz.</p>
+          <p className="mt-3 font-body text-sm text-white/70">Ücretsiz, kayıt gerektirmeden deneyebilirsiniz.</p>
 
           {PLANNER_URL ? (
             <a
               href={PLANNER_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-sweep mt-7 inline-block rounded-full border border-primary/30 px-10 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-105 active:scale-95"
+              className="mt-7 inline-block rounded-full bg-[#FFDB00] px-10 py-3.5 font-body text-sm font-bold uppercase tracking-wide text-primary transition-colors hover:bg-[#E6C500]"
             >
               Planlayıcıyı Aç
             </a>
           ) : (
             <>
-              <span className="mt-7 inline-block cursor-not-allowed rounded-full border border-secondary/15 px-10 py-3.5 font-body text-sm font-semibold text-secondary-light">
+              <span className="mt-7 inline-block cursor-not-allowed rounded-full border-2 border-white/40 px-10 py-3.5 font-body text-sm font-bold uppercase tracking-wide text-white">
                 Çok Yakında
               </span>
-              <p className="mt-4 font-body text-xs text-secondary-light">
+              <p className="mt-4 font-body text-xs text-white/70">
                 Planlayıcımız üzerinde çalışmaya devam ediyoruz. O sırada{" "}
-                <Link href="/katalog" className="underline hover:text-primary">
+                <Link href="/katalog" className="underline hover:text-[#FFDB00]">
                   kataloğumuza
                 </Link>{" "}
                 göz atabilirsiniz.
