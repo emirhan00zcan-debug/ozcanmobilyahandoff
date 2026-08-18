@@ -53,6 +53,10 @@ interface PlannerState {
   // true: konum uygulandı. false: çarpışma nedeniyle reddedildi (§Faz 4 çakışma uyarısı bunu kullanır).
   setModulePosition: (id: string, x: number, y: number) => boolean;
   rotateModule: (id: string) => void;
+  // Yerleştirilmiş bir modülün renk/kulp/ayak varyasyonunu değiştirir (PAX
+  // tarzı "rengini seç" adımının bu katalogdaki karşılığı — bkz. ModuleInspector).
+  // Ölçü/konum değişmediği için snap/çarpışma yeniden değerlendirilmez.
+  setModuleVariation: (id: string, variationId: string, colorHex: string | null) => void;
 
   drawMode: boolean;
   draftPoints: Point[];
@@ -252,6 +256,15 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
       modules: modules.map((m) => (m.id === id ? { ...m, position: { ...m.position, x, y } } : m)),
     });
     return true;
+  },
+
+  setModuleVariation: (id, variationId, colorHex) => {
+    const { modules } = get();
+    set({
+      modules: modules.map((m) =>
+        m.id === id ? { ...m, productVariationId: variationId, meta: { ...m.meta, colorHex } } : m,
+      ),
+    });
   },
 
   rotateModule: (id) => {

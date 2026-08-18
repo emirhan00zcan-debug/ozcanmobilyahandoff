@@ -1,16 +1,42 @@
 import { useEffect, useState } from "react";
+import { fetchCatalog, type CatalogVariation } from "../lib/catalog";
 import { usePlannerStore } from "../lib/store";
 
 const STEP_MM = 10;
 const COLLISION_WARNING = "Bu konum başka bir modülle veya duvarla çakışıyor — konum değiştirilmedi.";
+
+// Varyasyon SKU'ları tek bir renk ekseni değil, birden çok özelliği (kapak
+// tipi, çerçeve rengi, ayak boyu vb.) tek bir kısa koda kodluyor — bu yüzden
+// aynı hexColor'a sahip birçok varyasyon olabiliyor (bkz. gerçek katalogda
+// bir gardırobun 12 varyasyonunun yalnızca 2 farklı rengi olması). Salt renk
+// yuvarlağı bu durumda ayırt edici değil; bütün varyasyonlar arasındaki ortak
+// önek (ürün adının SKU'daki karşılığı) çıkarılıp geri kalan okunabilir bir
+// etikete çevriliyor.
+function commonSkuPrefix(skus: string[]): string {
+  if (skus.length === 0) return "";
+  let prefix = skus[0];
+  for (const sku of skus.slice(1)) {
+    while (prefix && !sku.startsWith(prefix)) prefix = prefix.slice(0, -1);
+    if (!prefix) return "";
+  }
+  const lastDash = prefix.lastIndexOf("-");
+  return lastDash > 0 ? prefix.slice(0, lastDash + 1) : "";
+}
+
+function variationLabel(sku: string, prefix: string): string {
+  const suffix = prefix && sku.startsWith(prefix) ? sku.slice(prefix.length) : sku;
+  return (suffix || sku).replace(/-/g, " ");
+}
 
 export function ModuleInspector() {
   const modules = usePlannerStore((s) => s.modules);
   const selectedModuleIds = usePlannerStore((s) => s.selectedModuleIds);
   const selectModule = usePlannerStore((s) => s.selectModule);
   const setModulePosition = usePlannerStore((s) => s.setModulePosition);
+  const setModuleVariation = usePlannerStore((s) => s.setModuleVariation);
   const rotateModule = usePlannerStore((s) => s.rotateModule);
   const [warning, setWarning] = useState(false);
+  const [variations, setVariations] = useState<CatalogVariation[]>([]);
 
   const selectedList = modules.filter((m) => selectedModuleIds.includes(m.id));
   const selected = selectedList.length === 1 ? selectedList[0] : undefined;
@@ -19,6 +45,33 @@ export function ModuleInspector() {
   useEffect(() => {
     setWarning(false);
   }, [selectedModuleIds]);
+
+  // Renk/kulp/ayak varyasyonu seçici (PAX tarzı "rengini seç" adımının bu
+  // katalogdaki karşılığı) — modül eklenirken yalnızca ilk varyasyon
+  // kaydediliyor (bkz. store.addModuleFromCatalog), burada tüm seçenekleri
+  // görmek için ürün tekrar (varyasyonlarıyla) çekiliyor. Demo modüllerin
+  // (productId "demo-1"/"demo-2") gerçek katalogda karşılığı olmadığından
+  // istek sessizce boş sonuç döner — hata göstermeye değmez, sadece
+  // seçici gizli kalır.
+  useEffect(() => {
+    if (!selected) {
+      setVariations([]);
+      return;
+    }
+    let cancelled = false;
+    fetchCatalog([selected.productId])
+      .then(([product]) => {
+        if (!cancelled) setVariations(product?.variations ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setVariations([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selected?.productId]);
+
+  const variationLabelPrefix = commonSkuPrefix(variations.map((v) => v.sku));
 
   if (selectedList.length === 0) {
     return (
@@ -87,6 +140,48 @@ export function ModuleInspector() {
           Kapat
         </button>
       </div>
+
+      {variations.length > 1 && (
+        <div style={{ marginBottom: 16 }}>
+          <span className="field-label">Renk / Varyasyon</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 200, overflowY: "auto" }}>
+            {variations.map((v) => {
+              const active = v.id === selected.productVariationId;
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => setModuleVariation(selected.id, v.id, v.hexColor)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "6px 8px",
+                    borderRadius: "var(--radius-sm)",
+                    border: active ? "1.5px solid var(--accent)" : "1px solid var(--rule)",
+                    background: active ? "var(--accent-soft)" : "var(--surface)",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      background: v.hexColor ?? "var(--surface-2)",
+                      border: "1px solid var(--rule-strong)",
+                      flex: "0 0 auto",
+                    }}
+                  />
+                  <span style={{ fontSize: 11.5, color: "var(--ink)", flex: 1, textTransform: "capitalize" }}>
+                    {variationLabel(v.sku, variationLabelPrefix)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <label style={{ display: "block", marginBottom: 12 }}>
         <span className="field-label">X (mm)</span>
