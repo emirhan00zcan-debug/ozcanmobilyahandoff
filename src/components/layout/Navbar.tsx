@@ -104,13 +104,13 @@ function SearchSuggestionsPanel({
 // "Odalara Göre" mega menu'sünde her odanın sağ panelinde gösterilecek kategoriler —
 // gerçek kategori verisinden (categories prop'u) odayla ilişkili anlamlı bir alt küme.
 const ROOM_CATEGORY_SLUGS: Record<string, string[]> = {
-  "yatak-odasi": ["gardirop", "dresuar", "makyaj-kosesi", "portmanto", "tv-unitesi", "kahve-kosesi"],
-  "giyinme-odasi": ["gardirop", "portmanto", "makyaj-kosesi", "dresuar", "kahve-kosesi", "banyo-dolabi"],
-  "antre-hol": ["portmanto", "dresuar", "gardirop", "makyaj-kosesi"],
-  "salon-oturma-odasi": ["tv-unitesi", "dresuar", "kahve-kosesi", "gardirop", "portmanto", "calisma-masasi"],
-  mutfak: ["moduler-mutfak-dolabi", "kahve-kosesi", "dresuar"],
+  "yatak-odasi": ["gardirop", "dresuar", "makyaj-kosesi", "portmanto", "tv-unitesi"],
+  "giyinme-odasi": ["gardirop", "portmanto", "makyaj-kosesi", "dresuar"],
+  "antre-hol": ["portmanto", "dresuar", "gardirop"],
+  "salon-oturma-odasi": ["tv-unitesi", "dresuar", "kahve-kosesi"],
+  mutfak: ["moduler-mutfak-dolabi", "kahve-kosesi"],
   banyo: ["banyo-dolabi", "makyaj-kosesi"],
-  "calisma-odasi": ["calisma-masasi", "kahve-kosesi", "dresuar", "tv-unitesi"],
+  "calisma-odasi": ["calisma-masasi", "dresuar", "kahve-kosesi"],
   "genc-cocuk-odasi": ["cocuk-odasi", "oyuncu-masasi", "calisma-masasi", "gardirop", "dresuar"],
   "ofis-is-yeri": ["calisma-masasi", "dresuar", "kahve-kosesi", "tv-unitesi"],
   "cok-amacli-dolaplar": ["gardirop", "dresuar", "banyo-dolabi", "moduler-mutfak-dolabi", "portmanto", "tv-unitesi"],
