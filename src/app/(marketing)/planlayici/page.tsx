@@ -55,44 +55,56 @@ const PLANNER_URL = process.env.NEXT_PUBLIC_PLANNER_URL;
 export default function PlanlayiciPage() {
   return (
     <>
-      {/* Hero — IKEA sarısı zemin, logo renginde başlık/CTA */}
-      <div className="bg-[#FFDB00]">
-        <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-          <nav className="mb-6 flex items-center gap-2 font-body text-xs text-primary/70">
-            <Link href="/" className="font-medium text-primary hover:underline">
+      {/* Hero — planlayıcı uygulamasını tanıtan video banner; koyu/teal degrade
+          üzerinde beyaz metin ve markanın imza sarısıyla (#FFDB00) vurgu */}
+      <div className="relative isolate overflow-hidden">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source src="/videos/planlayici-hero.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-primary/50 to-black/75" />
+
+        <div className="relative mx-auto flex min-h-[560px] max-w-7xl flex-col px-4 pt-6 sm:min-h-[640px] sm:px-6 lg:px-8">
+          <nav className="mb-6 flex items-center gap-2 font-body text-xs text-white/75">
+            <Link href="/" className="font-medium text-white hover:underline">
               Ana sayfa
             </Link>
             <span>|</span>
             <span>Planlayıcı</span>
           </nav>
-        </div>
 
-        <div className="mx-auto max-w-3xl px-4 pb-16 pt-4 text-center sm:px-6 lg:px-8 lg:pb-24">
-          <p className="font-body text-xs font-semibold uppercase tracking-[0.3em] text-primary/70">
-            Ücretsiz Planlayıcı
-          </p>
-          <h1 className="mt-4 font-display text-4xl font-bold uppercase leading-[1.05] tracking-tight text-primary sm:text-5xl lg:text-6xl">
-            Odanızı Satın Almadan Önce Görün
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl font-body text-base leading-relaxed text-primary/80">
-            Gerçek ölçülerinizle mobilyalarınızı milimetrik hassasiyette yerleştirin, saniyeler içinde üç boyutlu
-            önizleyin.
-          </p>
-
-          {PLANNER_URL ? (
-            <a
-              href={PLANNER_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-8 inline-block rounded-full bg-primary px-10 py-3.5 font-body text-sm font-bold uppercase tracking-wide text-[#FFDB00] transition-colors hover:bg-primary-600"
-            >
-              Planlayıcıyı Aç
-            </a>
-          ) : (
-            <span className="mt-8 inline-block cursor-not-allowed rounded-full border-2 border-primary/40 px-10 py-3.5 font-body text-sm font-bold uppercase tracking-wide text-primary">
-              Çok Yakında
+          <div className="mx-auto flex max-w-3xl flex-1 flex-col items-center justify-center pb-16 text-center lg:pb-24">
+            <span className="inline-block rounded-full bg-[#FFDB00] px-4 py-1.5 font-body text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+              Ücretsiz Planlayıcı
             </span>
-          )}
+            <h1 className="mt-5 font-display text-4xl font-bold uppercase leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+              Odanızı Satın Almadan Önce Görün
+            </h1>
+            <p className="mx-auto mt-5 max-w-xl font-body text-base leading-relaxed text-white/85">
+              Gerçek ölçülerinizle mobilyalarınızı milimetrik hassasiyette yerleştirin, saniyeler içinde üç boyutlu
+              önizleyin.
+            </p>
+
+            {PLANNER_URL ? (
+              <a
+                href={PLANNER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-8 inline-block rounded-full bg-[#FFDB00] px-10 py-3.5 font-body text-sm font-bold uppercase tracking-wide text-primary transition-colors hover:bg-[#E6C500]"
+              >
+                Planlayıcıyı Aç
+              </a>
+            ) : (
+              <span className="mt-8 inline-block cursor-not-allowed rounded-full border-2 border-white/50 px-10 py-3.5 font-body text-sm font-bold uppercase tracking-wide text-white">
+                Çok Yakında
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

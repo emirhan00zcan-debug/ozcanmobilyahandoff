@@ -56,3 +56,5 @@ next-env.d.ts
 
 # Büyük ekran kaydı — repo boyutunu şişirmesin diye
 *.mp4
+# Planlayıcı hero'sunda gerçekten kullanılan, canlıya deploy edilmesi gereken video (~1MB)
+!public/videos/planlayici-hero.mp4
