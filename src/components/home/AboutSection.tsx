@@ -58,7 +58,7 @@ export default function AboutSection({ data }: Props) {
               />
               <text className="fill-white font-body text-[8px] font-semibold uppercase tracking-[0.2em]">
                 <textPath href="#about-badge-ring">
-                  Kaliteli Tasarım • Özcan Mobilya • Kaliteli Tasarım • Özcan Mobilya •
+                  Kaliteli Tasarım • Özcan Mobilya •
                 </textPath>
               </text>
             </svg>
