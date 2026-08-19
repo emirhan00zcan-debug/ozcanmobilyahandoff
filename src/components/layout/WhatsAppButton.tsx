@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FaWhatsapp, FaTimes, FaPaperPlane } from "react-icons/fa";
 import { trackEvent } from "@/lib/analytics";
-import { sendWhatsAppMessageAction } from "@/lib/actions/whatsapp-actions";
 
 // contactInfo'daki gerçek işletme telefonu (+90 505 442 3809), wa.me formatı için
 // ülke koduyla birlikte sadece rakamlar (bkz. src/lib/data/homepage-mock.ts contactInfo).
@@ -27,8 +26,6 @@ export default function WhatsAppButton() {
   const [phase, setPhase] = useState<Phase>("closed");
   const [showContent, setShowContent] = useState(false);
   const [message, setMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
   // Panel zaten açıkken (expanding/expanded) tetikleyicilerin üst üste binmesini önlemek için
@@ -38,10 +35,11 @@ export default function WhatsAppButton() {
     phaseRef.current = phase;
   }, [phase]);
 
-  // Sağ-üst köşeye yaklaşma tetikleyicisi bu ref ile "silahlanıyor"; kapatma butonuna
-  // basıldığında kısa bir süre devre dışı bırakılıp tekrar silahlanıyor, aksi halde fare
-  // hâlâ köşedeyken widget kapanır kapanmaz anında yeniden açılırdı.
+  // Sağ-üst köşeye yaklaşma tetikleyicisi, sayfa yüklenip CLOSE_CORNER_ARM_DELAY_MS geçtikten
+  // sonra "silahlanır"; ziyaret başına sadece bir kez tetiklenir (cornerFiredRef) — widget
+  // kapatılıp fare tekrar köşeye götürülse bile bir daha açılmaz.
   const armedRef = useRef(false);
+  const cornerFiredRef = useRef(false);
   const timeoutsRef = useRef<number[]>([]);
 
   useEffect(() => {
@@ -66,30 +64,16 @@ export default function WhatsAppButton() {
   const handleClose = () => {
     setShowContent(false);
     setPhase("closed");
-
-    armedRef.current = false;
-    const t = window.setTimeout(() => {
-      armedRef.current = true;
-    }, CLOSE_CORNER_ARM_DELAY_MS);
-    timeoutsRef.current.push(t);
   };
 
-  const handleSend = async () => {
+  // WhatsApp Business API'si (Graph API) yok — "Gönder" butonu da, kapalı haldeki ikon gibi,
+  // yazılan mesajla birlikte wa.me linkini yeni sekmede açar.
+  const handleSend = () => {
     const text = message.trim() || DEFAULT_MESSAGE;
-    if (isSending) return;
-
-    setIsSending(true);
-    setSendError(null);
-    const result = await sendWhatsAppMessageAction(text);
-    setIsSending(false);
-
-    if (result.success) {
-      trackEvent("whatsapp_click");
-      setMessage("");
-      setSent(true);
-    } else {
-      setSendError(result.error);
-    }
+    trackEvent("whatsapp_click");
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    setMessage("");
+    setSent(true);
   };
 
   useEffect(() => {
@@ -108,9 +92,9 @@ export default function WhatsAppButton() {
     }, IDLE_TRIGGER_MS);
 
     // 2) Kapatma niyeti: fare, tarayıcının sekme kapatma (X) düğmesinin bulunduğu sağ-üst
-    // köşeye yaklaşırsa (sayfadan çıkmadan sadece o bölgede gezinse bile) tetikle — widget
-    // kapatılıp fare tekrar o köşeye götürülürse yeniden açılır (tek seferlik değil). Geri
-    // tuşu (sol-üst köşe) zaten ExitIntentPopup'ta ayrı bir işleve bağlı, burada tekrar edilmiyor.
+    // köşeye yaklaşırsa (sayfadan çıkmadan sadece o bölgede gezinse bile) tetikle — ziyaret
+    // başına yalnızca bir kez (cornerFiredRef), tekrar tekrar açılmaz. Geri tuşu (sol-üst köşe)
+    // zaten ExitIntentPopup'ta ayrı bir işleve bağlı, burada tekrar edilmiyor.
     const armTimer = window.setTimeout(() => {
       armedRef.current = true;
     }, CLOSE_CORNER_ARM_DELAY_MS);
@@ -118,22 +102,21 @@ export default function WhatsAppButton() {
     const nearCloseCorner = (clientX: number, clientY: number) =>
       Math.hypot(window.innerWidth - clientX, clientY) <= CLOSE_CORNER_RADIUS;
 
+    const triggerCorner = () => {
+      if (cornerFiredRef.current) return;
+      cornerFiredRef.current = true;
+      openWidget();
+    };
     const onMouseMove = (e: MouseEvent) => {
-      if (!armedRef.current) return;
-      if (nearCloseCorner(e.clientX, e.clientY)) openWidget();
+      if (!armedRef.current || cornerFiredRef.current) return;
+      if (nearCloseCorner(e.clientX, e.clientY)) triggerCorner();
     };
     const onMouseOut = (e: MouseEvent) => {
-      if (!armedRef.current) return;
-      if (e.clientY <= 0 && !e.relatedTarget && nearCloseCorner(e.clientX, e.clientY)) openWidget();
+      if (!armedRef.current || cornerFiredRef.current) return;
+      if (e.clientY <= 0 && !e.relatedTarget && nearCloseCorner(e.clientX, e.clientY)) triggerCorner();
     };
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseout", onMouseOut);
-
-    // 3) Sekme değiştirme: başka sekmeye geçilirse (visibilitychange) tetikle.
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") openWidget();
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       document.removeEventListener("click", onClick);
@@ -141,7 +124,6 @@ export default function WhatsAppButton() {
       window.clearTimeout(armTimer);
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseout", onMouseOut);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, []);
 
@@ -201,36 +183,28 @@ export default function WhatsAppButton() {
             <div className="flex items-center gap-2 rounded-full border border-secondary/15 bg-secondary/[0.03] py-1.5 pl-4 pr-1.5">
               <input
                 value={message}
-                disabled={isSending}
                 onChange={(e) => {
                   setMessage(e.target.value);
-                  setSendError(null);
                   setSent(false);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSend();
                 }}
                 placeholder="Bize buradan yazın..."
-                className="min-w-0 flex-1 bg-transparent font-body text-sm text-secondary outline-none placeholder:text-secondary-light disabled:opacity-60"
+                className="min-w-0 flex-1 bg-transparent font-body text-sm text-secondary outline-none placeholder:text-secondary-light"
               />
               <button
                 type="button"
                 onClick={handleSend}
-                disabled={isSending}
                 aria-label="Gönder"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105 active:scale-95 disabled:opacity-60"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105 active:scale-95"
               >
-                {isSending ? (
-                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                ) : (
-                  <FaPaperPlane className="h-3.5 w-3.5" />
-                )}
+                <FaPaperPlane className="h-3.5 w-3.5" />
               </button>
             </div>
-            {sendError && <p className="mt-2 px-1 font-body text-xs text-red-600">{sendError}</p>}
             {sent && (
               <p className="mt-2 px-1 font-body text-xs text-primary">
-                Mesajınız iletildi, en kısa sürede dönüş yapacağız.
+                WhatsApp&apos;ta açılıyor...
               </p>
             )}
           </div>
