@@ -13,11 +13,13 @@ import {
 // Sayfanın kendisi tarayıcı arayüzünün (geri/ileri/yenile) piksel konumunu bilemez, ama bu
 // düğmeler pratikte her tarayıcıda pencerenin sol-üst köşesine yakın durur — bu yüzden
 // sol-üst köşeye (0,0) belli bir yarıçap içinde yaklaşma/oradan çıkış tespit edilir.
-// Kalıcı bir "bir daha gösterme" hafızası (sessionStorage vb.) YOK: popup kapatılıp fare
-// tekrar o bölgeye götürülürse yeniden açılır — hem test etmeyi kolaylaştırır hem de
-// sayfa yenilenmeden tekrar tekrar tetiklenebilir olmasını sağlar.
+// Oturum başına sadece bir kez gösterilir: sessionStorage'a yazılan bayrak sayesinde,
+// popup kapatılıp fare tekrar o bölgeye götürülse veya sayfa içi gezinmeyle bileşen
+// yeniden mount olsa bile aynı sekmede/oturumda tekrar açılmaz. Yeni bir sekme/oturumda
+// bayrak sıfırlanmış olur.
 const ARM_DELAY_MS = 4000; // sayfa açılır açılmaz kazara tetiklenmesin diye kısa bekleme
 const BACK_BUTTON_RADIUS = 120; // px — geri/ileri/yenile küme alanını rahatça kapsayan yarıçap
+const SESSION_STORAGE_KEY = "exit-intent-popup-shown";
 
 const SOCIAL_LINKS = [
   { label: "Facebook'ta takip edin", href: "https://facebook.com/profile.php?id=61574506475071", Icon: FaFacebookF },
@@ -43,6 +45,7 @@ export default function ExitIntentPopup() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (sessionStorage.getItem(SESSION_STORAGE_KEY)) return; // bu oturumda zaten gösterildi
 
     let armed = false;
     const armTimer = setTimeout(() => {
@@ -51,6 +54,8 @@ export default function ExitIntentPopup() {
 
     const trigger = () => {
       if (isOpenRef.current) return; // zaten açıksa tekrar tetiklemeye gerek yok
+      if (sessionStorage.getItem(SESSION_STORAGE_KEY)) return; // bu oturumda zaten gösterildi
+      sessionStorage.setItem(SESSION_STORAGE_KEY, "1");
       setIsOpen(true);
     };
 
