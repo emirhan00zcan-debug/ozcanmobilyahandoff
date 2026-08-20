@@ -44,7 +44,7 @@ export default function CaymaFormuPage() {
           <p className="mt-6">
             <strong>Kime:</strong>
             <br />
-            [Ticari Unvan]
+            Özcan Mobilya - Hüseyin Özcan
             <br />
             Camikebir Mahallesi Tütüncü Sokak No:6/A, Sinop/Merkez
             <br />

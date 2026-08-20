@@ -14,7 +14,7 @@ export default function GizlilikPolitikasiPage() {
       <LegalPageHeader title="Gizlilik Politikası ve KVKK Aydınlatma Metni" />
       <article className={ARTICLE_CLASS}>
         <p>
-          Bu metin, <strong>[Özcan Mobilya — Ticari Unvan]</strong> (&quot;Şirket&quot;) tarafından
+          Bu metin, <strong>Özcan Mobilya - Hüseyin Özcan</strong> (&quot;Şirket&quot;) tarafından
           6698 sayılı Kişisel Verilerin Korunması Kanunu (&quot;KVKK&quot;) uyarınca veri sorumlusu
           sıfatıyla, ozcanmobilya.com üzerinden topladığı kişisel verilerin işlenmesine ilişkin
           ziyaretçi ve müşterileri aydınlatmak amacıyla hazırlanmıştır.
@@ -22,7 +22,7 @@ export default function GizlilikPolitikasiPage() {
 
         <h2>1. Veri Sorumlusu</h2>
         <p>
-          <strong>Unvan:</strong> [Ticari Unvan — vergi levhası onaylandığında güncellenecek]
+          <strong>Unvan:</strong> Özcan Mobilya - Hüseyin Özcan
           <br />
           <strong>Adres:</strong> Camikebir Mahallesi Tütüncü Sokak No:6/A, Sinop/Merkez
           <br />
@@ -30,7 +30,9 @@ export default function GizlilikPolitikasiPage() {
           <br />
           <strong>Telefon:</strong> +90 505 442 3809
           <br />
-          <strong>Vergi Dairesi / No:</strong> [ ]
+          <strong>Esnaf Sicil No:</strong> Sinop Esnaf ve Sanatkarlar Sicil Müdürlüğü / 19153
+          <br />
+          <strong>Vergi Dairesi / No:</strong> Sinop Vergi Dairesi Müdürlüğü / 6690465105
         </p>
 
         <h2>2. İşlenen Kişisel Veriler</h2>

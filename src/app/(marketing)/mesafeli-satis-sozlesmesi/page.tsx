@@ -27,8 +27,20 @@ export default function MesafeliSatisSozlesmesiPage() {
 
         <h2>1. Taraflar</h2>
         <p>
-          <strong>Satıcı:</strong> [Ticari Unvan], Camikebir Mahallesi Tütüncü Sokak No:6/A,
-          Sinop/Merkez — ozcan.mobilya.sinop@gmail.com — +90 505 442 3809 (&quot;Satıcı&quot;)
+          <strong>Satıcı:</strong> Özcan Mobilya - Hüseyin Özcan
+          <br />
+          <strong>Adres:</strong> Camikebir Mahallesi Tütüncü Sokak No:6/A, Sinop/Merkez
+          <br />
+          <strong>Esnaf Sicil No:</strong> Sinop Esnaf ve Sanatkarlar Sicil Müdürlüğü / 19153
+          <br />
+          <strong>Vergi Dairesi / No:</strong> Sinop Vergi Dairesi Müdürlüğü / 6690465105
+          <br />
+          <strong>E-posta:</strong> ozcan.mobilya.sinop@gmail.com
+          <br />
+          <strong>Telefon:</strong> +90 505 442 3809
+          <br />
+          (bundan böyle &quot;Satıcı&quot;)
+          <br />
           <br />
           <strong>Alıcı:</strong> Sitede üyelik oluşturarak veya sipariş vererek işbu
           sözleşmenin tarafı olan kişi (&quot;Alıcı&quot;)

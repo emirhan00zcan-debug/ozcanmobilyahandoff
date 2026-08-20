@@ -21,7 +21,7 @@ export default function HizmetSartlariPage() {
         <h2>1. Sitenin Kullanımı</h2>
         <p>
           Site içeriği yalnızca kişisel, ticari olmayan kullanım içindir. Sitedeki metin,
-          görsel ve tasarım öğeleri [Ticari Unvan]&apos;a aittir; izinsiz kopyalanamaz,
+          görsel ve tasarım öğeleri Özcan Mobilya - Hüseyin Özcan&apos;a aittir; izinsiz kopyalanamaz,
           çoğaltılamaz.
         </p>
 
@@ -49,7 +49,7 @@ export default function HizmetSartlariPage() {
 
         <h2>5. Değişiklikler</h2>
         <p>
-          [Ticari Unvan], bu şartları ve site içeriğini önceden bildirmeksizin güncelleme
+          Özcan Mobilya - Hüseyin Özcan, bu şartları ve site içeriğini önceden bildirmeksizin güncelleme
           hakkını saklı tutar. Güncel sürüm bu sayfada yayınlandığı andan itibaren geçerlidir.
         </p>
 
