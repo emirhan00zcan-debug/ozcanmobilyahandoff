@@ -11,6 +11,7 @@ import CollectionTabs from "@/components/home/CollectionTabs";
 import PromoDuo from "@/components/home/PromoDuo";
 import CategoryChips from "@/components/home/CategoryChips";
 import CategorySpotlight from "@/components/home/CategorySpotlight";
+import VideoShowcase from "@/components/home/VideoShowcase";
 import AboutSection from "@/components/home/AboutSection";
 import Testimonials from "@/components/home/Testimonials";
 import InstagramStrip from "@/components/home/InstagramStrip";
@@ -144,14 +145,9 @@ export default async function HomePage() {
         <CategorySpotlight hero={categorySpotlight.hero} cards={categorySpotlight.cards} />
       </Reveal>
 
-      {/* 11. Kaçırılmayacak Fırsatlar — ikinci ürün vitrin */}
+      {/* 11. Video vitrin — "Biz Kimiz?" bölümüne geçişte atölyeyi tanıtan sinematik banner */}
       <Reveal>
-        <FeaturedProducts
-          title="Kaçırılmayacak Fırsatlar"
-          description="Fabrikadan doğrudan satışa özel, kısa süreliğine fiyatta dip yapmış demonte mobilya ürünlerimiz."
-          tabs={[{ label: "Tümü", products: featuredProducts }]}
-          allHref="/koleksiyon/firsatlar"
-        />
+        <VideoShowcase />
       </Reveal>
 
       {/* 12. Biz Kimiz? */}

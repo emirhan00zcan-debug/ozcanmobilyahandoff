@@ -58,3 +58,5 @@ next-env.d.ts
 *.mp4
 # Planlayıcı hero'sunda gerçekten kullanılan, canlıya deploy edilmesi gereken video (~1MB)
 !public/videos/planlayici-hero.mp4
+# Anasayfa "Biz Kimiz?" öncesi video vitrinde kullanılan, sıkıştırılmış video
+!public/videos/anasayfa-vitrin.mp4
