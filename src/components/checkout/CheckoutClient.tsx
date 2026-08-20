@@ -54,6 +54,7 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
   const [error, setError] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [emailVerificationRequired, setEmailVerificationRequired] = useState(false);
+  const [contractAccepted, setContractAccepted] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("CASH_ON_DELIVERY");
   const [paytrToken, setPaytrToken] = useState<string | null>(null);
@@ -128,6 +129,10 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) return;
+    if (!contractAccepted) {
+      setError("Devam etmek için Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi'ni onaylamanız gerekir.");
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
 
@@ -475,11 +480,26 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
             ))}
           </div>
 
+          <label className="mt-4 flex items-start gap-2.5 border-t border-secondary/10 pt-4 font-body text-xs text-secondary-light">
+            <input
+              type="checkbox"
+              checked={contractAccepted}
+              onChange={(e) => setContractAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+            />
+            <span>
+              <Link href="/mesafeli-satis-sozlesmesi" target="_blank" className="font-medium text-primary underline underline-offset-2 hover:text-primary/80">
+                Ön Bilgilendirme Formu&apos;nu ve Mesafeli Satış Sözleşmesi&apos;ni
+              </Link>{" "}
+              okudum, içeriğini onaylıyorum.
+            </span>
+          </label>
+
           {error && <p className="mt-3 font-body text-xs font-medium text-red-600">{error}</p>}
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !contractAccepted}
             className="btn-sweep mt-5 w-full rounded-full border border-primary/30 py-3.5 font-body text-sm font-semibold text-secondary hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:hover:scale-100"
           >
             {isSubmitting
@@ -488,14 +508,6 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
                 : "Sipariş oluşturuluyor..."
               : "Siparişi Onayla"}
           </button>
-
-          <p className="mt-3 text-center font-body text-xs text-secondary-light">
-            Siparişi onaylayarak{" "}
-            <Link href="/mesafeli-satis-sozlesmesi" className="underline underline-offset-2 hover:text-primary">
-              Mesafeli Satış Sözleşmesi&apos;ni
-            </Link>{" "}
-            kabul etmiş olursunuz.
-          </p>
         </div>
       </form>
     </div>
