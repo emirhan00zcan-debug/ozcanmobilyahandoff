@@ -1,12 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { FaBoxOpen } from "react-icons/fa";
+import { FaBoxOpen, FaStar } from "react-icons/fa";
 import { prisma } from "@/lib/prisma";
 import { requireUser, signOut } from "@/lib/auth";
 import { ORDER_STATUS_LABELS } from "@/lib/order-labels";
 import ProfileSection from "@/components/account/ProfileSection";
 import AddressesSection from "@/components/account/AddressesSection";
 import PaymentMethodsSection from "@/components/account/PaymentMethodsSection";
+import OrderItemReview from "@/components/account/OrderItemReview";
 
 // Bu sayfa kullanıcıya özel, oturum gerektiren, herkese açık arama değeri olmayan bir
 // panel — index'lenmesi hem gizlilik açısından yanlış hem de arama sonuçlarında değersiz
@@ -22,6 +23,7 @@ const NAV_LINKS = [
   { href: "#adresler", label: "Adreslerim" },
   { href: "#odeme", label: "Ödeme Yöntemlerim" },
   { href: "#siparisler", label: "Siparişlerim" },
+  { href: "#yorumlarim", label: "Yorumlarım" },
 ];
 
 function formatPrice(value: number) {
@@ -46,6 +48,24 @@ export default async function HesabimPage() {
   // Bir siparişte kullanılmış adres FK kısıtlaması yüzünden silinemez (bkz. Order.addressId) —
   // bu adreslerde "Sil" butonu hiç gösterilmiyor.
   const usedAddressIds = new Set(orders.map((o) => o.addressId));
+
+  // "Yorumlarım": teslim edilmiş siparişlerdeki ürünler, tekrar edenler ayıklanarak —
+  // her biri için ya mevcut yorum gösterilir ya da değerlendirme formu açılabilir.
+  const reviewableProducts = Array.from(
+    new Map(
+      orders
+        .filter((o) => o.status === "DELIVERED")
+        .flatMap((o) => o.items)
+        .map((item) => [item.productId, item.productNameSnapshot] as const),
+    ).entries(),
+  ).map(([productId, productName]) => ({ productId, productName }));
+
+  const myReviews = reviewableProducts.length
+    ? await prisma.review.findMany({
+        where: { userId, productId: { in: reviewableProducts.map((p) => p.productId) } },
+      })
+    : [];
+  const myReviewByProductId = new Map(myReviews.map((r) => [r.productId, r]));
 
   const displayName = user.name?.trim() || "Özcan Mobilya Müşterisi";
   const avatarInitial = (user.name?.trim()?.[0] ?? user.email[0]).toUpperCase();
@@ -202,6 +222,37 @@ export default async function HesabimPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+
+          <div id="yorumlarim" className="scroll-mt-24 rounded-2xl border border-secondary/10 bg-white p-6">
+            <h2 className="font-display text-lg font-semibold text-secondary">Yorumlarım</h2>
+
+            {reviewableProducts.length === 0 ? (
+              <div className="mt-4 flex flex-col items-center gap-3 rounded-xl border border-dashed border-secondary/15 py-10 text-center">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary/[0.04] text-secondary-light">
+                  <FaStar className="h-5 w-5" />
+                </span>
+                <p className="font-body text-sm text-secondary-light">
+                  Siparişiniz teslim edildikten sonra ürünleri buradan değerlendirebilirsiniz.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4 divide-y divide-secondary/10">
+                {reviewableProducts.map(({ productId, productName }) => {
+                  const existing = myReviewByProductId.get(productId);
+                  return (
+                    <div key={productId} className="py-4 first:pt-0 last:pb-0">
+                      <p className="font-body text-sm font-medium text-secondary">{productName}</p>
+                      <OrderItemReview
+                        productId={productId}
+                        canReview
+                        existingReview={existing ? { rating: existing.rating, comment: existing.comment } : null}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
