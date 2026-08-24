@@ -141,6 +141,9 @@ function revalidateStorefront() {
   revalidatePath("/oda");
   revalidatePath("/oda/[slug]", "page");
   revalidatePath("/koleksiyon");
+  revalidatePath("/koleksiyon/[slug]", "page");
+  revalidatePath("/katalog");
+  revalidatePath("/indirimler");
   // "/urun" segmentinin kendi layout.tsx'i yok (yalnızca /urun/[slug]/page.tsx var), bu yüzden
   // eski "/urun", "layout" çağrısı hiçbir cache tag'iyle eşleşmiyordu ve ürünün kendi sayfası
   // fiyat değişikliğinden sonra hiç güncellenmiyordu. Doğru dinamik segment kalıbı gerekiyor.
