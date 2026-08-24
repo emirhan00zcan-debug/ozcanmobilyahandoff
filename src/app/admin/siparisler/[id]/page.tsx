@@ -104,8 +104,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               {order.address.fullName} · {order.address.phone}
             </p>
             <p className="font-body text-sm text-secondary-light">
-              {order.address.addressLine}, {order.address.district}/{order.address.city}{" "}
-              {order.address.postalCode ?? ""}
+              {order.address.addressLine}
+              {order.address.neighborhood ? `, ${order.address.neighborhood}` : ""}, {order.address.district}/
+              {order.address.city} {order.address.postalCode ?? ""}
             </p>
             {order.note && (
               <p className="mt-3 rounded-lg bg-secondary/[0.04] p-3 font-body text-sm text-secondary-light">

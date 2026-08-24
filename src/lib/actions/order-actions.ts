@@ -16,6 +16,7 @@ export type CheckoutAddressInput = {
   phone: string;
   city: string;
   district: string;
+  neighborhood?: string;
   addressLine: string;
   postalCode?: string;
 };
@@ -120,6 +121,7 @@ export async function createOrderAction(
         phone: address.phone,
         city: address.city,
         district: address.district,
+        neighborhood: address.neighborhood,
         addressLine: address.addressLine,
         postalCode: address.postalCode,
         userId,

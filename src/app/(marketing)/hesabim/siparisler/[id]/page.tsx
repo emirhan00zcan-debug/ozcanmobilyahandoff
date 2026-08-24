@@ -115,7 +115,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <p className="mt-3 font-body text-sm text-secondary">{order.address.fullName}</p>
           <p className="font-body text-sm text-secondary-light">{order.address.phone}</p>
           <p className="mt-1 font-body text-sm text-secondary-light">
-            {order.address.addressLine}, {order.address.district}/{order.address.city}
+            {order.address.addressLine}
+            {order.address.neighborhood ? `, ${order.address.neighborhood}` : ""}, {order.address.district}/
+            {order.address.city}
             {order.address.postalCode ? ` (${order.address.postalCode})` : ""}
           </p>
         </div>

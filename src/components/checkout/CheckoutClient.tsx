@@ -27,6 +27,7 @@ const EMPTY_ADDRESS: CheckoutAddressInput = {
   phone: "",
   city: "",
   district: "",
+  neighborhood: "",
   addressLine: "",
   postalCode: "",
 };
@@ -54,6 +55,8 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [emailVerificationRequired, setEmailVerificationRequired] = useState(false);
   const [contractAccepted, setContractAccepted] = useState(false);
+  const [neighborhoodOptions, setNeighborhoodOptions] = useState<string[]>([]);
+  const [neighborhoodLoading, setNeighborhoodLoading] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("BANK_TRANSFER");
   const [paytrToken, setPaytrToken] = useState<string | null>(null);
@@ -86,6 +89,31 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // İlçe seçildiğinde o ilçenin mahallelerini çeker (bkz. app/api/mahalle) — tüm Türkiye
+  // mahalle verisi (~24MB) istemci bundle'ına dahil edilmez, sadece seçilen ilçe için istenir.
+  useEffect(() => {
+    if (!address.city || !address.district) {
+      setNeighborhoodOptions([]);
+      return;
+    }
+    let cancelled = false;
+    setNeighborhoodLoading(true);
+    fetch(`/api/mahalle?il=${encodeURIComponent(address.city)}&ilce=${encodeURIComponent(address.district)}`)
+      .then((res) => res.json())
+      .then((data: { neighbourhoods?: string[] }) => {
+        if (!cancelled) setNeighborhoodOptions(data.neighbourhoods ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setNeighborhoodOptions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setNeighborhoodLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [address.city, address.district]);
 
   const handleChange = (field: keyof CheckoutAddressInput) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setAddress((prev) => ({ ...prev, [field]: e.target.value }));
@@ -331,7 +359,7 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
               label="Şehir"
               value={address.city}
               onChange={(e) => {
-                setAddress((prev) => ({ ...prev, city: e.target.value, district: "" }));
+                setAddress((prev) => ({ ...prev, city: e.target.value, district: "", neighborhood: "" }));
               }}
               required
               options={citiesData.map((c) => ({ label: c.name, value: c.name }))}
@@ -341,7 +369,7 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
             <SelectField
               label="İlçe"
               value={address.district}
-              onChange={(e) => setAddress((prev) => ({ ...prev, district: e.target.value }))}
+              onChange={(e) => setAddress((prev) => ({ ...prev, district: e.target.value, neighborhood: "" }))}
               required
               options={
                 address.city
@@ -352,6 +380,16 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
               }
               placeholder="İlçe Seçiniz"
               disabled={!address.city}
+            />
+
+            <SelectField
+              label="Mahalle"
+              value={address.neighborhood ?? ""}
+              onChange={(e) => setAddress((prev) => ({ ...prev, neighborhood: e.target.value }))}
+              required
+              options={neighborhoodOptions.map((n) => ({ label: n, value: n }))}
+              placeholder={neighborhoodLoading ? "Yükleniyor..." : "Mahalle Seçiniz"}
+              disabled={!address.district || neighborhoodLoading}
             />
           </div>
           <div>

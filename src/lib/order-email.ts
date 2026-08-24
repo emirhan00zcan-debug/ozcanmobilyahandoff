@@ -13,6 +13,7 @@ export type OrderEmailAddress = {
   phone: string;
   city: string;
   district: string;
+  neighborhood?: string;
   addressLine: string;
 };
 
@@ -46,7 +47,8 @@ function formatItemsList(items: OrderEmailItem[]) {
 }
 
 function formatAddress(address: OrderEmailAddress) {
-  return `${address.fullName} — ${address.phone}\n${address.addressLine}, ${address.district}/${address.city}`;
+  const neighborhoodPart = address.neighborhood ? `, ${address.neighborhood}` : "";
+  return `${address.fullName} — ${address.phone}\n${address.addressLine}${neighborhoodPart}, ${address.district}/${address.city}`;
 }
 
 function formatTotals(data: OrderEmailData) {

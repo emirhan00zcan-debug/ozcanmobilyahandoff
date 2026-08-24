@@ -110,6 +110,7 @@ export async function confirmOrderVerification(
       phone: order.address.phone,
       city: order.address.city,
       district: order.address.district,
+      neighborhood: order.address.neighborhood ?? undefined,
       addressLine: order.address.addressLine,
     },
     customerName: order.user?.name ?? order.address.fullName,
