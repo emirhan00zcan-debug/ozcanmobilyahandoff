@@ -15,7 +15,7 @@ type SeedTaxonomy = { name: string; slug: string; imageUrl?: string };
 const SEED_CATEGORIES: SeedTaxonomy[] = [
   { name: "Gardrop", slug: "gardirop", imageUrl: "/media/reklam2_karsidan.jpg" },
   { name: "Portmanto", slug: "portmanto", imageUrl: "/media/wardrobe_front_closed_1776678972128.jpg" },
-  { name: "Çalışma Masası", slug: "calisma-masasi", imageUrl: "/media/Gemini_Generated_Image_ci9bm4ci9bm4ci9b.png" },
+  { name: "Çalışma Masası", slug: "calisma-masasi", imageUrl: "/media/Gemini_Generated_Image_umx6nlumx6nlumx6.png" },
   { name: "Tv Ünitesi", slug: "tv-unitesi", imageUrl: "/media/t3_pro_1769533120140.jpg" },
   { name: "Kahve Köşesi", slug: "kahve-kosesi", imageUrl: "/media/Gemini_Generated_Image_5oyd1r5oyd1r5oyd.png" },
   { name: "Oyuncu Masası", slug: "oyuncu-masasi", imageUrl: "/media/gorsel_2026-06-27_145006208.png" },
