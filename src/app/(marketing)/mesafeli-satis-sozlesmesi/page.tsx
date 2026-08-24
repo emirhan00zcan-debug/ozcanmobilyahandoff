@@ -13,18 +13,6 @@ export default function MesafeliSatisSozlesmesiPage() {
     <>
       <LegalPageHeader title="Mesafeli Satış Sözleşmesi ve Ön Bilgilendirme Formu" />
       <article className={ARTICLE_CLASS}>
-        <div className="rounded-xl border border-secondary/15 bg-secondary/[0.03] p-4">
-          <p className="text-xs">
-            <strong>Özellikle dikkat:</strong> Bu taslak, Mesafeli Sözleşmeler Yönetmeliği
-            madde 15/1-(a) uyarınca &quot;tüketicinin istekleri veya kişisel ihtiyaçları
-            doğrultusunda hazırlanan mallarda&quot; cayma hakkının kullanılamayacağını
-            varsayar. Kataloğunuzda hem stoktan (hazır) hem de <strong>size özel ölçü</strong>{" "}
-            ile üretilen ürünler bulunduğundan, hangi ürünlerin bu istisna kapsamına girdiğini
-            bir hukuk danışmanıyla netleştirip 6. maddeyi ona göre kesinleştirin — bu, iade
-            politikanızı doğrudan etkileyen en kritik karardır.
-          </p>
-        </div>
-
         <h2>1. Taraflar</h2>
         <p>
           <strong>Satıcı:</strong> Özcan Mobilya - Hüseyin Özcan
@@ -89,7 +77,7 @@ export default function MesafeliSatisSozlesmesiPage() {
           Mesafeli Sözleşmeler Yönetmeliği m.15 uyarınca, <strong>tüketicinin istekleri veya
           kişisel ihtiyaçları doğrultusunda hazırlanan</strong> (örn. özel ölçüye/renge göre
           üretilen) ürünlerde cayma hakkı kullanılamaz. Aşağıdaki ürün kategorileri
-          <em> [hukuki onay sonrası netleştirilecek]</em> bu kapsamda değerlendirilir:
+          bu kapsamda değerlendirilir:
         </p>
         <ul>
           <li>Standart ölçü dışında, alıcının talebiyle özel ölçüde üretilen ürünler</li>
