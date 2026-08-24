@@ -239,3 +239,49 @@ export async function updateProductAction(
   revalidatePath(`/admin/urunler/${productId}`);
   return { error: null };
 }
+
+export type VariationsFormState = { error: string | null };
+
+// Ürün sayfasında bir varyasyon (ör. Cam Kapak + Mat Siyah + Uzun Ayak) seçildiğinde
+// gösterilen fiyat/stok, Product.basePrice/stock değil bu tablodaki (ProductVariation)
+// satırdan geliyor (bkz. ProductDetailClient effectivePrice/effectiveStock) — bu yüzden
+// varyasyonlu ürünlerde admin panelindeki "Satış Fiyatı"/"Stok Adedi" alanları tek başına
+// ürün sayfasındaki gösterilen fiyatı/stoku değiştirmiyor, bu form ayrıca gerekiyor.
+export async function updateProductVariationsAction(
+  productId: string,
+  _prevState: VariationsFormState,
+  formData: FormData,
+): Promise<VariationsFormState> {
+  await requireAdmin();
+
+  const variations = await prisma.productVariation.findMany({
+    where: { productId },
+    select: { id: true },
+  });
+  if (variations.length === 0) return { error: null };
+
+  const updates: { id: string; price: number; stock: number }[] = [];
+  for (const { id } of variations) {
+    const priceRaw = String(formData.get(`price_${id}`) ?? "").trim();
+    const stockRaw = String(formData.get(`stock_${id}`) ?? "").trim();
+    const price = Number(priceRaw);
+    const stock = Number.parseInt(stockRaw, 10);
+    if (!Number.isFinite(price) || price < 0) {
+      return { error: "Geçerli olmayan bir fiyat girildi." };
+    }
+    if (!Number.isFinite(stock) || stock < 0) {
+      return { error: "Geçerli olmayan bir stok adedi girildi." };
+    }
+    updates.push({ id, price, stock });
+  }
+
+  await prisma.$transaction(
+    updates.map(({ id, price, stock }) =>
+      prisma.productVariation.update({ where: { id }, data: { price, stock } }),
+    ),
+  );
+
+  revalidateStorefront();
+  revalidatePath(`/admin/urunler/${productId}`);
+  return { error: null };
+}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import ProductForm from "@/components/admin/ProductForm";
+import ProductVariationsForm from "@/components/admin/ProductVariationsForm";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
@@ -11,7 +12,13 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const [product, categories, rooms] = await Promise.all([
     prisma.product.findUnique({
       where: { id },
-      include: { images: { orderBy: { order: "asc" } } },
+      include: {
+        images: { orderBy: { order: "asc" } },
+        variations: {
+          orderBy: { createdAt: "asc" },
+          include: { selectedOptions: { include: { variationOption: true } } },
+        },
+      },
     }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
     prisma.room.findMany({ orderBy: { order: "asc" } }),
@@ -47,6 +54,19 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           images: product.images.map((image) => image.url),
         }}
       />
+
+      {product.variations.length > 0 && (
+        <ProductVariationsForm
+          productId={product.id}
+          variations={product.variations.map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            price: Number(v.price),
+            stock: v.stock,
+            label: v.selectedOptions.map((so) => so.variationOption.value).join(" · "),
+          }))}
+        />
+      )}
     </div>
   );
 }
