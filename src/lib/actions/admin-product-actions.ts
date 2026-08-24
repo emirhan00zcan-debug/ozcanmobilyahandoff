@@ -235,6 +235,17 @@ export async function updateProductAction(
     });
   }
 
+  // Varyasyonlu ürünlerde fiyat/stok müşteriye ProductVariation satırından gösterilir (bkz.
+  // ProductDetailClient effectivePrice/effectiveStock) — üstteki genel "Satış Fiyatı"/"Stok
+  // Adedi" tek başına ürün sayfasını etkilemesin ve anasayfa kartıyla tutarsız kalmasın diye,
+  // burada girilen değerler tüm varyasyonlara da yazılır. Yani bu form kaydedildiğinde
+  // "Varyasyonlar" tablosundaki olası fiyat/stok farkları da bu tek değerle ezilir — ürüne
+  // özel varyasyon fiyatları isteniyorsa Varyasyonlar formu bu kayıttan SONRA kullanılmalı.
+  await prisma.productVariation.updateMany({
+    where: { productId },
+    data: { price: parsed.data.basePrice, stock: parsed.data.stock },
+  });
+
   revalidateStorefront();
   revalidatePath(`/admin/urunler/${productId}`);
   return { error: null };

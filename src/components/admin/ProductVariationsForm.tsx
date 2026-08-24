@@ -29,8 +29,10 @@ export default function ProductVariationsForm({ productId, variations }: Props) 
     <div className="mt-10 max-w-2xl">
       <h2 className="font-display text-lg font-bold text-secondary">Varyasyonlar</h2>
       <p className="mt-1 font-body text-xs text-secondary-light">
-        Ürün sayfasında müşteriye gösterilen fiyat ve stok, seçilen varyasyona göre buradan belirlenir
-        — yukarıdaki &quot;Satış Fiyatı&quot;/&quot;Stok Adedi&quot; alanları bu ürün için kullanılmaz.
+        Ürün sayfasında müşteriye gösterilen fiyat ve stok, seçilen varyasyona göre buradan belirlenir.
+        Yukarıdaki &quot;Satış Fiyatı&quot;/&quot;Stok Adedi&quot; alanlarını kaydettiğinizde bu tablodaki tüm
+        satırlar o değerle güncellenir — farklı varyasyonlara farklı fiyat/stok girmek isterseniz
+        yukarıdaki formu kaydettikten <strong>sonra</strong> burayı düzenleyin.
       </p>
 
       <form action={formAction} className="mt-4 overflow-x-auto rounded-2xl border border-secondary/10 bg-white">
