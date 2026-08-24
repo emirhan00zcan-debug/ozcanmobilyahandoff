@@ -41,7 +41,7 @@ export async function createOrderAction(
   items: CheckoutItemInput[],
   note?: string,
   couponCode?: string,
-  paymentMethod: PaymentMethodType = "CASH_ON_DELIVERY",
+  paymentMethod: PaymentMethodType = "BANK_TRANSFER",
 ): Promise<CreateOrderResult> {
   const session = await auth();
   const userId = session?.user?.id;

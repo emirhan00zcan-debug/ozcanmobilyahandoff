@@ -42,10 +42,9 @@ function AddPaymentMethodForm({ onDone }: { onDone: () => void }) {
         <label className="mb-1.5 block font-body text-xs font-medium text-secondary-light">Yöntem</label>
         <select
           name="type"
-          defaultValue="CASH_ON_DELIVERY"
+          defaultValue="BANK_TRANSFER"
           className="w-full rounded-xl border border-secondary/15 px-4 py-2.5 font-body text-sm text-secondary focus:border-primary focus:outline-none"
         >
-          <option value="CASH_ON_DELIVERY">Kapıda Ödeme</option>
           <option value="BANK_TRANSFER">Havale / EFT</option>
         </select>
       </div>

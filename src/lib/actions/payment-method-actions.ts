@@ -10,7 +10,7 @@ export type PaymentMethodActionState = { success: boolean; error: string | null 
 // PayTR entegrasyonu tamamlanana kadar sadece kart gerektirmeyen tipler eklenebilir —
 // CARD arayüzde "yakında" olarak gösteriliyor, seçilemiyor; buraya CARD ile gelinmesi
 // beklenmez ama yine de reddedilir.
-const ALLOWED_TYPES: PaymentMethodType[] = ["CASH_ON_DELIVERY", "BANK_TRANSFER"];
+const ALLOWED_TYPES: PaymentMethodType[] = ["BANK_TRANSFER"];
 
 export async function createPaymentMethodAction(
   _prevState: PaymentMethodActionState,

@@ -34,7 +34,6 @@ const EMPTY_ADDRESS: CheckoutAddressInput = {
 type Props = { userName?: string | null; userEmail?: string | null; paytrEnabled: boolean };
 
 const PAYMENT_METHOD_OPTIONS: { value: PaymentMethodType; label: string }[] = [
-  { value: "CASH_ON_DELIVERY", label: "Kapıda Ödeme" },
   { value: "BANK_TRANSFER", label: "Havale / EFT" },
   { value: "CARD", label: "Kredi Kartı" },
 ];
@@ -56,7 +55,7 @@ export default function CheckoutClient({ userName, userEmail, paytrEnabled }: Pr
   const [emailVerificationRequired, setEmailVerificationRequired] = useState(false);
   const [contractAccepted, setContractAccepted] = useState(false);
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("CASH_ON_DELIVERY");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("BANK_TRANSFER");
   const [paytrToken, setPaytrToken] = useState<string | null>(null);
   const [cardTokenError, setCardTokenError] = useState<string | null>(null);
 
