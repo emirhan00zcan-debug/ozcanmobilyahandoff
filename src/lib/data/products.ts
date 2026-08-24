@@ -336,12 +336,12 @@ export function toFeaturedProduct(product: ProductDetail): FeaturedProduct {
 // Ürün sayfaları arasında ortak (siteye özel, ürüne özel değil) bir bölüm.
 export type ProductReview = {
   id: string;
-  image: string;
+  image?: string;
   name: string;
   rating: number;
   quote: string;
-  productName: string;
-  productSlug: string;
+  productName?: string;
+  productSlug?: string;
   verifiedPurchase: boolean;
 };
 
@@ -391,6 +391,34 @@ export const productReviews: ProductReview[] = [
     verifiedPurchase: true,
   },
 ];
+
+// Yorumcunun tam adını "Serkan T." gibi kısaltır — küratörlü örneklerle aynı gizlilik biçimi.
+function maskReviewerName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "Doğrulanmış Müşteri";
+  if (parts.length === 1) return parts[0];
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
+}
+
+// Ürünü teslim aldıktan sonra hesabım/siparişler sayfasından bırakılan gerçek yorumlar
+// (bkz. submitReviewAction) + yukarıdaki küratörlü örnekler birlikte, en yeni önce gösterilir.
+export async function getProductReviews(productSlug: string): Promise<ProductReview[]> {
+  const dbReviews = await prisma.review.findMany({
+    where: { product: { slug: productSlug } },
+    include: { user: { select: { name: true, email: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const mapped: ProductReview[] = dbReviews.map((r) => ({
+    id: r.id,
+    name: maskReviewerName(r.user.name?.trim() || r.user.email),
+    rating: r.rating,
+    quote: r.comment,
+    verifiedPurchase: true,
+  }));
+
+  return [...mapped, ...productReviews.filter((r) => r.productSlug === productSlug)];
+}
 
 // "Teknik Detaylar" / "Marka Kimliğimiz" sekmeleri — referans sitedeki gerçek metinler,
 // tüm ürün sayfalarında ortak (siteye özel) statik içerik.

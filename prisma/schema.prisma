@@ -80,6 +80,7 @@ model User {
   accounts       Account[]
   sessions       Session[]
   paymentMethods PaymentMethod[]
+  reviews        Review[]
 
   @@map("users")
 }
@@ -161,6 +162,7 @@ model Address {
   phone       String
   city        String
   district    String
+  neighborhood String?
   addressLine String   @db.Text
   postalCode  String?
   isDefault   Boolean  @default(false)
@@ -289,6 +291,7 @@ model Product {
   variations       ProductVariation[]
   cartItems        CartItem[]
   orderItems       OrderItem[]
+  reviews          Review[]
 
   @@index([categoryId])
   @@index([roomId])
@@ -306,6 +309,30 @@ model ProductImage {
 
   @@index([productId])
   @@map("product_images")
+}
+
+// ============================================================================
+// ÜRÜN YORUMLARI ("Sizden Gelenler")
+// ============================================================================
+// Sadece ürünü satın almış, oturum açmış kullanıcılar yorum bırakabilir (bkz.
+// submitReviewAction — teslim edilmiş bir siparişte bu ürün var mı diye kontrol eder).
+// Bir kullanıcı bir ürüne yalnızca bir kez yorum yapabilir (@@unique).
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rating    Int
+  comment   String   @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@map("reviews")
 }
 
 // ============================================================================

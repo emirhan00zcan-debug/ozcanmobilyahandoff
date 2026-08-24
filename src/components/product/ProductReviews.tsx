@@ -2,13 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { FaStar } from "react-icons/fa";
 import { BadgeCheck, ChevronRight } from "lucide-react";
-import { productReviews } from "@/lib/data/products";
+import { productReviews, getProductReviews } from "@/lib/data/products";
 
 // "Sizden Gelenler" — referans sitedeki koyu lacivert (#1D349A) renk şemasıyla birebir aynı.
-export default function ProductReviews({ productSlug }: { productSlug?: string }) {
-  const reviews = productSlug
-    ? productReviews.filter((r) => r.productSlug === productSlug)
-    : productReviews;
+export default async function ProductReviews({ productSlug }: { productSlug?: string }) {
+  const reviews = productSlug ? await getProductReviews(productSlug) : productReviews;
 
   if (reviews.length === 0) {
     return (
@@ -32,22 +30,24 @@ export default function ProductReviews({ productSlug }: { productSlug?: string }
           <div>
             <h2 className="font-display text-3xl font-semibold text-white">Sizden Gelenler</h2>
             <p className="mt-2 text-white/80 font-body text-sm max-w-2xl">
-              Müşterilerimizin evlerinden örnek deneyimler ve kurulum fotoğrafları. Zamanla puanlama sistemi aktifleşecek ve ürünlere özel yorumlar yayınlanacaktır.
+              Müşterilerimizin gerçek deneyimleri ve kurulum fotoğrafları. Ürünü satın alıp teslim aldıktan sonra hesabınızdaki siparişten yorum bırakabilirsiniz.
             </p>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {reviews.map((review) => (
             <div key={review.id} className="flex flex-col overflow-hidden rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-              <div className="relative aspect-[3/4] w-full overflow-hidden">
-                <Image
-                  src={review.image}
-                  alt={review.name}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover"
-                />
-              </div>
+              {review.image && (
+                <div className="relative aspect-[3/4] w-full overflow-hidden">
+                  <Image
+                    src={review.image}
+                    alt={review.name}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover"
+                  />
+                </div>
+              )}
               <div className="flex flex-1 flex-col gap-3 p-5 bg-white">
                 <div className="flex items-center justify-between">
                   <div className="flex gap-0.5 text-[#F5B800]">
