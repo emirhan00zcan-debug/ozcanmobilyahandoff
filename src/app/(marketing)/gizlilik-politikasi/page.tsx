@@ -59,11 +59,40 @@ export default function GizlilikPolitikasiPage() {
 
         <h2>4. Kişisel Verilerin Aktarılması</h2>
         <p>
-          Kişisel verileriniz; ödeme işlemlerinin yürütülmesi için ödeme kuruluşuna (PayTR),
-          kargo/teslimat için anlaşmalı kargo firmasına ve yasal zorunluluk hâllerinde yetkili
-          kamu kurumlarına, KVKK&apos;nın 8. ve 9. maddelerinde belirtilen şartlarla sınırlı
-          olarak aktarılabilir. Verileriniz yurt dışına aktarılmaz
-          <em> [barındırma/e-posta altyapısı yurt dışı sunucu kullanıyorsa bu madde güncellenmelidir]</em>.
+          Kişisel verileriniz, hizmetin sunulabilmesi için gerekli olduğu ölçüde aşağıdaki
+          taraflara, KVKK&apos;nın 8. ve 9. maddelerinde belirtilen şartlarla sınırlı olarak
+          aktarılabilir:
+        </p>
+        <ul>
+          <li>Ödeme kuruluşu (PayTR) — ödeme işlemlerinin yürütülmesi (Türkiye)</li>
+          <li>Anlaşmalı kargo firması — sipariş teslimatı (Türkiye)</li>
+          <li>
+            Veritabanı barındırma altyapısı (Supabase / Amazon Web Services, Frankfurt/Almanya —
+            Avrupa Birliği) — hesap, sipariş ve site verilerinin saklanması
+          </li>
+          <li>Site barındırma altyapısı (Vercel Inc., ABD merkezli) — sitenin çalıştırılması</li>
+          <li>
+            E-posta gönderim altyapısı (Resend) — sipariş onayı, şifre sıfırlama ve (açık rıza
+            verilmesi hâlinde) bülten e-postalarının iletilmesi
+          </li>
+          <li>
+            Google Analytics (Google LLC, ABD merkezli) — yalnızca çerez onayı verilmesi hâlinde
+            ziyaret istatistiklerinin ölçülmesi
+          </li>
+          <li>
+            Google/Apple ile giriş tercih edilmesi hâlinde ilgili kimlik doğrulama sağlayıcıları
+          </li>
+          <li>
+            Upstash — form gönderimlerinde kötüye kullanımı önlemek amacıyla hız sınırlama
+            altyapısı
+          </li>
+          <li>Yasal zorunluluk hâllerinde yetkili kamu kurum ve kuruluşları (Türkiye)</li>
+        </ul>
+        <p>
+          Bu aktarımların bir kısmı kişisel verilerin Türkiye dışında (başta Avrupa Birliği ve
+          Amerika Birleşik Devletleri olmak üzere) işlenmesini gerektirmektedir. Yurt dışına
+          aktarımlar, KVKK&apos;nın 9. maddesinde öngörülen şartlara (açık rıza, Kurul tarafından
+          ilan edilen yeterlilik kararı veya uygun güvenceler) uygun şekilde yürütülür.
         </p>
 
         <h2>5. Saklama Süresi</h2>
