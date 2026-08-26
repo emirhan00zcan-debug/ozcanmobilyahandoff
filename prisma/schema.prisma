@@ -608,6 +608,13 @@ model PaymentMethod {
 model NewsletterSubscriber {
   id        String   @id @default(cuid())
   email     String   @unique
+
+  // Ticari elektronik ileti onayının ispatı (KVKK + Ticari İletişim Yönetmeliği) — hangi
+  // metne, ne zamandan itibaren, hangi IP'den onay verildiği (bkz. newsletter-actions.ts
+  // NEWSLETTER_CONSENT_VERSION). Onay kutusu eklenmeden önceki eski kayıtlarda null.
+  consentIp      String?
+  consentVersion String?
+
   createdAt DateTime @default(now())
 
   @@map("newsletter_subscribers")

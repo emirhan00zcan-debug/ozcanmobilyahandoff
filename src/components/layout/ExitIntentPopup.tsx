@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useActionState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { FaTimes, FaFacebookF, FaInstagram, FaWhatsapp, FaCheck } from "react-icons/fa";
 import {
   subscribeNewsletterAction,
@@ -180,6 +181,26 @@ export default function ExitIntentPopup() {
                   className="w-full rounded-full border border-secondary/15 bg-secondary/[0.02] px-5 py-3.5 font-body text-sm text-secondary placeholder:text-secondary-light focus:border-primary focus:outline-none"
                 />
 
+                <label className="mt-3 flex items-start gap-2 font-body text-[11px] leading-relaxed text-secondary-light">
+                  <input
+                    type="checkbox"
+                    name="consent"
+                    required
+                    className="mt-0.5 accent-primary"
+                  />
+                  <span>
+                    <Link
+                      href="/gizlilik-politikasi"
+                      target="_blank"
+                      className="underline underline-offset-2 hover:text-secondary"
+                    >
+                      Gizlilik Politikası&apos;nı
+                    </Link>{" "}
+                    okudum, Özcan Mobilya&apos;nın bana e-posta yoluyla kampanya/indirim
+                    bildirimi göndermesini kabul ediyorum.
+                  </span>
+                </label>
+
                 {state.error && (
                   <p className="mt-2 font-body text-xs font-medium text-red-600">{state.error}</p>
                 )}
@@ -194,8 +215,7 @@ export default function ExitIntentPopup() {
               </form>
 
               <p className="mt-3 text-center font-body text-[11px] text-secondary-light">
-                Kaydolarak kampanya e-postalarımızı almayı kabul edersiniz, istediğiniz zaman
-                vazgeçebilirsiniz.
+                İstediğiniz zaman abonelikten çıkabilirsiniz.
               </p>
 
               {/* Sosyal medya — sitede az önce tanımlanan ortak .btn-sweep dolgu animasyonu

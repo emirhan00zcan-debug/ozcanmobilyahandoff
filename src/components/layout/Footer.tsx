@@ -38,39 +38,41 @@ export default function Footer() {
             </div>
           ) : (
             <>
-              <form action={formAction} className="mt-4 flex overflow-hidden rounded-full border border-secondary/15">
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="E-posta adresiniz"
-                  className="w-full bg-transparent px-5 py-3 font-body text-sm text-secondary placeholder:text-secondary-light focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="btn-sweep shrink-0 border-l border-primary/30 px-6 font-body text-sm font-semibold text-secondary active:scale-95 disabled:opacity-60"
-                >
-                  {isPending ? "..." : "Kaydol"}
-                </button>
+              <form action={formAction} className="mt-4">
+                <div className="flex overflow-hidden rounded-full border border-secondary/15">
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    placeholder="E-posta adresiniz"
+                    className="w-full bg-transparent px-5 py-3 font-body text-sm text-secondary placeholder:text-secondary-light focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="btn-sweep shrink-0 border-l border-primary/30 px-6 font-body text-sm font-semibold text-secondary active:scale-95 disabled:opacity-60"
+                  >
+                    {isPending ? "..." : "Kaydol"}
+                  </button>
+                </div>
+
+                <label className="mt-3 flex items-start gap-2 font-body text-xs text-secondary-light">
+                  <input type="checkbox" name="consent" required className="mt-0.5 accent-primary" />
+                  <span>
+                    <Link href="/gizlilik-politikasi" target="_blank" className="underline">
+                      Gizlilik Politikası&apos;nı
+                    </Link>{" "}
+                    okudum, Özcan Mobilya&apos;nın bana e-posta yoluyla kampanya/indirim
+                    bildirimi göndermesini kabul ediyorum.
+                  </span>
+                </label>
+
+                {state.error && (
+                  <p className="mt-2 font-body text-xs font-medium text-red-600">{state.error}</p>
+                )}
               </form>
-              {state.error && (
-                <p className="mt-2 font-body text-xs font-medium text-red-600">{state.error}</p>
-              )}
             </>
           )}
-
-          <p className="mt-3 font-body text-xs text-secondary-light">
-            Abone olarak{" "}
-            <Link href="/hizmet-sartlari" className="underline">
-              Hizmet Şartları&apos;nı
-            </Link>{" "}
-            ve{" "}
-            <Link href="/gizlilik-politikasi" className="underline">
-              Gizlilik Politikası&apos;nı
-            </Link>{" "}
-            kabul etmiş olursunuz.
-          </p>
         </div>
 
         <div className="hidden bg-secondary/10 md:block" />

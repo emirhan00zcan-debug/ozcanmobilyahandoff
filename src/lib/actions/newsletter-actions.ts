@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { isRateLimited } from "@/lib/rate-limit";
 
 // Çıkış-niyeti (exit-intent) popup'ının "%10 indirim" kuponu — bkz.
 // src/components/layout/ExitIntentPopup.tsx. Kupon Coupon tablosunda yoksa
@@ -9,6 +11,11 @@ import { sendEmail } from "@/lib/email";
 // tanımlanması gerekmesin.
 const WELCOME_COUPON_CODE = "HOSGELDIN10";
 const WELCOME_COUPON_VALIDITY_MS = 5 * 365 * 24 * 60 * 60 * 1000; // ~5 yıl
+
+// Ticari elektronik ileti onay metninin sürümü (bkz. Footer.tsx / ExitIntentPopup.tsx'teki
+// onay kutusu metni). NewsletterSubscriber.consentVersion'a yazılır; metin ileride
+// değişirse burası da güncellenmeli ki hangi ifadeye onay verildiği ispatlanabilsin.
+const NEWSLETTER_CONSENT_VERSION = "2026-08-26";
 
 export type NewsletterActionState =
   | { success: true; couponCode: string }
@@ -22,12 +29,22 @@ export async function subscribeNewsletterAction(
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { success: false, error: "Geçerli bir e-posta adresi girin." };
   }
+  if (formData.get("consent") !== "on") {
+    return { success: false, error: "Devam etmek için kampanya e-postalarını almayı kabul etmelisiniz." };
+  }
+  if (await isRateLimited("newsletter-subscribe", 5, 600)) {
+    return { success: false, error: "Çok fazla deneme yaptınız, lütfen biraz sonra tekrar deneyin." };
+  }
+
+  const headersList = await headers();
+  const forwardedFor = headersList.get("x-forwarded-for");
+  const consentIp = forwardedFor?.split(",")[0]?.trim() || headersList.get("x-real-ip") || null;
 
   try {
     await prisma.newsletterSubscriber.upsert({
       where: { email },
-      update: {},
-      create: { email },
+      update: { consentIp, consentVersion: NEWSLETTER_CONSENT_VERSION },
+      create: { email, consentIp, consentVersion: NEWSLETTER_CONSENT_VERSION },
     });
 
     const coupon = await prisma.coupon.upsert({
