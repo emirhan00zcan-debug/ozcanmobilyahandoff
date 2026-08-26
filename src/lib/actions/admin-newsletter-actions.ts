@@ -7,7 +7,7 @@ import { requireAdmin } from "@/lib/auth";
 export type NewsletterCampaignState =
   | { status: "idle" }
   | { status: "error"; error: string }
-  | { status: "success"; sentCount: number; failedCount: number };
+  | { status: "success"; sentCount: number; failedCount: number; lastError?: string };
 
 // Resend'in ücretsiz planı saniyede ~2 istekle sınırlı — çok sayıda aboneye
 // art arda gönderirken 429 alıp sessizce e-posta kaybetmemek için istekler
@@ -34,18 +34,20 @@ export async function sendNewsletterCampaignAction(
 
   let sentCount = 0;
   let failedCount = 0;
+  let lastError: string | undefined;
 
   for (const [index, { email }] of subscribers.entries()) {
-    const ok = await sendEmail({ to: email, subject, text: message });
-    if (ok) {
+    const result = await sendEmail({ to: email, subject, text: message });
+    if (result.success) {
       sentCount++;
     } else {
       failedCount++;
+      lastError = result.error;
     }
     if (index < subscribers.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, SEND_DELAY_MS));
     }
   }
 
-  return { status: "success", sentCount, failedCount };
+  return { status: "success", sentCount, failedCount, lastError };
 }

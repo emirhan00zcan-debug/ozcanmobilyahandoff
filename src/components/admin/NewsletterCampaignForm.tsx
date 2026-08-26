@@ -49,10 +49,15 @@ export default function NewsletterCampaignForm({ subscriberCount }: { subscriber
         <p className="font-body text-xs font-medium text-red-600">{state.error}</p>
       )}
       {state.status === "success" && (
-        <p className="font-body text-xs font-medium text-primary">
-          Gönderildi: {state.sentCount} başarılı
-          {state.failedCount > 0 ? `, ${state.failedCount} başarısız` : ""}.
-        </p>
+        <div>
+          <p className="font-body text-xs font-medium text-primary">
+            Gönderildi: {state.sentCount} başarılı
+            {state.failedCount > 0 ? `, ${state.failedCount} başarısız` : ""}.
+          </p>
+          {state.lastError && (
+            <p className="mt-1 font-body text-xs font-medium text-red-600">Hata: {state.lastError}</p>
+          )}
+        </div>
       )}
 
       <button
