@@ -1,0 +1,114 @@
+{
+  "id": "mutfak-dolabi-cok-amacli",
+  "name": "Cok Amacli Mutfak Dolabi",
+  "category": "Mutfak",
+  "room": "mutfak",
+  "archetype": "carcass",
+  "standards": {
+    "panel_t": 18,
+    "back_t": 8,
+    "door_t": 18,
+    "door_gap": 3,
+    "shelf_setback": 6,
+    "foot_h": 100,
+    "edge_band_t": 2,
+    "render_bevel": 0.4
+  },
+  "sizes": [
+    {
+      "code": "60x90",
+      "label": "Tezgah Yuksekligi",
+      "w": 600,
+      "h": 900,
+      "d": 400,
+      "compartments": 3,
+      "doors": 2,
+      "note": "900 mm = standart tezgah yuksekligi; mutfak tezgahinin yanina hizalanir."
+    },
+    {
+      "code": "80x90",
+      "label": "Genis",
+      "w": 800,
+      "h": 900,
+      "d": 400,
+      "compartments": 3,
+      "doors": 2,
+      "note": "Ayni yukseklik, daha genis govde."
+    },
+    {
+      "code": "60x180",
+      "label": "Kiler / Boy Dolabi",
+      "w": 600,
+      "h": 1800,
+      "d": 400,
+      "compartments": 5,
+      "doors": 2,
+      "hero": true,
+      "note": "Erzak/kiler dolabi. Tam boy iki kapak, 5 kat."
+    }
+  ],
+  "colors": [
+    {
+      "code": "beyaz",
+      "label": "Parlak Beyaz",
+      "hex": "#F4F4F2",
+      "roughness": 0.32,
+      "kind": "solid",
+      "hero": true
+    },
+    {
+      "code": "antrasit",
+      "label": "Antrasit",
+      "hex": "#3B3E42",
+      "roughness": 0.4,
+      "kind": "solid"
+    },
+    {
+      "code": "sonoma-mese",
+      "label": "Sonoma Mese",
+      "hex": "#C9A97D",
+      "roughness": 0.45,
+      "kind": "wood",
+      "grain_dark": "#A98A5E"
+    }
+  ],
+  "hardware": {
+    "handle": {
+      "type": "bar",
+      "centers": 224,
+      "bar_diameter": 12,
+      "post_diameter": 10,
+      "projection": 34,
+      "finish": "mat-siyah",
+      "hex": "#1C1C1E",
+      "roughness": 0.35,
+      "inset_x": 45
+    },
+    "foot": {
+      "type": "ayarli-plastik",
+      "diameter": 50,
+      "inset": 55,
+      "hex": "#202124",
+      "roughness": 0.55
+    }
+  },
+  "pricing": {
+    "base_try": 3900,
+    "size_modifier_try": {
+      "60x90": 0,
+      "80x90": 600,
+      "60x180": 2400
+    },
+    "color_modifier_try": {
+      "beyaz": 0,
+      "antrasit": 200,
+      "sonoma-mese": 200
+    }
+  },
+  "notes": [
+    "100 mm ayarli ayak — robot supurge uyumlu, dengesiz mutfak zeminine ayarlanir.",
+    "Cift kapak; menteseler dista, kulplar ortada bulusur.",
+    "Arkalik govdenin arka yuzune direkt monte edilir.",
+    "Tum kesimler duz dikdortgendir - CNC ebatlama gerektirmez."
+  ]
+}

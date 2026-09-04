@@ -1,0 +1,44 @@
+{
+  "id": "mutfak",
+  "label": "Mutfak",
+  "image": "ArkaPlan_Gorselleri/coffee_station_background_empty_1787579752736.png",
+
+  "_kalibrasyon": [
+    "Fotograftan olculdu: duvar-zemin cizgisi y=783 px (4 noktada duz -> kamera",
+    "duvara dik), supurgelik 35 px. Dikeyler paralel -> ufuk kare ortasinda.",
+    "Tavan 2700 mm kabulu ile tutarli cozum: kamera 1006 mm, duvarda 3.71 mm/px,",
+    "supurgelik 130 mm. Lens 35 mm -> duvar mesafesi ~3689 mm.",
+    "Urun, soldaki bitki golgelerinin disinda kalan temiz duvar alanina konumlandi."
+  ],
+
+  "camera": {
+    "lens": 35,
+    "height_mm": 1006,
+    "floor_line_px": 783
+  },
+
+  "product": {
+    "x_mm": 700,
+    "wall_gap_mm": 18
+  },
+
+  "reference": {
+    "wall_px": [850, 300],
+    "floor_px": [700, 900],
+    "sample_radius_px": 25
+  },
+
+  "light": {
+    "sun_azimuth_deg": -55,
+    "sun_elevation_deg": 30,
+    "sun_strength": 0.0,
+    "sun_color": "#FFF0D8",
+    "sun_angle_deg": 3.0,
+    "ambient_color": "#E4E0D6",
+    "ambient_strength": 0.4,
+    "window_azimuth_deg": -80,
+    "window_strength": 200.0,
+    "window_size_m": 2.2,
+    "window_shadow": true
+  }
+}

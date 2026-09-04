@@ -57,6 +57,32 @@ def cyl(pid, name, base, direction, diameter, length, material):
     }
 
 
+def handle_parts(handle, door_id, cx, cz):
+    """Kulp parcalari. Dugme kulp: sap + bas. Cubuk kulp: 2 ayak + dikey boru."""
+    parts = []
+    if handle["type"] == "knob":
+        head_len = 10
+        stem_len = handle["projection"] - head_len
+        parts.append(cyl(f"kulp-sap-{door_id}", "Kulp Sapi", (cx, 0, cz), (0, -1, 0),
+                         handle["stem_diameter"], stem_len, "hardware"))
+        parts.append(cyl(f"kulp-bas-{door_id}", "Kulp Basi", (cx, -stem_len, cz), (0, -1, 0),
+                         handle["diameter"], head_len, "hardware"))
+    else:
+        half = handle["centers"] / 2.0
+        stand = handle["projection"] - handle["bar_diameter"] / 2.0
+        for sign, tag in ((-1, "alt"), (1, "ust")):
+            parts.append(cyl(f"kulp-ayak-{tag}-{door_id}", "Kulp Ayagi",
+                             (cx, 0, cz + sign * half), (0, -1, 0),
+                             handle["post_diameter"], stand, "hardware"))
+        parts.append(cyl(f"kulp-boru-{door_id}", "Kulp Borusu",
+                         (cx, -stand, cz - half - handle["bar_diameter"] / 2.0), (0, 0, 1),
+                         handle["bar_diameter"], handle["centers"] + handle["bar_diameter"],
+                         "hardware"))
+    for p in parts:
+        p["parent"] = door_id
+    return parts
+
+
 def build_carcass(spec, size):
     """Govde + raf + kapak + arkalik + ayak + kulp. Tum kesimler duz dikdortgen."""
     s = spec["standards"]
@@ -79,6 +105,7 @@ def build_carcass(spec, size):
 
     y0 = door_t  # govde on yuzu
     z0 = foot_h  # govde alt yuzu
+    door_count = size.get("doors", 1)
 
     parts = [
         box("yan-sol", "Yan Panel (Sol)", (0, y0, z0), (t, carcass_d, carcass_h),
@@ -92,7 +119,7 @@ def build_carcass(spec, size):
     ]
 
     for k in range(1, shelf_count + 1):
-        z = z0 + t + k * net_h + (k - 1) * t
+        z = round(z0 + t + k * net_h + (k - 1) * t)
         parts.append(
             box(f"raf-{k}", f"Raf {k}", (t, y0 + setback, z),
                 (inner_w, carcass_d - setback, t), "body", ["front"])
@@ -103,14 +130,29 @@ def build_carcass(spec, size):
             "back", [])
     )
 
-    door_w = W - 2 * gap
+    # Kapaklar: tek kapakta menteseler solda, cift kapakta her kapak kendi dis
+    # kenarindan doner ve kulplar ortada bulusur.
     door_h = carcass_h - 2 * gap
-    door = box("kapak", "Kapak", (gap, 0, z0 + gap), (door_w, door_t, door_h),
-               "body", ["all"])
-    # Mentese sol tarafta -> kapak sol on dikey kenarindan doner (acik render icin)
-    door["pivot"] = [gap, door_t, z0 + gap]
-    door["hinge_axis"] = "z"
-    parts.append(door)
+    door_w = (W - (door_count + 1) * gap) / door_count
+    door_z = z0 + gap
+    handle = spec["hardware"]["handle"]
+
+    for i in range(door_count):
+        door_x = gap + i * (door_w + gap)
+        hinge_left = door_count == 1 or i == 0
+        door_id = f"kapak-{i + 1}" if door_count > 1 else "kapak"
+        label = f"Kapak {i + 1}" if door_count > 1 else "Kapak"
+        door = box(door_id, label, (door_x, 0, door_z), (door_w, door_t, door_h),
+                   "body", ["all"])
+        door["pivot"] = [door_x if hinge_left else door_x + door_w, door_t, door_z]
+        door["hinge_side"] = "left" if hinge_left else "right"
+        parts.append(door)
+
+        # kulp acilan kenara yakin durur
+        opening_edge = door_x + door_w if hinge_left else door_x
+        offset = -handle["inset_x"] if hinge_left else handle["inset_x"]
+        parts.extend(handle_parts(handle, door_id, opening_edge + offset,
+                                  door_z + door_h / 2.0))
 
     foot = spec["hardware"]["foot"]
     fi = foot["inset"]
@@ -119,17 +161,7 @@ def build_carcass(spec, size):
         start=1,
     ):
         parts.append(cyl(f"ayak-{i}", f"Ayak {i}", (fx, fy, 0), (0, 0, 1),
-                         foot["diameter"], foot["len"] if "len" in foot else foot_h, "foot"))
-
-    knob = spec["hardware"]["handle"]
-    kx = W - gap - knob["inset_x"]
-    kz = z0 + gap + door_h / 2.0
-    head_len = 10
-    stem_len = knob["projection"] - head_len
-    parts.append(cyl("kulp-govde", "Kulp Govdesi", (kx, 0, kz), (0, -1, 0),
-                     knob["stem_diameter"], stem_len, "hardware"))
-    parts.append(cyl("kulp-basi", "Kulp Basi", (kx, -stem_len, kz), (0, -1, 0),
-                     knob["diameter"], head_len, "hardware"))
+                         foot["diameter"], foot_h, "foot"))
 
     return parts, {
         "carcass_h": carcass_h,

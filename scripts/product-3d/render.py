@@ -343,8 +343,8 @@ def build_product(model, materials, door_open_deg=0.0):
     shift = (-W / 2 * MM, -D / 2 * MM, 0.0)
 
     objects = []
-    door_obj = None
-    door_part = None
+    doors = []            # (obj, part)
+    attached = {}         # kapak id -> uzerindeki kulp parcalari
 
     for part in model["parts"]:
         if part["shape"] == "box":
@@ -354,28 +354,31 @@ def build_product(model, materials, door_open_deg=0.0):
             else:
                 obj.data.materials.append(materials[part["material"]])
             bevel_and_smooth(obj, bevel)
-            if part["id"] == "kapak":
-                door_obj, door_part = obj, part
         else:
             obj = add_cylinder(part["name"], part["pos"], part["dir"], part["d"], part["len"], shift)
             obj.data.materials.append(materials[part["material"]])
             bevel_and_smooth(obj, 0.2)
         objects.append(obj)
 
-    if door_open_deg and door_obj is not None:
-        pivot = Vector((door_part["pivot"][0] * MM + shift[0],
-                        door_part["pivot"][1] * MM + shift[1],
-                        0.0))
-        angle = math.radians(-door_open_deg)
-        knobs = [o for o in objects if o.name.startswith("Kulp")]
-        for o in [door_obj] + knobs:
-            rel = o.location - pivot
-            cos_a, sin_a = math.cos(angle), math.sin(angle)
-            o.location = pivot + Vector((rel.x * cos_a - rel.y * sin_a,
-                                         rel.x * sin_a + rel.y * cos_a,
-                                         rel.z))
-            o.rotation_mode = "XYZ"
-            o.rotation_euler.rotate(Euler((0, 0, angle), "XYZ"))
+        if "pivot" in part:
+            doors.append((obj, part))
+        if "parent" in part:
+            attached.setdefault(part["parent"], []).append(obj)
+
+    for door_obj, part in doors if door_open_deg else ():
+        pivot = Vector((part["pivot"][0] * MM + shift[0],
+                        part["pivot"][1] * MM + shift[1], 0.0))
+        # sol mentese -> kapak saat yonunde (negatif), sag mentese -> tersi
+        sign = -1 if part.get("hinge_side", "left") == "left" else 1
+        angle = math.radians(sign * door_open_deg)
+        cos_a, sin_a = math.cos(angle), math.sin(angle)
+        for obj in [door_obj] + attached.get(part["id"], []):
+            rel = obj.location - pivot
+            obj.location = pivot + Vector((rel.x * cos_a - rel.y * sin_a,
+                                           rel.x * sin_a + rel.y * cos_a,
+                                           rel.z))
+            obj.rotation_mode = "XYZ"
+            obj.rotation_euler.rotate(Euler((0, 0, angle), "XYZ"))
 
     return objects
 
@@ -719,7 +722,7 @@ def auto_exposure(scene, target_linear=1.08, percentile=99.5, probe_res=220, pro
 SHOTS = {
     "hero":   dict(azimuth=34, elevation=11, lens=85,  margin=0.82, door=0,   look=0.5),
     "front":  dict(azimuth=0,  elevation=3,  lens=135, margin=0.84, door=0,   look=0.5),
-    "detail": dict(azimuth=30, elevation=16, lens=70,  margin=0.88, door=105, look=0.5),
+    "detail": dict(azimuth=20, elevation=14, lens=70,  margin=0.90, door=108, look=0.5),
     "angle":  dict(azimuth=-38, elevation=24, lens=80, margin=0.82, door=0,   look=0.5),
     "room":   dict(door=0),
 }
