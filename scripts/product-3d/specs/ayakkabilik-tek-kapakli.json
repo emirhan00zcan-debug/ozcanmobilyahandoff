@@ -1,0 +1,109 @@
+{
+  "id": "ayakkabilik-tek-kapakli",
+  "name": "Tek Kapaklı Ayakkabılık",
+  "category": "Antre",
+  "room": "antre",
+  "archetype": "carcass",
+
+  "standards": {
+    "panel_t": 18,
+    "back_t": 8,
+    "door_t": 18,
+    "door_gap": 3,
+    "shelf_setback": 6,
+    "foot_h": 30,
+    "edge_band_t": 2,
+    "render_bevel": 0.4
+  },
+
+  "sizes": [
+    {
+      "code": "45x90",
+      "label": "Dar",
+      "w": 450,
+      "h": 900,
+      "d": 350,
+      "compartments": 4,
+      "note": "Dar antreler icin. 4 kat, ~8 cift ayakkabi."
+    },
+    {
+      "code": "60x90",
+      "label": "Standart",
+      "w": 600,
+      "h": 900,
+      "d": 350,
+      "compartments": 4,
+      "hero": true,
+      "note": "Ana model. 4 kat, ~12 cift ayakkabi."
+    },
+    {
+      "code": "60x50",
+      "label": "Alcak / Bench",
+      "w": 600,
+      "h": 500,
+      "d": 350,
+      "compartments": 2,
+      "note": "Oturma yuksekligi. 2 kat, ~6 cift. Opsiyonel minder ile bank."
+    }
+  ],
+
+  "colors": [
+    {
+      "code": "beyaz",
+      "label": "Parlak Beyaz",
+      "hex": "#F4F4F2",
+      "roughness": 0.32,
+      "kind": "solid",
+      "hero": true
+    },
+    {
+      "code": "sonoma-mese",
+      "label": "Sonoma Mese",
+      "hex": "#C9A97D",
+      "roughness": 0.45,
+      "kind": "wood",
+      "grain_dark": "#A98A5E"
+    },
+    {
+      "code": "antrasit",
+      "label": "Antrasit",
+      "hex": "#3B3E42",
+      "roughness": 0.40,
+      "kind": "solid"
+    }
+  ],
+
+  "hardware": {
+    "handle": {
+      "type": "knob",
+      "diameter": 32,
+      "projection": 28,
+      "stem_diameter": 12,
+      "finish": "mat-siyah",
+      "hex": "#1C1C1E",
+      "roughness": 0.35,
+      "inset_x": 55,
+      "inset_z": 55
+    },
+    "foot": {
+      "type": "ayarli-plastik",
+      "diameter": 40,
+      "inset": 45,
+      "hex": "#202124",
+      "roughness": 0.55
+    }
+  },
+
+  "pricing": {
+    "base_try": 2450,
+    "size_modifier_try": { "45x90": -300, "60x90": 0, "60x50": -450 },
+    "color_modifier_try": { "beyaz": 0, "sonoma-mese": 150, "antrasit": 150 }
+  },
+
+  "notes": [
+    "Montajli/modulerdir; minifiks veya sistem deligi modellenmez.",
+    "Arkalik govdenin arka yuzune direkt monte edilir, dis olcuye dahildir.",
+    "Tum kesimler duz dikdortgendir - CNC ebatlama gerektirmez.",
+    "Gorunen kenarlarda 2 mm PVC bant; renderda 0.4 mm pah ile temsil edilir."
+  ]
+}

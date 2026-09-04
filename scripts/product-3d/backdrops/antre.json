@@ -1,0 +1,44 @@
+{
+  "id": "antre",
+  "label": "Antre",
+  "image": "ArkaPlan_Gorselleri/entryway_portmanto_background_empty_1787579652956.png",
+  "_kalibrasyon": [
+    "Fotograftan olculdu: duvar-zemin cizgisi y=765 px, supurgelik 32 px.",
+    "Dikeyler paralel -> kamera egimsiz, ufuk kare ortasinda (y=512).",
+    "Tavan 2700 mm kabulu ile tutarli cozum: kamera 962 mm, duvarda 3.80 mm/px,",
+    "supurgelik 122 mm. Lens 35 mm secildi -> duvar mesafesi ~3785 mm."
+  ],
+  "camera": {
+    "lens": 35,
+    "height_mm": 962,
+    "floor_line_px": 765
+  },
+  "product": {
+    "x_mm": -100,
+    "wall_gap_mm": 18
+  },
+  "reference": {
+    "wall_px": [
+      700,
+      400
+    ],
+    "floor_px": [
+      700,
+      880
+    ],
+    "sample_radius_px": 25
+  },
+  "light": {
+    "sun_azimuth_deg": -62,
+    "sun_elevation_deg": 34,
+    "sun_strength": 0.0,
+    "sun_color": "#FFF0D8",
+    "sun_angle_deg": 3.0,
+    "ambient_color": "#D8E2EE",
+    "ambient_strength": 0.4,
+    "window_azimuth_deg": -85,
+    "window_strength": 200.0,
+    "window_size_m": 2.2,
+    "window_shadow": true
+  }
+}
