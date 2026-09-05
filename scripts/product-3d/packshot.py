@@ -10,7 +10,9 @@ alinan fotograflar spec'ten uretilenlerle ayni gorunsun diye. Sahneye
 dokunmaz: gecici bir sahne acar, urunu oraya baglar, sonunda temizler.
 """
 
+import argparse
 import importlib.util
+import sys
 from pathlib import Path
 
 import bpy
@@ -23,12 +25,24 @@ SAMPLES = 256
 RES = 2000
 # ---------------------------------------------------------------------------
 
+# Arka planda calisirken ayarlar komut satirindan ezilebilir:
+#   blender sahne.blend -b --python packshot.py -- --obj Dolap --out C:\cikti --samples 128
+ap = argparse.ArgumentParser()
+ap.add_argument("--obj", action="append", help="urun objesi adi; yoksa sahnedeki secim")
+ap.add_argument("--out", help="cikti klasoru")
+ap.add_argument("--samples", type=int, default=SAMPLES)
+ap.add_argument("--res", type=int, default=RES)
+args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+OUT_DIR = args.out or OUT_DIR
+SAMPLES, RES = args.samples, args.res
+
 spec = importlib.util.spec_from_file_location("om_render", RENDER_PY)
 render = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(render)
 
 # Secilenlerin altindaki tum mesh'ler: bos (empty) bir ust obje secmek de yeter
-objs, stack, seen = [], list(bpy.context.selected_objects), set()
+roots = [bpy.data.objects[n] for n in args.obj] if args.obj else bpy.context.selected_objects
+objs, stack, seen = [], list(roots), set()
 while stack:
     obj = stack.pop()
     if obj.name in seen:
@@ -48,6 +62,13 @@ out_dir.mkdir(parents=True, exist_ok=True)
 scene = bpy.data.scenes.new("Packshot")
 for obj in objs:
     scene.collection.objects.link(obj)
+
+# GUI'de render operatoru pencerenin sahnesini kullanir; sadece temp_override
+# yetmez, pencereyi de gecici olarak bu sahneye almak gerekir
+window = bpy.context.window
+previous_scene = window.scene if window else None
+if window:
+    window.scene = scene
 
 with bpy.context.temp_override(scene=scene, view_layer=scene.view_layers[0],
                                collection=scene.collection):
@@ -72,6 +93,9 @@ with bpy.context.temp_override(scene=scene, view_layer=scene.view_layers[0],
         scene.render.filepath = str(out_dir / f"{name}.png")
         bpy.ops.render.render(write_still=True)
         print(f"[packshot] yazildi: {scene.render.filepath}")
+
+if window:
+    window.scene = previous_scene
 
 # --- gecici sahneyi ve kurdugu isik/kamera/zemini kaldir
 for obj in list(scene.collection.objects):
