@@ -27,7 +27,16 @@ spec = importlib.util.spec_from_file_location("om_render", RENDER_PY)
 render = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(render)
 
-objs = [o for o in bpy.context.selected_objects if o.type == "MESH"]
+# Secilenlerin altindaki tum mesh'ler: bos (empty) bir ust obje secmek de yeter
+objs, stack, seen = [], list(bpy.context.selected_objects), set()
+while stack:
+    obj = stack.pop()
+    if obj.name in seen:
+        continue
+    seen.add(obj.name)
+    if obj.type == "MESH":
+        objs.append(obj)
+    stack.extend(obj.children)
 if not objs:
     raise RuntimeError("Once urun mesh'lerini sec (oda/zemin/duvar haric).")
 
@@ -48,6 +57,10 @@ with bpy.context.temp_override(scene=scene, view_layer=scene.view_layers[0],
 
     lo, hi = render.world_bbox(objs)
     center = ((lo.x + hi.x) / 2, (lo.y + hi.y) / 2)
+    # Eksik secim en sik hata: olcu urunun dis olcusu degilse secim yanlistir
+    print(f"[packshot] {len(objs)} mesh, olcu "
+          f"{(hi.x - lo.x) * 1000:.0f} x {(hi.y - lo.y) * 1000:.0f} x "
+          f"{(hi.z - lo.z) * 1000:.0f} mm")
     render.setup_studio(scene, lo, hi, center_xy=center)
 
     for name in SHOTS:
