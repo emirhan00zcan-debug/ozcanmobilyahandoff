@@ -82,9 +82,15 @@ def hex_to_linear(hexstr):
     return tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in srgb) + (1.0,)
 
 
+def enable_nodes(id_data):
+    """4.x'te node agacini acar; 5.x'te agac hazir gelir, use_nodes kalkiyor."""
+    if bpy.app.version < (5, 0, 0):
+        id_data.use_nodes = True
+
+
 def _new_mat(name):
     mat = bpy.data.materials.new(name)
-    mat.use_nodes = True
+    enable_nodes(mat)
     nt = mat.node_tree
     nt.nodes.clear()
     out = nt.nodes.new("ShaderNodeOutputMaterial")
@@ -433,7 +439,7 @@ def setup_studio(scene, lo, hi, center_xy=(0.0, 0.0)):
 
     world = bpy.data.worlds.new("Studio")
     scene.world = world
-    world.use_nodes = True
+    enable_nodes(world)
     bg = world.node_tree.nodes["Background"]
     bg.inputs["Color"].default_value = (0.55, 0.56, 0.58, 1.0)
     bg.inputs["Strength"].default_value = 0.45
@@ -513,15 +519,63 @@ def frame_camera(scene, objects, azimuth, elevation, lens, margin, look_at_frac=
 # kompozit: saf beyaz fon
 # ----------------------------------------------------------------------------
 
+def alpha_over(nt, background, foreground):
+    """Alpha over node'u kurup baglar.
+
+    5.0'da soketler yeniden adlandirildi: 4.x'te [1]=arka [2]=on (ikisi de "Image"),
+    5.x'te "Background"/"Foreground". Index'e guvenilmez, once isme bakilir.
+    """
+    node = nt.nodes.new("CompositorNodeAlphaOver")
+    node.location = (-150, 0)
+    bg = node.inputs["Background"] if "Background" in node.inputs else node.inputs[1]
+    fg = node.inputs["Foreground"] if "Foreground" in node.inputs else node.inputs[2]
+    nt.links.new(background, bg)
+    nt.links.new(foreground, fg)
+    return node
+
+
+def compositor_tree(scene):
+    """Kompozit agacini ve cikis node'unu dondurur (Blender 4.x ve 5.x).
+
+    5.0'da sahnenin kompozit agaci bir node grubuna tasindi (scene.node_tree ->
+    scene.compositing_node_group) ve Composite node'u yerini grup cikisina birakti.
+    """
+    if hasattr(scene, "node_tree"):                                    # Blender 4.x
+        scene.use_nodes = True
+        nt = scene.node_tree
+        nt.nodes.clear()
+        out = nt.nodes.new("CompositorNodeComposite")
+    else:                                                              # Blender 5.x
+        nt = scene.compositing_node_group
+        if nt is None:
+            nt = bpy.data.node_groups.new("Kompozit", "CompositorNodeTree")
+            scene.compositing_node_group = nt
+        nt.nodes.clear()
+        if not any(getattr(i, "in_out", None) == "OUTPUT" for i in nt.interface.items_tree):
+            nt.interface.new_socket("Image", in_out="OUTPUT", socket_type="NodeSocketColor")
+        out = nt.nodes.new("NodeGroupOutput")
+    out.location = (150, 0)
+    return nt, out
+
+
+def compositing_off(scene):
+    """Kompoziti gecici kapatir; geri acmak icin donen fonksiyonu cagirir."""
+    if hasattr(scene, "node_tree"):                                    # Blender 4.x
+        keep = scene.use_nodes
+        scene.use_nodes = False
+        return lambda: setattr(scene, "use_nodes", keep)
+    keep = scene.compositing_node_group                                # Blender 5.x
+    scene.compositing_node_group = None
+    return lambda: setattr(scene, "compositing_node_group", keep)
+
+
 def composite_on_white(scene, exposure_stops=0.0):
     """Urunu saf beyaz (255) fon uzerine bindirir.
 
     Pozlama burada, alpha-over'dan ONCE yalnizca urun katmanina uygulanir;
     sahne pozlamasi kullanilsaydi beyaz fon da kararirdi.
     """
-    scene.use_nodes = True
-    nt = scene.node_tree
-    nt.nodes.clear()
+    nt, comp = compositor_tree(scene)
     rl = nt.nodes.new("CompositorNodeRLayers")
     rl.location = (-700, 0)
     expo = nt.nodes.new("CompositorNodeExposure")
@@ -530,14 +584,9 @@ def composite_on_white(scene, exposure_stops=0.0):
     white = nt.nodes.new("CompositorNodeRGB")
     white.location = (-450, -250)
     white.outputs[0].default_value = (1.0, 1.0, 1.0, 1.0)
-    over = nt.nodes.new("CompositorNodeAlphaOver")
-    over.location = (-150, 0)
-    comp = nt.nodes.new("CompositorNodeComposite")
-    comp.location = (150, 0)
     nt.links.new(rl.outputs["Image"], expo.inputs["Image"])
-    nt.links.new(white.outputs[0], over.inputs[1])
-    nt.links.new(expo.outputs["Image"], over.inputs[2])
-    nt.links.new(over.outputs[0], comp.inputs["Image"])
+    over = alpha_over(nt, white.outputs[0], expo.outputs["Image"])
+    nt.links.new(over.outputs[0], comp.inputs[0])
 
 
 # ----------------------------------------------------------------------------
@@ -565,7 +614,7 @@ def setup_room(scene, cfg, lo, hi, repo_root):
 
     world = bpy.data.worlds.new("Oda")
     scene.world = world
-    world.use_nodes = True
+    enable_nodes(world)
     bg = world.node_tree.nodes["Background"]
     bg.inputs["Color"].default_value = hex_to_linear(cfg["light"]["ambient_color"])
     bg.inputs["Strength"].default_value = cfg["light"]["ambient_strength"]
@@ -642,9 +691,7 @@ def room_camera(scene, cfg, res_x):
 
 
 def composite_on_backdrop(scene, backdrop, exposure_stops):
-    scene.use_nodes = True
-    nt = scene.node_tree
-    nt.nodes.clear()
+    nt, comp = compositor_tree(scene)
     rl = nt.nodes.new("CompositorNodeRLayers")
     rl.location = (-700, 100)
     expo = nt.nodes.new("CompositorNodeExposure")
@@ -653,14 +700,9 @@ def composite_on_backdrop(scene, backdrop, exposure_stops):
     img = nt.nodes.new("CompositorNodeImage")
     img.image = backdrop
     img.location = (-450, -220)
-    over = nt.nodes.new("CompositorNodeAlphaOver")
-    over.location = (-150, 0)
-    comp = nt.nodes.new("CompositorNodeComposite")
-    comp.location = (150, 0)
     nt.links.new(rl.outputs["Image"], expo.inputs["Image"])
-    nt.links.new(img.outputs["Image"], over.inputs[1])
-    nt.links.new(expo.outputs["Image"], over.inputs[2])
-    nt.links.new(over.outputs[0], comp.inputs["Image"])
+    over = alpha_over(nt, img.outputs["Image"], expo.outputs["Image"])
+    nt.links.new(over.outputs[0], comp.inputs[0])
 
 
 REFERENCE_ALBEDO = 0.80  # notr beyaz referans yuzey (fotografcinin gri karti)
@@ -677,7 +719,7 @@ def auto_exposure(scene, target_linear=1.08, percentile=99.5, probe_res=220, pro
     import numpy as np
 
     ref = bpy.data.materials.new("Pozlama Referansi")
-    ref.use_nodes = True
+    enable_nodes(ref)
     nt = ref.node_tree
     nt.nodes.clear()
     out = nt.nodes.new("ShaderNodeOutputMaterial")
@@ -688,13 +730,13 @@ def auto_exposure(scene, target_linear=1.08, percentile=99.5, probe_res=220, pro
 
     keep = (scene.render.resolution_x, scene.render.resolution_y, scene.cycles.samples,
             scene.render.filepath, scene.render.image_settings.file_format,
-            scene.use_nodes, scene.cycles.use_denoising)
+            scene.cycles.use_denoising)
 
     probe = Path(tempfile.gettempdir()) / "om_exposure_probe.exr"
     scene.render.resolution_x = scene.render.resolution_y = probe_res
     scene.cycles.samples = probe_samples
     scene.cycles.use_denoising = False
-    scene.use_nodes = False
+    restore_compositing = compositing_off(scene)
     scene.render.image_settings.file_format = "OPEN_EXR"
     scene.render.image_settings.color_depth = "32"
     scene.render.filepath = str(probe)
@@ -708,7 +750,8 @@ def auto_exposure(scene, target_linear=1.08, percentile=99.5, probe_res=220, pro
 
     (scene.render.resolution_x, scene.render.resolution_y, scene.cycles.samples,
      scene.render.filepath, scene.render.image_settings.file_format,
-     scene.use_nodes, scene.cycles.use_denoising) = keep
+     scene.cycles.use_denoising) = keep
+    restore_compositing()
     scene.render.image_settings.color_depth = "8"
 
     product = px[px[:, 3] > 0.9][:, :3]
