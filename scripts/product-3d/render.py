@@ -281,6 +281,7 @@ def build_materials(model, color_code):
         "body": body,
         "hardware": mat_metal("OM Kulp", "#1C1C1E", 0.35),
         "foot": mat_plastic("OM Ayak", "#202124", 0.55),
+        "cushion": mat_plastic("OM Minder", "#D7D1C9", 0.75),
     }, color
 
 

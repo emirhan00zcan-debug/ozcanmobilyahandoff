@@ -1,0 +1,95 @@
+{
+  "id": "ayakkabilik-bank",
+  "name": "Bankli Ayakkabilik",
+  "category": "Antre",
+  "room": "antre",
+  "archetype": "bench",
+
+  "standards": {
+    "panel_t": 18,
+    "back_t": 8,
+    "door_t": 18,
+    "door_gap": 3,
+    "shelf_setback": 6,
+    "foot_h": 0,
+    "cushion_t": 50,
+    "edge_band_t": 2,
+    "render_bevel": 0.4
+  },
+
+  "sizes": [
+    {
+      "code": "90x45",
+      "label": "Standart",
+      "w": 900,
+      "h": 450,
+      "d": 350,
+      "open_bay_w": 320,
+      "open_shelves": 1,
+      "hero": true,
+      "note": "Oturma yuksekligi bank. Solda kapakli bolme, sagda 2 katli acik raf."
+    }
+  ],
+
+  "colors": [
+    {
+      "code": "vadi-mese",
+      "label": "Vadi Mese",
+      "hex": "#B39570",
+      "roughness": 0.42,
+      "kind": "wood",
+      "grain_dark": "#93764F",
+      "hero": true
+    },
+    {
+      "code": "beyaz",
+      "label": "Parlak Beyaz",
+      "hex": "#F4F4F2",
+      "roughness": 0.32,
+      "kind": "solid"
+    },
+    {
+      "code": "antrasit",
+      "label": "Antrasit",
+      "hex": "#3B3E42",
+      "roughness": 0.40,
+      "kind": "solid"
+    }
+  ],
+
+  "hardware": {
+    "handle": {
+      "type": "bar",
+      "orientation": "horizontal",
+      "centers": 192,
+      "bar_diameter": 12,
+      "post_diameter": 10,
+      "projection": 32,
+      "finish": "mat-siyah",
+      "hex": "#1C1C1E",
+      "roughness": 0.35,
+      "inset_x": 0,
+      "inset_z": 45
+    },
+    "foot": {
+      "type": "yok",
+      "diameter": 0,
+      "inset": 0,
+      "hex": "#202124",
+      "roughness": 0.55
+    }
+  },
+
+  "pricing": {
+    "base_try": 2900,
+    "size_modifier_try": { "90x45": 0 },
+    "color_modifier_try": { "vadi-mese": 150, "beyaz": 0, "antrasit": 150 }
+  },
+
+  "notes": [
+    "Govde zemine oturur, ayak yoktur.",
+    "Minder ayri dosemeli parcadir; kesim listesinde melamin panel olarak sayilmaz.",
+    "Kapak orta bolmenin yarisina biner, mentese solda.",
+    "Tum kesimler duz dikdortgendir - CNC ebatlama gerektirmez."
+  ]
+}

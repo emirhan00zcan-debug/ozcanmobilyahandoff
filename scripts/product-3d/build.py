@@ -70,12 +70,17 @@ def handle_parts(handle, door_id, cx, cz):
     else:
         half = handle["centers"] / 2.0
         stand = handle["projection"] - handle["bar_diameter"] / 2.0
-        for sign, tag in ((-1, "alt"), (1, "ust")):
-            parts.append(cyl(f"kulp-ayak-{tag}-{door_id}", "Kulp Ayagi",
-                             (cx, 0, cz + sign * half), (0, -1, 0),
+        yatay = handle.get("orientation") == "horizontal"
+        # yatay kulpta ayaklar X'te ayrilir ve boru X boyunca uzanir
+        for sign, tag in ((-1, "sol" if yatay else "alt"), (1, "sag" if yatay else "ust")):
+            ayak = (cx + sign * half, 0, cz) if yatay else (cx, 0, cz + sign * half)
+            parts.append(cyl(f"kulp-ayak-{tag}-{door_id}", "Kulp Ayagi", ayak, (0, -1, 0),
                              handle["post_diameter"], stand, "hardware"))
-        parts.append(cyl(f"kulp-boru-{door_id}", "Kulp Borusu",
-                         (cx, -stand, cz - half - handle["bar_diameter"] / 2.0), (0, 0, 1),
+        yari_bar = handle["bar_diameter"] / 2.0
+        boru_baz = ((cx - half - yari_bar, -stand, cz) if yatay
+                    else (cx, -stand, cz - half - yari_bar))
+        parts.append(cyl(f"kulp-boru-{door_id}", "Kulp Borusu", boru_baz,
+                         (1, 0, 0) if yatay else (0, 0, 1),
                          handle["bar_diameter"], handle["centers"] + handle["bar_diameter"],
                          "hardware"))
     for p in parts:
@@ -173,7 +178,82 @@ def build_carcass(spec, size):
     }
 
 
-BUILDERS = {"carcass": build_carcass}
+def build_bench(spec, size):
+    """Bank: solda kapakli bolme, sagda acik raf(lar), ustte minder.
+
+    Ic bolme genisligi acik bolmeden geriye kalandir; boylece acik bolme her
+    olcude ayakkabi sigacak genislikte kalir. Tum kesimler duz dikdortgen.
+    """
+    s = spec["standards"]
+    t, back_t, door_t = s["panel_t"], s["back_t"], s["door_t"]
+    gap, setback, foot_h = s["door_gap"], s["shelf_setback"], s["foot_h"]
+    cushion_t = s["cushion_t"]
+
+    W, H, D = size["w"], size["h"], size["d"]
+    open_w = size["open_bay_w"]
+    shelves = size.get("open_shelves", 1)
+
+    carcass_h = H - cushion_t - foot_h
+    carcass_d = D - back_t - door_t
+    inner_w = W - 2 * t
+    inner_h = carcass_h - 2 * t
+    closed_w = inner_w - t - open_w
+    if closed_w < 200:
+        raise SystemExit(f"{size['code']}: acik bolme {open_w} mm cok genis, "
+                         f"kapakli bolmeye {closed_w:.0f} mm kaliyor")
+    div_x = t + closed_w
+
+    y0, z0 = door_t, foot_h
+    parts = [
+        box("yan-sol", "Yan Panel (Sol)", (0, y0, z0), (t, carcass_d, carcass_h),
+            "body", ["front", "top"]),
+        box("yan-sag", "Yan Panel (Sag)", (W - t, y0, z0), (t, carcass_d, carcass_h),
+            "body", ["front", "top"]),
+        box("alt", "Alt Panel", (t, y0, z0), (inner_w, carcass_d, t), "body", ["front"]),
+        box("ust", "Ust Panel", (t, y0, z0 + carcass_h - t), (inner_w, carcass_d, t),
+            "body", ["front"]),
+        box("orta-bolme", "Orta Bolme", (div_x, y0, z0 + t), (t, carcass_d, inner_h),
+            "body", ["front"]),
+    ]
+
+    # acik bolmenin raflari esit araliklarla
+    net_h = (inner_h - shelves * t) / (shelves + 1)
+    for k in range(1, shelves + 1):
+        z = round(z0 + t + k * net_h + (k - 1) * t, 2)
+        parts.append(box(f"raf-{k}", f"Raf {k}", (div_x + t, y0 + setback, z),
+                         (open_w, carcass_d - setback, t), "body", ["front"]))
+
+    parts.append(box("arkalik", "Arkalik", (0, y0 + carcass_d, z0), (W, back_t, carcass_h),
+                     "back", []))
+    parts.append(box("minder", "Minder", (0, 0, z0 + carcass_h), (W, D, cushion_t),
+                     "cushion", []))
+
+    # kapak orta bolmenin yarisina kadar biner
+    door_w = div_x + t / 2.0 - gap
+    door_h = carcass_h - 2 * gap
+    door = box("kapak", "Kapak", (gap, 0, z0 + gap), (door_w, door_t, door_h),
+               "body", ["all"])
+    door["pivot"] = [gap, door_t, z0 + gap]
+    door["hinge_side"] = "left"
+    parts.append(door)
+
+    handle = spec["hardware"]["handle"]
+    parts.extend(handle_parts(handle, "kapak", gap + door_w / 2.0,
+                              z0 + gap + door_h - handle["inset_z"]))
+
+    return parts, {
+        "carcass_h": carcass_h,
+        "carcass_d": carcass_d,
+        "inner_w": inner_w,
+        "inner_h": inner_h,
+        "closed_bay_w": round(closed_w, 2),
+        "open_bay_w": open_w,
+        "open_shelf_h": round(net_h, 2),
+        "door_w": round(door_w, 2),
+    }
+
+
+BUILDERS = {"carcass": build_carcass, "bench": build_bench}
 
 
 def build_size(spec, size):
@@ -222,7 +302,8 @@ def cut_rows(model):
             "Uzunluk (mm)": f"{length:g}",
             "Genislik (mm)": f"{width:g}",
             "Kalinlik (mm)": f"{thickness:g}",
-            "Malzeme": {"body": "Melamin Suntalam", "back": "Melamin Arkalik"}.get(material, material),
+            "Malzeme": {"body": "Melamin Suntalam", "back": "Melamin Arkalik",
+                        "cushion": "Minder (dosemeli)"}.get(material, material),
             "Bantli Kenar": band,
         })
     rows.sort(key=lambda r: (-float(r["Uzunluk (mm)"]), -float(r["Genislik (mm)"])))
@@ -396,9 +477,14 @@ def main():
             all_rows.append({"Olcu": f"{size['w']}x{size['h']}x{size['d']}", **row})
 
         d = model["derived"]
+        # ozet satiri arketipe gore degisir: raf yuksekligi ya da bolme genisligi
+        if "net_compartment_h" in d:
+            ayrinti = f"kat yuksekligi {d['net_compartment_h']:g} mm"
+        else:
+            ayrinti = (f"kapakli bolme {d['closed_bay_w']:g} mm  "
+                       f"acik bolme {d['open_bay_w']:g} mm")
         print(f"{size['code']:>8}  {size['w']}x{size['h']}x{size['d']} mm  "
-              f"ic {d['inner_w']:g}x{d['inner_h']:g}  "
-              f"kat yuksekligi {d['net_compartment_h']:g} mm  "
+              f"ic {d['inner_w']:g}x{d['inner_h']:g}  {ayrinti}  "
               f"{len(model['parts'])} parca  -> {rb.name}")
 
     csv_path = out_dir / f"{spec['id']}-kesim-listesi.csv"
