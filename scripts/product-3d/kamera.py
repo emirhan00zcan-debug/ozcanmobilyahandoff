@@ -14,6 +14,7 @@ import bpy
 # --- ayarlar ---------------------------------------------------------------
 ACI = "hero"     # hero = 3/4 sag | front = tam on | angle = 3/4 sol, yukaridan
 RES = 2000       # kare (1:1) cikti
+URUN = ""        # obje adi yazarsan secim gerekmez, orn. "Ayakkab_l_k___Kapakli___Acik_Raf__Model_4_1"
 RENDER_PY = Path(r"C:\Users\pc\Downloads\ozcan-mobilya-handoff\scripts\product-3d\render.py")
 # ---------------------------------------------------------------------------
 
@@ -21,8 +22,11 @@ spec = importlib.util.spec_from_file_location("om_render", RENDER_PY)
 render = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(render)
 
-# Secilenlerin altindaki tum mesh'ler: bos bir ust obje secmek de yeter
-objs, stack, seen = [], list(bpy.context.selected_objects), set()
+# URUN verilmisse ondan, yoksa secimden basla; ikisinde de altindaki tum mesh'ler
+if URUN and URUN not in bpy.data.objects:
+    raise RuntimeError(f"Sahnede {URUN!r} diye bir obje yok.")
+kok = [bpy.data.objects[URUN]] if URUN else list(bpy.context.selected_objects)
+objs, stack, seen = [], list(kok), set()
 while stack:
     obj = stack.pop()
     if obj.name in seen:
@@ -32,7 +36,8 @@ while stack:
         objs.append(obj)
     stack.extend(obj.children)
 if not objs:
-    raise RuntimeError("Once urun mesh'lerini sec (oda/zemin/duvar haric).")
+    raise RuntimeError("Urun secili degil. Ya 3D pencerede urune tikla (zemin/duvar "
+                       "degil), ya da yukaridaki URUN satirina obje adini yaz.")
 
 scene = bpy.context.scene
 scene.render.resolution_x = scene.render.resolution_y = RES
