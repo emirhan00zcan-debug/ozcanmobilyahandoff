@@ -45,6 +45,21 @@ blender --background --python scripts/product-3d/render.py -- --parts scripts/pr
 `blender` PATH'te değilse tam yol verin:
 `"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe"`.
 
+### 4. Elde kurulmuş bir sahneden çekim
+
+Spec'ten değil de Blender'da açık bir sahneden (ör. hazır oda modeli içine
+yerleştirilmiş ürün) fotoğraf almak için `packshot.py`. Ürünü seçip Scripting
+sekmesinde çalıştırır; hero / front / angle açılarını beyaz fona render eder.
+
+```bash
+blender sahne.blend --background --python scripts/product-3d/packshot.py
+```
+
+Işık, oto-pozlama ve beyaz fon kompoziti `render.py`'dan geldiği için çıkan
+görseller spec'ten üretilenlerle aynı görünür. Sahneye dokunmaz: geçici bir
+sahne açar, ürünü oraya bağlar, sonunda temizler. Kapak açık `detail` çekimi
+menteşe bilgisi gerektirdiği için sadece spec'li hatta var.
+
 ## Hattın çalışma mantığı
 
 ### Ölçüler

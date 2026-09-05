@@ -419,11 +419,13 @@ def add_area_light(name, loc, target, size, power, spread=None):
     return obj
 
 
-def setup_studio(scene, lo, hi):
+def setup_studio(scene, lo, hi, center_xy=(0.0, 0.0)):
     """Klasik packshot: tek golge veren key + golgesiz dolgu/rim/tepe softbox.
 
     Isik gucleri diag^2 ile olceklenir -> her urun boyutunda ayni pozlama.
+    center_xy: isik duzeninin merkezi; urun orijinde degilse bbox merkezi verilir.
     """
+    cx, cy = center_xy
     center = (lo + hi) / 2
     height = hi.z - lo.z
     diag = (hi - lo).length
@@ -436,20 +438,20 @@ def setup_studio(scene, lo, hi):
     bg.inputs["Color"].default_value = (0.55, 0.56, 0.58, 1.0)
     bg.inputs["Strength"].default_value = 0.45
 
-    key = add_area_light("Key", (-diag * 0.95, -diag * 1.10, height * 1.45),
+    key = add_area_light("Key", (cx - diag * 0.95, cy - diag * 1.10, height * 1.45),
                          (center.x, center.y, center.z),
                          (diag * 1.05, diag * 1.05), 95 * k)
 
     # Dolgu yandan gelmeli — fazla one alinirsa gorunen yan yuz karanlik kalir
-    fill = add_area_light("Fill", (diag * 1.70, -diag * 0.30, height * 0.85),
+    fill = add_area_light("Fill", (cx + diag * 1.70, cy - diag * 0.30, height * 0.85),
                           (center.x, center.y, center.z),
                           (diag * 2.0, diag * 2.0), 78 * k)
 
-    rim = add_area_light("Rim", (diag * 0.60, diag * 1.35, height * 1.70),
+    rim = add_area_light("Rim", (cx + diag * 0.60, cy + diag * 1.35, height * 1.70),
                          (center.x, center.y, center.z * 1.15),
                          (diag * 1.0, diag * 1.0), 46 * k)
 
-    top = add_area_light("Top", (0, -diag * 0.20, height * 2.4),
+    top = add_area_light("Top", (cx, cy - diag * 0.20, height * 2.4),
                          (center.x, center.y, center.z),
                          (diag * 1.2, diag * 1.2), 60 * k)
 
@@ -464,16 +466,18 @@ def setup_studio(scene, lo, hi):
     bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=diag * 6)
     bm.to_mesh(ground)
     bm.free()
-    floor.location = (0, 0, lo.z)
+    floor.location = (cx, cy, lo.z)
     floor.is_shadow_catcher = True
     return floor
 
 
-def frame_camera(scene, objects, azimuth, elevation, lens, margin, look_at_frac=0.5):
+def frame_camera(scene, objects, azimuth, elevation, lens, margin, look_at_frac=0.5,
+                 center_xy=None):
     from bpy_extras.object_utils import world_to_camera_view
 
     lo, hi = world_bbox(objects)
-    target = Vector((0.0, (lo.y + hi.y) / 2, lo.z + (hi.z - lo.z) * look_at_frac))
+    cx, cy = center_xy if center_xy else (0.0, (lo.y + hi.y) / 2)
+    target = Vector((cx, cy, lo.z + (hi.z - lo.z) * look_at_frac))
     diag = (hi - lo).length
 
     cam_data = bpy.data.cameras.new("Kamera")
