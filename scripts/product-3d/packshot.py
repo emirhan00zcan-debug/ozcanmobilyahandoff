@@ -32,7 +32,8 @@ ap.add_argument("--obj", action="append", help="urun objesi adi; yoksa sahnedeki
 ap.add_argument("--out", help="cikti klasoru")
 ap.add_argument("--samples", type=int, default=SAMPLES)
 ap.add_argument("--res", type=int, default=RES)
-args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+# parse_known_args: ayni komut satirini kaplama.py ile paylasabilmek icin
+args, _ = ap.parse_known_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 OUT_DIR = args.out or OUT_DIR
 SAMPLES, RES = args.samples, args.res
 
