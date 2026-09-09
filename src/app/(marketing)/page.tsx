@@ -12,6 +12,7 @@ import PromoDuo from "@/components/home/PromoDuo";
 import CategoryChips from "@/components/home/CategoryChips";
 import CategorySpotlight from "@/components/home/CategorySpotlight";
 import VideoShowcase from "@/components/home/VideoShowcase";
+import RoomTransformShowcase from "@/components/home/RoomTransformShowcase";
 import AboutSection from "@/components/home/AboutSection";
 import Testimonials from "@/components/home/Testimonials";
 import InstagramStrip from "@/components/home/InstagramStrip";
@@ -29,6 +30,7 @@ import {
   testimonials,
   socialLinks,
   categorySpotlight,
+  roomTransforms,
 } from "@/lib/data/homepage-mock";
 import { getFeaturedProducts } from "@/lib/data/products";
 
@@ -148,6 +150,11 @@ export default async function HomePage() {
       {/* 11. Video vitrin — "Biz Kimiz?" bölümüne geçişte atölyeyi tanıtan sinematik banner */}
       <Reveal>
         <VideoShowcase />
+      </Reveal>
+
+      {/* 11.5. Önce/Sonra — sürüklenebilir mekan dönüşümü vitrini */}
+      <Reveal>
+        <RoomTransformShowcase items={roomTransforms} />
       </Reveal>
 
       {/* 12. Biz Kimiz? */}

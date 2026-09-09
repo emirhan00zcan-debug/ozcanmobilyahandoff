@@ -291,6 +291,44 @@ export const categorySpotlight: { hero: CategorySpotlightHero; cards: CategorySp
 };
 
 // Ürün grid'lerinin üstünde hızlı filtre olarak kullanılan gerçek kategori isimleri
+// "Özcan Mobilya ile mekanınız nasıl değişir?" — önce/sonra kaydırıcı vitrini.
+// Görseller scripts/product-3d/ hattının kalibre edilmiş oda arka planları +
+// aynı kamera açısıyla render edilmiş ürün kompozisyonları (bkz. backdrops/*.json) —
+// yani gerçekten aynı fotoğraf, sadece ürün eklenmiş hali.
+export type RoomTransform = {
+  id: string;
+  tabLabel: string;
+  beforeLabel: string;
+  afterLabel: string;
+  beforeImage: string;
+  afterImage: string;
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+export const roomTransforms: RoomTransform[] = [
+  {
+    id: "antre",
+    tabLabel: "Antre",
+    beforeLabel: "Boş Antre",
+    afterLabel: "Özcan Mobilya İle",
+    beforeImage: "/media/before-after/antre-once.png",
+    afterImage: "/media/before-after/antre-sonra.png",
+    ctaLabel: "Ayakkabılık Modellerini Gör",
+    ctaHref: "/kategori/antre-hol",
+  },
+  {
+    id: "mutfak",
+    tabLabel: "Mutfak",
+    beforeLabel: "Boş Mutfak",
+    afterLabel: "Özcan Mobilya İle",
+    beforeImage: "/media/before-after/mutfak-once.png",
+    afterImage: "/media/before-after/mutfak-sonra.png",
+    ctaLabel: "Mutfak Dolaplarını Gör",
+    ctaHref: "/kategori/moduler-mutfak-dolabi",
+  },
+];
+
 export const quickFilterChips: string[] = [
   "Gardrop",
   "TV Ünitesi",
