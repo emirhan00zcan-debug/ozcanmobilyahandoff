@@ -47,7 +47,7 @@ export default function RoomTransformShowcase({ items }: Props) {
         </div>
       )}
 
-      <div className="relative mx-auto mt-10 aspect-square w-full max-w-2xl overflow-hidden rounded-3xl shadow-xl sm:max-w-3xl">
+      <div className="relative mx-auto mt-10 aspect-[3/2] w-full max-w-3xl overflow-hidden rounded-3xl shadow-xl sm:max-w-4xl">
         <BeforeAfterSlider
           key={current.id}
           beforeSrc={current.beforeImage}
