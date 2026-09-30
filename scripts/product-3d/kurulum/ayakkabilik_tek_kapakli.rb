@@ -44,6 +44,9 @@ module OzcanKurulum
     BAZA_CEKTIRME_X = [150.0, 450.0]
     PIVOT = [9.5, 110.5]     # kapağın (Y, Z) dönme ekseni: açılınca alt tablanın önüne yatar
 
+    PLAKA_T = 3.0             # çektirme plakalarının kalınlığı
+    VIDA_EKSEN = [15.0, 10.0] # dişi çerçevesinde çektirme vidası ekseninin (x, z) konumu
+
     KAPI_X0 = T + KAPI_BOSLUK
     KAPI_Z0 = ALT_Z + T + KAPI_BOSLUK
     KAPI_W = IW - 2 * KAPI_BOSLUK
@@ -125,14 +128,45 @@ module OzcanKurulum
       itme(f || e.add_face(kenar), v, mesafe)
     end
 
-    # x = sabit düzleminde, üstten açık U profili (yuvarlak dipli)
-    def u_profil(x, r, zc, ztop, seg = 12)
-      pts = [P(x, -r, ztop)]
-      (0..seg).each do |i|
-        a = Math::PI + Math::PI * i / seg
-        pts << P(x, r * Math.cos(a), zc + r * Math.sin(a))
+    # Teğet çemberlerden plaka dış hattı (saat yönü tersine). daireler: [[x, y, r], ...].
+    # 'ice' indisli kenar (daire i → i+1) içe doğru 'bukum' mm kavisli çizilir.
+    def plaka_hatti(daireler, ice = nil, bukum = 0.0)
+      n = daireler.size
+      kenar = Array.new(n) do |i|
+        ax, ay, ar = daireler[i]
+        bx, by, br = daireler[(i + 1) % n]
+        d = Math.hypot(bx - ax, by - ay)
+        ux = (bx - ax) / d
+        uy = (by - ay) / d
+        c = (ar - br) / d
+        s = Math.sqrt(1 - c * c)
+        nx = ux * c + uy * s # dış normal: gidiş yönünün sağı
+        ny = uy * c - ux * s
+        [[ax + ar * nx, ay + ar * ny], [bx + br * nx, by + br * ny], [nx, ny]]
       end
-      pts << P(x, r, ztop)
+      pts = []
+      n.times do |i|
+        cx, cy, r = daireler[i]
+        a0 = Math.atan2(kenar[i - 1][1][1] - cy, kenar[i - 1][1][0] - cx)
+        a1 = Math.atan2(kenar[i][0][1] - cy, kenar[i][0][0] - cx)
+        a1 += 2 * Math::PI if a1 < a0 - 1e-9
+        k = [((a1 - a0) / 0.25).ceil, 1].max
+        (0..k).each { |j| a = a0 + (a1 - a0) * j / k; pts << [cx + r * Math.cos(a), cy + r * Math.sin(a)] }
+        next unless i == ice
+        p0, p1, (nx, ny) = kenar[i]
+        kx = (p0[0] + p1[0]) / 2 - 2 * bukum * nx
+        ky = (p0[1] + p1[1]) / 2 - 2 * bukum * ny
+        (1..11).each do |j|
+          t = j / 12.0
+          pts << [(1 - t)**2 * p0[0] + 2 * (1 - t) * t * kx + t * t * p1[0],
+                  (1 - t)**2 * p0[1] + 2 * (1 - t) * t * ky + t * t * p1[1]]
+        end
+      end
+      pts
+    end
+
+    def yuvarlak_dik(x0, y0, x1, y1, r)
+      plaka_hatti([[x0 + r, y0 + r, r], [x1 - r, y0 + r, r], [x1 - r, y1 - r, r], [x0 + r, y1 - r, r]])
     end
 
     # X ekseni etrafında döndürülmüş katı; prof = [[x, r], ...] kapalı profil (mm)
@@ -196,6 +230,7 @@ module OzcanKurulum
         seffaf: mk.('Şeffaf Plastik', [160, 200, 228], 0.45),
         cinko: mk.('Çinko Kaplama', [160, 164, 170]),
         nikel: mk.('Nikel', [192, 196, 202]),
+        pirinc: mk.('Pirinç Burç', [196, 158, 72]),
         yuva: mk.('Vida Yuvası', [40, 40, 44]),
         kulp: mk.('Kulp Beyaz', [250, 250, 250]),
         sap: mk.('Tornavida Sapı', [226, 96, 24]),
@@ -216,43 +251,71 @@ module OzcanKurulum
       d
     end
 
-    def somun_tanimi
-      d = @m.definitions.add('Kare Somun M6')
-      e = d.entities
-      kutu(e, 0, -5, -5, 4, 5, 5)
-      daire_it(e, P(0, 0, 0), X_AXIS, 3, yon(1, 0, 0), 4)
-      boya(e, @mat[:cinko])
+    def havsa_vida_tanimi
+      d = @m.definitions.add('Sunta Vidası 3.5x16 (havşa)')
+      torna(d.entities, [[-2.2, 0], [-2.2, 3.6], [0, 1.75], [14, 1.75], [16, 0.5], [16, 0]], 20, @mat[:cinko])
+      yildiz(d.entities, -2.25, 3.2)
       d
     end
 
-    # Dişi (geçirilen parça): yan panele/bazaya vidalı. Yerel: x=0 montaj yüzü,
-    # x=14 karşılama yüzü; pim yuvası ve vida kanalı üstten de açık (üst tabla "cuk" diye oturur).
+    # Çektirmenin burçtaki vidası: başsız, ucu konik; ön ucu x=0'da.
+    def cektirme_vidasi_tanimi
+      d = @m.definitions.add('Çektirme Vidası M6 (burçta)')
+      torna(d.entities, [[0, 0], [0, 3], [7.5, 3], [9, 1.2], [9, 0]], 20, @mat[:cinko])
+      yildiz(d.entities, -0.05, 3.2)
+      d
+    end
+
+    # --- Şeffaf çektirme: iki parçalı köşe bağlantısı ---
+    # İki yarım da "bağlantı çerçevesinde" çizilir: orijin iki panelin iç köşe
+    # çizgisinde; y = köşe çizgisi boyunca vida ekseni (vidalanma yönü), z = parçanın
+    # vidalandığı panelden dışarı, x = karşı panelden uzağa. Böylece dişinin (x, z)'si
+    # erkeğin (z, x)'ine denk gelir: dil yuvanın yarığına oturur.
+    def plaka(e, daireler, ice, delikler)
+      it(e, plaka_hatti(daireler, ice, 8).map { |x, y| P(x, y, 0) }, yon(0, 0, 1), PLAKA_T)
+      delikler.each do |x, y|
+        daire_it(e, P(x, y, PLAKA_T), Z_AXIS, 3.8, yon(0, 0, -1), 1.5, 16)
+        daire_it(e, P(x, y, PLAKA_T - 1.5), Z_AXIS, 1.9, yon(0, 0, -1), 1.5, 12)
+      end
+    end
+
+    def havsa_vidalari(e, delikler)
+      delikler.each { |x, y| e.add_instance(@vida16h, eksen([x, y, PLAKA_T - 3.7], [0, 0, -1], [1, 0, 0])) }
+    end
+
+    # Dişi (geçirilen parça): köşede yarıklı yuva. Yarık hem karşı panele hem
+    # içeri doğru açık — alt tabla yandan kayarak, üst tabla yukarıdan "cuk" diye girer.
+    # Ön duvardaki pirinç burçta çektirme vidası durur.
     def disi_tanimi
       d = @m.definitions.add('Çektirme Dişi (geçirilen parça)')
       e = d.entities
-      kutu(e, 0, -17, 0, 14, 17, 20)
-      it(e, u_profil(14, 5.3, 10, 20), yon(-1, 0, 0), 5.5)                                   # pim yuvası
-      it(e, [P(2, -5.5, 20), P(7, -5.5, 20), P(7, 5.5, 20), P(2, 5.5, 20)], yon(0, 0, -1), 15.5) # somun cebi
-      it(e, u_profil(8.5, 3.3, 10, 20), yon(-1, 0, 0), 1.5)                                  # vida geçişi
-      [-12.5, 12.5].each { |y| daire_it(e, P(14, y, 10), X_AXIS, 3.8, yon(-1, 0, 0), 3) }   # vida havşaları
+      delik = [[46, 0], [12, 34]]
+      plaka(e, [[6.5, -6.5, 3], [46, 0, 7], [12, 34, 7], [6.5, 6.5, 3]], 1, delik)
+      it(e, [P(4.5, -7.5, 3), P(26, -7.5, 3), P(26, 7.5, 3), P(4.5, 7.5, 3)], yon(0, 0, 1), 17)
+      it(e, [P(4.5, -2.7, 20), P(23.5, -2.7, 20), P(23.5, 2.7, 20), P(4.5, 2.7, 20)], yon(0, 0, -1), 16)
+      x, z = VIDA_EKSEN
+      daire_it(e, P(x, -7.5, z), Y_AXIS, 4.2, yon(0, 1, 0), 4.8, 20)
       boya(e, @mat[:seffaf])
-      e.add_instance(@somun, tr(2.5, 0, 10))
-      [-12.5, 12.5].each { |y| e.add_instance(@vida25, eksen([11, y, 10], [-1, 0, 0], [0, 0, 1])) }
+      torna(e, [[0, 3], [0, 4.2], [4.8, 4.2], [4.8, 3]], 20, @mat[:pirinc])
+        .transform!(eksen([x, -7.5, z], [0, 1, 0], [0, 0, 1]))
+      havsa_vidalari(e, delik)
       d
     end
 
-    # Erkek (geçen parça): panele alttan vidalı. Yerel: x=0 karşılama yüzü (pim -x'e çıkar),
-    # z=0 montaj yüzü. Ortadaki M6 vida ayrı bileşendir (animasyonda döner).
+    # Erkek (geçen parça): köşede dik duran, üstü yuvarlak, delikli dil. Delik vida
+    # ekseninden 2 mm uzakta: konik uç girince dili (ve paneli) karşı panele çeker.
     def erkek_tanimi
       d = @m.definitions.add('Çektirme Erkek (geçen parça)')
       e = d.entities
-      kutu(e, 0, -17, 0, 14, 17, 20)
-      daire_it(e, P(0, 0, 10), X_AXIS, 5, yon(-1, 0, 0), 5.5)     # geçen pim
-      daire_it(e, P(14, 0, 10), X_AXIS, 6.5, yon(-1, 0, 0), 4)    # vida başı havşası
-      daire_it(e, P(10, 0, 10), X_AXIS, 3.3, yon(-1, 0, 0), 15.5) # vida deliği
-      [-12.5, 12.5].each { |y| daire_it(e, P(7, y, 20), Z_AXIS, 3.8, yon(0, 0, -1), 3) }
+      delik = [[46, 0], [12, -34]]
+      plaka(e, [[12, -34, 7], [46, 0, 7], [6.5, 6.5, 3]], 0, delik)
       boya(e, @mat[:seffaf])
-      [-12.5, 12.5].each { |y| e.add_instance(@vida25, eksen([7, y, 17], [0, 0, -1], [1, 0, 0])) }
+      g = e.add_group
+      dil = [[5, 3], [18, 3]] + (0..12).map { |i| a = Math::PI * i / 12; [11.5 + 6.5 * Math.cos(a), 16.5 + 6.5 * Math.sin(a)] }
+      it(g.entities, dil.map { |x, z| P(x, -2.5, z) }, yon(0, 1, 0), 5)
+      daire_it(g.entities, P(VIDA_EKSEN[1] + 2, -2.5, VIDA_EKSEN[0]), Y_AXIS, 3.3, yon(0, 1, 0), 5, 16)
+      boya(g.entities, @mat[:seffaf])
+      havsa_vidalari(e, delik)
       d
     end
 
@@ -265,41 +328,61 @@ module OzcanKurulum
 
     # Menteşe parçaları "menteşe çerçevesinde" çizilir: orijin = (menteşe ekseni X,
     # kapak arka yüzü Y=18, alt tabla üst yüzü Z=118), eksenler dünya eksenleri.
+    # Taban haç biçimli: oval delikli kanatlar, orta sırt; arka uçtaki vidanın
+    # altına kolun çatalı kayar, ortadaki dişli deliğe kolun sabitleme vidası girer.
     def taban_tanimi
       d = @m.definitions.add('Menteşe Tabanı (küçük parça)')
       e = d.entities
-      kutu(e, -7, 26, 0, 7, 62, 9)
-      [-1, 1].each { |s| it(e, [31, 43].product([0, 3]).values_at(0, 1, 3, 2).map { |y, z| P(7 * s, y, z) }, yon(s, 0, 0), 13) }
-      it(e, [P(-4, 30, 9), P(4, 30, 9), P(4, 62, 9), P(-4, 62, 9)], yon(0, 0, 1), 2)
-      daire_it(e, P(0, 44, 11), Z_AXIS, 2, yon(0, 0, -1), 8, 16)
+      kutu(e, -7, 22, 0, 7, 62, 6)
+      [-1, 1].each { |s| it(e, [[30, 0], [30, 2.5], [46, 2.5], [46, 0]].map { |y, z| P(7 * s, y, z) }, yon(s, 0, 0), 12) }
+      it(e, [P(-4.5, 24, 6), P(4.5, 24, 6), P(4.5, 62, 6), P(-4.5, 62, 6)], yon(0, 0, 1), 2)
+      [-1, 1].each { |s| it(e, plaka_hatti([[12 * s, 38, 2.2], [16 * s, 38, 2.2]]).map { |x, y| P(x, y, 2.5) }, yon(0, 0, -1), 2.5) }
+      [34, 59].each { |y| daire_it(e, P(0, y, 8), Z_AXIS, 2, yon(0, 0, -1), 7, 16) }
       boya(e, @mat[:nikel])
-      [-16, 16].each { |x| e.add_instance(@vida16, eksen([x, 37, 3], [0, 0, -1], [1, 0, 0])) }
+      [-1, 1].each { |s| e.add_instance(@vida16, eksen([14 * s, 38, 2.5], [0, 0, -1], [1, 0, 0])) }
+      e.add_instance(@tvida, eksen([0, 59, 9.6], [0, 0, -1], [1, 0, 0]))
       d
     end
 
+    # Kol: ters U sac; ön uçta mafsal, ortada kare yuvada sabitleme vidası,
+    # ayar deliği, arka uçta tabandaki vidaya geçen çatal.
     def kol_tanimi
       d = @m.definitions.add('Menteşe Kolu')
       e = d.entities
-      u = [[-8, 5], [-7.2, 5], [-7.2, 11], [7.2, 11], [7.2, 5], [8, 5], [8, 14], [-8, 14]]
-      it(e, u.map { |x, z| P(x, 20, z) }, yon(0, 1, 0), 48)
-      daire_it(e, P(0, 44, 14), Z_AXIS, 2.1, yon(0, 0, -1), 3, 16)
+      u = [[-8, 2.5], [-7.2, 2.5], [-7.2, 8], [7.2, 8], [7.2, 2.5], [8, 2.5], [8, 9.5], [-8, 9.5]]
+      it(e, u.map { |x, z| P(x, 16, z) }, yon(0, 1, 0), 48)
+      catal = (0..10).map { |i| a = Math::PI + Math::PI * i / 10; P(2.2 * Math.cos(a), 56.2 + 2.2 * Math.sin(a), 9.5) }
+      it(e, [P(-2.2, 64, 9.5)] + catal + [P(2.2, 64, 9.5)], yon(0, 0, -1), 1.5)
+      it(e, yuvarlak_dik(-4.2, 29.8, 4.2, 38.2, 1).map { |x, y| P(x, y, 9.5) }, yon(0, 0, -1), 1.5)
+      it(e, plaka_hatti([[0, 43.5, 2.2], [0, 48.5, 2.2]]).map { |x, y| P(x, y, 9.5) }, yon(0, 0, -1), 1.5)
       boya(e, @mat[:nikel])
-      torna(e, [[-8, 0], [-8, 6], [8, 6], [8, 0]], 24, @mat[:nikel]).transform!(tr(0, 14, 16))
+      torna(e, [[-8, 0], [-8, 5.5], [8, 5.5], [8, 0]], 24, @mat[:nikel]).transform!(tr(0, 12, 14))
+      [-1, 1].each do |s|
+        torna(e, [[0, 0], [0, 1.6], [0.8, 1.6], [0.8, 0]], 12, @mat[:nikel])
+          .transform!(eksen([8 * s, 22, 5.5], [s, 0, 0], [0, 0, 1]))
+      end
       d
     end
 
+    # Kap: Ø35 çanak + kapağın arka yüzünde kare ağızlı flanş ve iki vida kulağı.
     def kap_tanimi
       d = @m.definitions.add('Menteşe Kabı Ø35')
       e = d.entities
+      zc = 25.5
       torna(e, [[0, 16], [0, 17.5], [11.5, 17.5], [11.5, 0], [10.5, 0], [10.5, 16]], 32, @mat[:nikel])
-        .transform!(eksen([0, 0, 25.5], [0, -1, 0], [0, 0, 1]))
-      torna(e, [[0, 16], [0, 21], [1.5, 21], [1.5, 16]], 32, @mat[:nikel])
-        .transform!(eksen([0, 0, 25.5], [0, 1, 0], [0, 0, 1]))
-      kutu(e, -29, 0, 21.5, -18, 1.2, 37.5)
-      kutu(e, 18, 0, 21.5, 29, 1.2, 37.5)
-      boya(e, @mat[:nikel])
+        .transform!(eksen([0, 0, zc], [0, -1, 0], [0, 0, 1]))
+      g = e.add_group
+      f = g.entities.add_face(yuvarlak_dik(-19, zc - 19, 19, zc + 19, 8).map { |x, z| P(x, 0, z) })
+      g.entities.add_face(yuvarlak_dik(-12, zc - 12, 12, zc + 12, 5).map { |x, z| P(x, 0, z) }).erase!
+      itme(f, yon(0, 1, 0), 1.5)
+      boya(g.entities, @mat[:nikel])
+      [-1, 1].each do |s|
+        k = e.add_group
+        it(k.entities, plaka_hatti([[19 * s, zc + 6, 7], [24 * s, zc + 6, 7]]).map { |x, z| P(x, 0, z) }, yon(0, 1, 0), 1.2)
+        boya(k.entities, @mat[:nikel])
+        e.add_instance(@vida16h, eksen([24 * s, -1.0, zc + 6], [0, -1, 0], [0, 0, 1]))
+      end
       torna(e, [[-6, 0], [-6, 4], [6, 4], [6, 0]], 20, @mat[:nikel]).transform!(tr(0, -4, 18))
-      [-24, 24].each { |x| e.add_instance(@vida16, eksen([x, 1.2, 31.5], [0, -1, 0], [0, 0, 1])) }
       d
     end
 
@@ -335,19 +418,49 @@ module OzcanKurulum
       i
     end
 
-    # Tornavidanın ekseni: vida başından dışarı (-d), düşeyde 'egim' derece eğik
-    def surucu_yonu(d, egim)
-      v = Geom::Vector3d.new(-d.x, -d.y, -d.z).normalize
-      Geom::Vector3d.new(v.x, v.y, v.z + Math.tan(egim.degrees)).normalize
+    ORIJIN = {
+      sol_yan: [0, 0, 0], sag_yan: [W - T, 0, 0], alt_tabla: [T, 0, ALT_Z], ust_tabla: [T, 0, UST_Z], baza: [T, 0, 0]
+    }.freeze
+
+    # Tüm çektirmeler dünya koordinatında: k = iç köşe noktası, ns = dişinin panelinden
+    # içeri, np = erkeğin panelinden içeri, ek = vida ekseni (vidalanma yönü; tornavida
+    # karşı taraftan gelir: yanlarda önden, bazada ortadan).
+    def baglantilar
+      l = []
+      [[:sol_yan, T, 1, 'sol'], [:sag_yan, W - T, -1, 'sag']].each do |yan, xs, sx, taraf|
+        CEKTIRME_Y.each_with_index do |y, i|
+          [[:alt_tabla, ALT_Z + T, 1, 'alt'], [:ust_tabla, UST_Z, -1, 'ust']].each do |pan, zp, sz, ad|
+            l << { id: "#{ad}_#{taraf}_#{i.zero? ? 'on' : 'arka'}", erkek: pan, disi: yan,
+                   k: [xs, y, zp], ns: [sx, 0, 0], np: [0, 0, sz], ek: [0, 1, 0] }
+          end
+        end
+      end
+      BAZA_CEKTIRME_X.each_with_index do |bx, i|
+        l << { id: "baza_#{i.zero? ? 'sol' : 'sag'}", erkek: :alt_tabla, disi: :baza,
+               k: [bx, T, ALT_Z], ns: [0, 1, 0], np: [0, 0, -1], ek: [i.zero? ? -1 : 1, 0, 0] }
+      end
+      l
     end
 
-    def erkek_koy(e, o, x, z, id, egim)
-      mt = eksen(o, x, z)
-      e.add_instance(@erkek, mt)
-      lt = mt * eksen([10, 0, 10], [-1, 0, 0], [0, 0, 1])
-      p = P(10, 0, 10).transform(mt)
-      d = Geom::Vector3d.new(-1, 0, 0).transform(mt).normalize
-      vida_koy(e, @cvida, lt, p, d, 4.0, 4.0, surucu_yonu(d, egim), id)
+    # Verilen eksenlerle konum (sol el de olabilir: ayna simetrik yerleşim)
+    def cerceve(k, x, y, z)
+      v = ->(a) { Geom::Vector3d.new(*a) }
+      Geom::Transformation.axes(P(*k), v.(x), v.(y), v.(z))
+    end
+
+    # Parçaya düşen çektirme yarımlarını ve dişideki (animasyonlu) vidayı ekler.
+    def cektirmeler(e, parca)
+      ters = tr(*ORIJIN[parca]).inverse
+      baglantilar.each do |b|
+        e.add_instance(@erkek, ters * cerceve(b[:k], b[:ns], b[:ek], b[:np])) if b[:erkek] == parca
+        next unless b[:disi] == parca
+        dt = ters * cerceve(b[:k], b[:np], b[:ek], b[:ns])
+        e.add_instance(@disi, dt)
+        x, z = VIDA_EKSEN
+        lt = dt * eksen([x, -7, z], [0, 1, 0], [0, 0, 1])
+        w = Geom::Vector3d.new(*[0, 1, 2].map { |i| -b[:ek][i] + 0.18 * b[:ns][i] + 0.09 * b[:np][i] }).normalize
+        vida_koy(e, @cvida, lt, P(x, -7, z).transform(dt), Geom::Vector3d.new(*b[:ek]), 5.0, 0.0, w, b[:id])
+      end
     end
 
     def parca_tanimi(ad)
@@ -360,11 +473,9 @@ module OzcanKurulum
       kutu(e, 0, 0, 0, T, D, H)
       it(e, [P(T, KANAL_Y0, 0), P(T, KANAL_Y1, 0), P(T, KANAL_Y1, H), P(T, KANAL_Y0, H)], yon(-1, 0, 0), KANAL_DER)
       boya(e, @mat[:beyaz])
-      CEKTIRME_Y.each do |y|
-        [ALT_Z + T, UST_Z - 20].each { |z| e.add_instance(@disi, eksen([T, y, z], [1, 0, 0], [0, 0, 1])) }
-      end
+      cektirmeler(e, :sol_yan)
       PIM_Y.each { |y| e.add_instance(@pim, eksen([T, y, PIM_Z], [1, 0, 0], [0, 0, 1])) }
-      [d, [0, 0, 0]]
+      [d, ORIJIN[:sol_yan]]
     end
 
     def sag_yan
@@ -373,11 +484,9 @@ module OzcanKurulum
       kutu(e, 0, 0, 0, T, D, H)
       it(e, [P(0, KANAL_Y0, 0), P(0, KANAL_Y1, 0), P(0, KANAL_Y1, H), P(0, KANAL_Y0, H)], yon(1, 0, 0), KANAL_DER)
       boya(e, @mat[:beyaz])
-      CEKTIRME_Y.each do |y|
-        [ALT_Z + T, UST_Z - 20].each { |z| e.add_instance(@disi, eksen([0, y, z], [-1, 0, 0], [0, 0, 1])) }
-      end
+      cektirmeler(e, :sag_yan)
       PIM_Y.each { |y| e.add_instance(@pim, eksen([0, y, PIM_Z], [-1, 0, 0], [0, 0, 1])) }
-      [d, [W - T, 0, 0]]
+      [d, ORIJIN[:sag_yan]]
     end
 
     def arkalik
@@ -395,16 +504,9 @@ module OzcanKurulum
       kutu(e, 0, 0, 0, IW, D, T)
       it(e, [P(0, KANAL_Y0, T), P(IW, KANAL_Y0, T), P(IW, KANAL_Y1, T), P(0, KANAL_Y1, T)], yon(0, 0, -1), KANAL_DER)
       boya(e, @mat[:beyaz])
-      CEKTIRME_Y.each_with_index do |y, i|
-        yer = i.zero? ? 'on' : 'arka'
-        erkek_koy(e, [14, y, T], [1, 0, 0], [0, 0, 1], "alt_sol_#{yer}", 8)
-        erkek_koy(e, [IW - 14, y, T], [-1, 0, 0], [0, 0, 1], "alt_sag_#{yer}", 8)
-      end
+      cektirmeler(e, :alt_tabla)
       MENTESE_X.each { |hx| e.add_instance(@taban, tr(hx - T, T, T)) }
-      BAZA_CEKTIRME_X.each_with_index do |bx, i|
-        erkek_koy(e, [bx - T, 32, 0], [0, 1, 0], [0, 0, -1], "baza_#{i.zero? ? 'sol' : 'sag'}", -10)
-      end
-      [d, [T, 0, ALT_Z]]
+      [d, ORIJIN[:alt_tabla]]
     end
 
     def ust_tabla
@@ -412,12 +514,8 @@ module OzcanKurulum
       e = d.entities
       kutu(e, 0, 0, 0, IW, KANAL_Y0, T)
       boya(e, @mat[:beyaz])
-      CEKTIRME_Y.each_with_index do |y, i|
-        yer = i.zero? ? 'on' : 'arka'
-        erkek_koy(e, [14, y, 0], [1, 0, 0], [0, 0, -1], "ust_sol_#{yer}", -8)
-        erkek_koy(e, [IW - 14, y, 0], [-1, 0, 0], [0, 0, -1], "ust_sag_#{yer}", -8)
-      end
-      [d, [T, 0, UST_Z]]
+      cektirmeler(e, :ust_tabla)
+      [d, ORIJIN[:ust_tabla]]
     end
 
     def raf
@@ -451,12 +549,12 @@ module OzcanKurulum
         kol = ge.add_instance(@kol, tr(*o))
         nitelik(kol, kol: taraf, lc: tr(*o).to_a)
         a = P(o[0], o[1] - 4, o[2] + 18)
-        b = P(o[0], o[1] + 14, o[2] + 16)
+        b = P(o[0], o[1] + 12, o[2] + 14)
         bag = ge.add_instance(@bag, bar_tr(a, b))
         nitelik(bag, bar: taraf, a: a.to_a, b: b.to_a)
-        lt = tr(o[0], o[1] + 44, o[2] + 14) * eksen([0, 0, 0], [0, 0, -1], [1, 0, 0])
+        lt = tr(o[0], o[1] + 34, o[2] + 8) * eksen([0, 0, 0], [0, 0, -1], [1, 0, 0])
         w = Geom::Vector3d.new(0, -Math.sin(35.degrees), Math.cos(35.degrees))
-        vida_koy(ge, @mvida, lt, P(o[0], o[1] + 44, o[2] + 14), Geom::Vector3d.new(0, 0, -1), 3.0, 2.5, w,
+        vida_koy(ge, @mvida, lt, P(o[0], o[1] + 34, o[2] + 8), Geom::Vector3d.new(0, 0, -1), 4.0, 2.3, w,
                  "mentese_#{taraf}", true)
       end
       [d, [KAPI_X0, 0, KAPI_Z0]]
@@ -467,8 +565,8 @@ module OzcanKurulum
       e = d.entities
       kutu(e, 0, 0, 0, IW, T, BAZA_H)
       boya(e, @mat[:beyaz])
-      BAZA_CEKTIRME_X.each { |bx| e.add_instance(@disi, eksen([bx - T, T, 80], [0, 1, 0], [0, 0, 1])) }
-      [d, [T, 0, 0]]
+      cektirmeler(e, :baza)
+      [d, ORIJIN[:baza]]
     end
 
     # ------------------------------------------------------------------
@@ -484,11 +582,11 @@ module OzcanKurulum
       @m.layers.purge_unused
       malzemeler
 
-      @vida25 = vida_tanimi('Sunta Vidası 3.5x25', 3.8, 2.5, 1.75, 25)
       @vida16 = vida_tanimi('Sunta Vidası 3.5x16', 3.8, 2.5, 1.75, 16)
-      @cvida = vida_tanimi('Çektirme Vidası M6x20', 6, 4, 3, 20)
-      @mvida = vida_tanimi('Menteşe Sabitleme Vidası', 4, 2.5, 2, 6)
-      @somun = somun_tanimi
+      @vida16h = havsa_vida_tanimi
+      @tvida = vida_tanimi('Taban Vidası M4', 3.5, 2.2, 2, 9)
+      @mvida = vida_tanimi('Menteşe Sabitleme Vidası', 3.8, 2.3, 2, 4)
+      @cvida = cektirme_vidasi_tanimi
       @disi = disi_tanimi
       @erkek = erkek_tanimi
       @pim = pim_tanimi

@@ -112,9 +112,14 @@ modellenmiş ürünler. `kurulum/ayakkabilik_tek_kapakli.rb` tek kapaklı (klapa
 ayakkabılığı (60 × 50 × 40 cm) SketchUp'ta kurar:
 
 - Her panel ayrı bileşen ve ayrı etiket (tag). Fabrikada takılı gelen parçalar
-  panelin içinde ayrı bileşen: şeffaf çektirme erkek/dişi (+ M6 vida, kare somun),
-  raf pimleri, menteşe tabanı (küçük parça), menteşe gövdesi (büyük parça: kap +
-  bağlantı kolu + kol + sabitleme vidası), kulp.
+  panelin içinde ayrı bileşen: raf pimleri, kulp ve
+  - şeffaf çektirme — erkek (geçen parça: havşa delikli üçgen plaka + delikli dil)
+    tablalarda, dişi (geçirilen parça: üçgen plaka + yarıklı yuva, pirinç burç ve
+    vida) yanlarda ve bazada. Vida ekseni köşe çizgisi boyunca: yanlarda önden,
+    bazada ortadan sıkılır. Tüm köşeler `baglantilar` tablosundan tek kuralla yerleşir.
+  - Ø35 gizli menteşe — taban (küçük parça: haç biçimli, oval delikli, çatal vidalı)
+    alt tablada; kap (kare ağızlı flanş) + bağlantı kolu + kol (çatal uçlu, kare
+    yuvada sabitleme vidası) kapakta.
 - Arkalık yanlardaki ve alt tabladaki 4 × 8 mm kanala geçer; üst tabla yanların
   20 mm altında, arkalık yan üst kotuna kadar çıkar. Raf pimleri alt tablanın üst
   yüzünden 190 mm yukarıda, baza 564 × 100 mm.
@@ -136,6 +141,7 @@ python scripts/product-3d/kurulum/video.py C:/kareler kurulum.mp4
 ```
 
 Animasyon zaman çizelgesi `cizelge` metodunda; her adım parça hareketi +
-tornavida ile vida sıkma (vida döner ve 4 mm ilerler, parça son 2 mm'yi çeker)
-olarak tanımlı. Kapak menteşesi kinematik: kapak açılınca kap kapakla döner,
-kol tabanda kalır, bağlantı kolu ikisi arasında uzar.
+tornavida ile vida sıkma (çektirme vidası döner, 5 mm ilerleyip konik ucuyla dilin
+deliğine girer, parça son 2 mm'yi çeker) olarak tanımlı. Kapak menteşesi
+kinematik: kapak açık halde gelir, kolun çatalı tabandaki vidanın altına kayar;
+kapak kapanırken kap kapakla döner, kol tabanda kalır, bağlantı kolu uzar.
