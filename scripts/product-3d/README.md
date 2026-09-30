@@ -104,3 +104,38 @@ seçer; şu an `carcass` var (gövde + raf + kapak + arkalık + ayak + kulp).
 `backdrops/` altına yeni bir JSON + `ArkaPlan_Gorselleri/` altına oda fotoğrafı.
 Gereken tek ölçüm: fotoğraftaki duvar-zemin çizgisinin piksel yüksekliği ve
 süpürgelik yüksekliği (ölçek için).
+
+## Kurulum kılavuzu modeli (`kurulum/`)
+
+Spec hattından ayrı: montaj animasyonu için **bağlantı elemanları dahil**
+modellenmiş ürünler. `kurulum/ayakkabilik_tek_kapakli.rb` tek kapaklı (klapa)
+ayakkabılığı (60 × 50 × 40 cm) SketchUp'ta kurar:
+
+- Her panel ayrı bileşen ve ayrı etiket (tag). Fabrikada takılı gelen parçalar
+  panelin içinde ayrı bileşen: şeffaf çektirme erkek/dişi (+ M6 vida, kare somun),
+  raf pimleri, menteşe tabanı (küçük parça), menteşe gövdesi (büyük parça: kap +
+  bağlantı kolu + kol + sabitleme vidası), kulp.
+- Arkalık yanlardaki ve alt tabladaki 4 × 8 mm kanala geçer; üst tabla yanların
+  20 mm altında, arkalık yan üst kotuna kadar çıkar. Raf pimleri alt tablanın üst
+  yüzünden 190 mm yukarıda, baza 564 × 100 mm.
+- Sahneler: `0 Kutu İçeriği` → `1 Sol Yan + Arkalık` … `7 Baza` → `8 Bitmiş Ürün`.
+
+SketchUp Ruby Konsolu:
+
+```ruby
+load 'C:/.../scripts/product-3d/kurulum/ayakkabilik_tek_kapakli.rb'
+OzcanKurulum::Ayakkabilik.kur('C:/.../ayakkabilik_kurulum.skp') # açık modeli temizler!
+OzcanKurulum::Ayakkabilik.oynat                                  # animasyonu ekranda oynatır
+OzcanKurulum::Ayakkabilik.kaydet('C:/kareler')                   # 1280×720, 25 fps PNG kareler
+```
+
+Kareleri adım başlıklı videoya çevirmek (ffmpeg gerekir):
+
+```bash
+python scripts/product-3d/kurulum/video.py C:/kareler kurulum.mp4
+```
+
+Animasyon zaman çizelgesi `cizelge` metodunda; her adım parça hareketi +
+tornavida ile vida sıkma (vida döner ve 4 mm ilerler, parça son 2 mm'yi çeker)
+olarak tanımlı. Kapak menteşesi kinematik: kapak açılınca kap kapakla döner,
+kol tabanda kalır, bağlantı kolu ikisi arasında uzar.
