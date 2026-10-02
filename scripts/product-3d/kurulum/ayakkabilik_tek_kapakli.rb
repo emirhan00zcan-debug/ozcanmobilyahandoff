@@ -46,6 +46,11 @@ module OzcanKurulum
     BAZA_CEKTIRME_X = [150.0, 450.0]
     PIVOT = [9.5, 110.5]     # kapağın (Y, Z) dönme ekseni: açılınca alt tablanın önüne yatar
 
+    # Kapak askısı: çubuk kapaktaki bağlantıdan sol yandaki dönen yatağın içinden kayar.
+    ASKI_YATAK = [T, 25.0, 300.0]   # sol yan iç yüzünde yatak merkezi (dünya)
+    ASKI_KAPAK = [25.0, 70.0]       # kapak-yerel bağlantı konumu (x sol kenardan, z alt kenardan)
+    ASKI_BOY = 220.0
+
     KAPI_X0 = T + KAPI_BOSLUK
     KAPI_Z0 = ALT_Z + T + KAPI_BOSLUK
     KAPI_W = IW - 2 * KAPI_BOSLUK
@@ -373,6 +378,38 @@ module OzcanKurulum
       d
     end
 
+    # Kapak askısı: yan paneldeki dönen plastik yatak, kapaktaki bağlantı ve çubuk.
+    def aski_yatak_tanimi
+      d = @m.definitions.add('Kapak Askısı Yatağı')
+      torna(d.entities, [[0, 0], [0, 11], [3, 11], [3, 6], [12, 6], [13, 4.5], [13, 0]], 32, @mat[:kulp])
+      d
+    end
+
+    def aski_baglanti_tanimi
+      d = @m.definitions.add('Kapak Askısı Bağlantısı')
+      e = d.entities
+      kutu(e, -10, 0, -14, 10, 1.5, 14)
+      g = e.add_group
+      kutu(g.entities, -3, 1.5, -4, 3, 7, 4)
+      boya(g.entities, @mat[:nikel])
+      boya(e, @mat[:nikel])
+      [-9, 9].each { |z| e.add_instance(@vida16, eksen([0, 1.5, z], [0, -1, 0], [0, 0, 1])) }
+      d
+    end
+
+    def aski_cubuk_tanimi
+      d = @m.definitions.add('Kapak Askısı Çubuğu')
+      torna(d.entities, [[-4, 0], [-4, 2.5], [ASKI_BOY, 2.5], [ASKI_BOY, 0]], 12, @mat[:cinko])
+      d
+    end
+
+    # Sabit boylu çubuk: a'dan b yönüne
+    def cubuk_tr(a, b)
+      x = (b - a).normalize
+      ax = x.axes
+      Geom::Transformation.axes(a, x, ax[0], ax[1])
+    end
+
     def bag_tanimi
       d = @m.definitions.add('Menteşe Bağlantı Kolu')
       kutu(d.entities, 0, -5, -2.5, 10, 5, 2.5)
@@ -434,6 +471,7 @@ module OzcanKurulum
         [ALT_Z + T, UST_Z - 20].each { |z| e.add_instance(@disi, eksen([T, y, z], [1, 0, 0], [0, 0, 1])) }
       end
       PIM_Y.each { |y| e.add_instance(@pim, eksen([T, y, PIM_Z], [1, 0, 0], [0, 0, 1])) }
+      e.add_instance(@aski_yatak, eksen(ASKI_YATAK, [1, 0, 0], [0, 0, 1]))
       [d, [0, 0, 0]]
     end
 
@@ -453,7 +491,7 @@ module OzcanKurulum
     def arkalik
       d = parca_tanimi('Arkalık')
       bw = IW + 2 * KANAL_DER - 1
-      bh = H - (ALT_Z + T - KANAL_DER + 0.5)
+      bh = UST_Z + T - (ALT_Z + T - KANAL_DER + 0.5) # üst tablanın üst yüzü hizasında biter
       kutu(d.entities, 0, 0, 0, bw, ARKA_T, bh)
       boya(d.entities, @mat[:arka])
       [d, [T - KANAL_DER + 0.5, KANAL_Y0 + 0.5, ALT_Z + T - KANAL_DER + 0.5]]
@@ -529,6 +567,14 @@ module OzcanKurulum
         vida_koy(ge, @mvida, lt, P(o[0], o[1] + 34, o[2] + 8), Geom::Vector3d.new(0, 0, -1), 4.0, 2.3, w,
                  "mentese_#{taraf}", true)
       end
+      g = e.add_group
+      g.name = 'Kapak Askısı'
+      bx, bz = ASKI_KAPAK
+      g.entities.add_instance(@aski_baglanti, tr(bx, T, bz))
+      a = P(bx, T + 4, bz)
+      b = P(ASKI_YATAK[0] + 9 - KAPI_X0, ASKI_YATAK[1], ASKI_YATAK[2] - KAPI_Z0) # yatağın çubuk deliği
+      c = g.entities.add_instance(@aski_cubuk, cubuk_tr(a, b))
+      nitelik(c, cubuk: true, a: a.to_a, b: b.to_a)
       [d, [KAPI_X0, 0, KAPI_Z0]]
     end
 
@@ -569,6 +615,9 @@ module OzcanKurulum
       @kap = kap_tanimi
       @bag = bag_tanimi
       @kulp = kulp_tanimi
+      @aski_yatak = aski_yatak_tanimi
+      @aski_baglanti = aski_baglanti_tanimi
+      @aski_cubuk = aski_cubuk_tanimi
       arac = tornavida_tanimi
 
       tags = SIRA.map { |k| [k, @m.layers.add(ETIKET[k])] }.to_h
@@ -701,6 +750,7 @@ module OzcanKurulum
       @vidalar = []
       @kollar = []
       @barlar = []
+      @cubuklar = []
       @parca.each do |k, ana|
         ana.definition.entities.each do |x|
           if x.is_a?(Sketchup::ComponentInstance) && nit(x, :vida)
@@ -711,6 +761,8 @@ module OzcanKurulum
               elsif nit(y, :kol) then @kollar << { inst: y, lc: Geom::Transformation.new(nit(y, :lc)) }
               elsif nit(y, :bar)
                 @barlar << { inst: y, a: Geom::Point3d.new(*nit(y, :a)), b: Geom::Point3d.new(*nit(y, :b)) }
+              elsif nit(y, :cubuk)
+                @cubuklar << { inst: y, a: Geom::Point3d.new(*nit(y, :a)), b: Geom::Point3d.new(*nit(y, :b)) }
               end
             end
           end
@@ -920,6 +972,7 @@ module OzcanKurulum
       end
       @kollar.each { |x| x[:inst].move!(rinv * x[:lc]) }
       @barlar.each { |x| x[:inst].move!(bar_tr(x[:a], x[:b].transform(rinv))) }
+      @cubuklar.each { |x| x[:inst].move!(cubuk_tr(x[:a], x[:b].transform(rinv))) }
       @vidalar.each do |v|
         st = s[:v][v[:id]]
         m = vida_tr(v, st[:adv], st[:ang])
