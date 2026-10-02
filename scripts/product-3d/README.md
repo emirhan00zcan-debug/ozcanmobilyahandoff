@@ -113,10 +113,8 @@ ayakkabılığı (60 × 50 × 40 cm) SketchUp'ta kurar:
 
 - Her panel ayrı bileşen ve ayrı etiket (tag). Fabrikada takılı gelen parçalar
   panelin içinde ayrı bileşen: raf pimleri, kulp ve
-  - şeffaf çektirme — erkek (geçen parça: havşa delikli üçgen plaka + delikli dil)
-    tablalarda, dişi (geçirilen parça: üçgen plaka + yarıklı yuva, pirinç burç ve
-    vida) yanlarda ve bazada. Vida ekseni köşe çizgisi boyunca: yanlarda önden,
-    bazada ortadan sıkılır. Tüm köşeler `baglantilar` tablosundan tek kuralla yerleşir.
+  - şeffaf çektirme — erkek (geçen parça: pimli blok + M6 vida) tablalarda, dişi
+    (geçirilen parça: üstten açık pim yuvalı blok + kare somun) yanlarda ve bazada.
   - Ø35 gizli menteşe — taban (küçük parça: haç biçimli, oval delikli, çatal vidalı)
     alt tablada; kap (kare ağızlı flanş) + bağlantı kolu + kol (çatal uçlu, kare
     yuvada sabitleme vidası) kapakta.
@@ -131,6 +129,7 @@ SketchUp Ruby Konsolu:
 load 'C:/.../scripts/product-3d/kurulum/ayakkabilik_tek_kapakli.rb'
 OzcanKurulum::Ayakkabilik.kur('C:/.../ayakkabilik_kurulum.skp') # açık modeli temizler!
 OzcanKurulum::Ayakkabilik.oynat                                  # animasyonu ekranda oynatır
+OzcanKurulum::Ayakkabilik.kumanda                                # klavyeyle adım adım (aşağıda)
 OzcanKurulum::Ayakkabilik.kaydet('C:/kareler')                   # 1280×720, 25 fps PNG kareler
 ```
 
@@ -141,7 +140,16 @@ python scripts/product-3d/kurulum/video.py C:/kareler kurulum.mp4
 ```
 
 Animasyon zaman çizelgesi `cizelge` metodunda; her adım parça hareketi +
-tornavida ile vida sıkma (çektirme vidası döner, 5 mm ilerleyip konik ucuyla dilin
-deliğine girer, parça son 2 mm'yi çeker) olarak tanımlı. Kapak menteşesi
+tornavida ile vida sıkma (vida döner ve 4 mm ilerler, parça son 2 mm'yi çeker)
+olarak tanımlı. Kapak menteşesi
 kinematik: kapak açık halde gelir, kolun çatalı tabandaki vidanın altına kayar;
 kapak kapanırken kap kapakla döner, kol tabanda kalır, bağlantı kolu uzar.
+
+### Adım adım oynatma
+
+`kumanda` sonrası çizim alanına bir kez tıklayıp klavyeyle: **→** bir adımı oynatıp
+sonunda durur, **←** bir adım geri alır, **Enter** olduğu yerde durdurur / devam
+ettirir, **Esc** çıkar ve modeli montajlı hale döndürür. Aynısı konsoldan:
+`sonraki`, `onceki`, `durdur`, `devam`, `adim(3)` (sadece 3. adım), `git(3)`
+(3. adımın başına atla), `bitir`. Adımlar: 0 kutu içeriği, 1–7 montaj, 8 bitmiş ürün.
+Durdurulmuş modeli kaydetmeden önce `bitir` (ya da Esc) — yoksa parçalar sökük kalır.
