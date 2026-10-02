@@ -153,3 +153,18 @@ ettirir, **Esc** çıkar ve modeli montajlı hale döndürür. Aynısı konsolda
 `sonraki`, `onceki`, `durdur`, `devam`, `adim(3)` (sadece 3. adım), `git(3)`
 (3. adımın başına atla), `bitir`. Adımlar: 0 kutu içeriği, 1–7 montaj, 8 bitmiş ürün.
 Durdurulmuş modeli kaydetmeden önce `bitir` (ya da Esc) — yoksa parçalar sökük kalır.
+
+### Çok amaçlı dolap (`kurulum/cok_amacli_dolap.rb`)
+
+34,7 × 170 × 34,1 cm boy dolabı: 80 cm üst kapak, 25 cm açık niş, 60 cm alt kapak,
+5 cm ayarlı ayak. Kullanım ve oynatma kontrolleri ayakkabılıkla aynı
+(`OzcanKurulum::CokAmacliDolap.kur / oynat / kumanda / kaydet`). Farkları:
+
+- Arkalık dört kenardan kanala geçer (iki yan, alt ve üst tabla).
+- Şeffaf çektirme açılı vidalı: dişi C kesitli kanal, erkek pahlı blok + pirinç burç;
+  metal vida köşeye 45° girip iki paneli birden çeker. Alt tabla ve niş tablalarında
+  dişi tablada, üst tablada (yukarıdan indiği için) dişi yanda.
+- Ayaklar iki parça: tabla altında taban, krom ayak çevrilerek takılır.
+- Kapaklar tam bindirme, menteşeler sol yanda; kapak açık halde gelip kol tabana kayar.
+- Adımlar: sol yan + arkalık → alt tabla + ayaklar → sağ yan → üst tabla → niş üst →
+  niş alt → raflar → kapaklar.
