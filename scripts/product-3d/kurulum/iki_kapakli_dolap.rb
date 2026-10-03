@@ -284,9 +284,9 @@ module OzcanKurulum
     # İki yarım da "bağlantı çerçevesinde" çizilir: orijin iki panelin iç köşe
     # çizgisinde; y = köşe çizgisi boyunca, x = erkeğin panelinden uzağa (dişinin
     # paneli üzerinde), z = dişinin panelinden uzağa (erkeğin paneli üzerinde).
-    # Erkek x=0 panelinde pahlı bir blok taşır. Dişi z=0 panelinde C kesitli bir kanal
-    # taşır; kanal erkeğin paneline ve iki ucuna açıktır, yani erkek bloğu yandan,
-    # yukarıdan ya da önden kayarak girer: dişi erkeğe geçer. Metal vida kanalın pahlı
+    # Erkek x=0 panelinde pahlı bir blok taşır. Dişi z=0 panelinde pahlı bir gövde
+    # taşır; gövdedeki yuva yalnız erkeğin paneline açıktır (iki yanı kapalı), erkek
+    # bloğu yandan ya da yukarıdan girer: dişi erkeğe geçer. Metal vida gövdenin pahlı
     # köşesinden 45° çapraz girip erkeğin pirinç burcuna vidalanır; sıkılınca iki
     # paneli birden köşeye çeker.
     VIDA_YON = [-1.0, 0.0, -1.0].freeze # vidalanma yönü (köşeye doğru)
@@ -324,8 +324,9 @@ module OzcanKurulum
       plaka_delikleri(e, delik, Z_AXIS)
       boya(e, @mat[:seffaf])
       g = e.add_group
-      kesit = [[15.5, 3], [23, 3], [23, 17], [15, 25], [3.5, 25], [3.5, 17.5], [15.5, 17.5]]
-      it(g.entities, kesit.map { |x, z| P(x, -11, z) }, yon(0, 1, 0), 22)
+      govde = [[3.5, 3], [23, 3], [23, 17], [15, 25], [3.5, 25]]
+      it(g.entities, govde.map { |x, z| P(x, -11, z) }, yon(0, 1, 0), 22)
+      it(g.entities, [P(3.5, -9, 3), P(3.5, 9, 3), P(3.5, 9, 17.5), P(3.5, -9, 17.5)], yon(1, 0, 0), 12) # yuva
       daire_it(g.entities, P(19, 0, 21), Geom::Vector3d.new(1, 0, 1), 4.5, yon(-1, 0, -1), 1.5, 20)
       boya(g.entities, @mat[:seffaf])
       delik.each { |x, y, _| e.add_instance(@vida16h, eksen([x, y, -0.7], [0, 0, -1], [1, 0, 0])) }
@@ -588,6 +589,9 @@ module OzcanKurulum
       d = parca_tanimi(ad)
       e = d.entities
       kutu(e, 0, 0, 0, KAPI_W, T, h)
+      kx = sol ? KAPI_W - KULP[0] : KULP[0]
+      kz = h - KULP[1]
+      daire_it(e, P(kx, 0, kz), Y_AXIS, 2.5, yon(0, 1, 0), T, 16) # kulp vidası deliği (Ø5)
       xs = sol ? T : W - T # menteşenin bağlandığı yanın iç yüzü (dünya X)
       sx = sol ? 1 : -1
       MENTESE_Z.each { |hz| daire_it(e, P(xs + sx * KAP_ZC - x0, T, hz - Z0), Y_AXIS, 17.5, yon(0, -1, 0), 12.5, 32) }
@@ -610,8 +614,6 @@ module OzcanKurulum
         vida_koy(ge, @mvida, lt, P(0, 34, 8).transform(hd), Geom::Vector3d.new(-sx, 0, 0), 4.0, 2.3, w,
                  "mentese_#{taraf}_#{i + 1}", true)
       end
-      kx = sol ? KAPI_W - KULP[0] : KULP[0]
-      kz = h - KULP[1]
       vida_koy(e, @kulp, eksen([kx, 0, kz], [0, -1, 0], [0, 0, 1]), P(kx, 0, kz), Geom::Vector3d.new(0, 1, 0),
                60.0, 0.0, Geom::Vector3d.new(0, -1, 0), "kulp_#{taraf}")
       # kulp vidası arkadan; tornavida kapağın serbest kenarına doğru eğik gelir (w kapak-yerel)
