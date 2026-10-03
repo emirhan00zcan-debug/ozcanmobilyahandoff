@@ -168,3 +168,11 @@ Durdurulmuş modeli kaydetmeden önce `bitir` (ya da Esc) — yoksa parçalar s�
 - Kapaklar tam bindirme, menteşeler sol yanda; kapak açık halde gelip kol tabana kayar.
 - Adımlar: sol yan + arkalık → alt tabla + ayaklar → sağ yan → üst tabla → niş üst →
   niş alt → raflar → kapaklar.
+
+### İki kapaklı dolap (`kurulum/iki_kapakli_dolap.rb`)
+
+69 × 65 × 34,5 cm alt dolap: iki tam bindirme kapak (menteşeler dış yanlarda), iki raf
+(eşit üç bölme), üst tabla yanların üstünde ve kapakları örter, 5 cm ayarlı ayak.
+`OzcanKurulum::IkiKapakliDolap.kur / oynat / kumanda / kaydet`. Adımlar: sol yan +
+arkalık → ayaklar + alt tabla → sağ yan → üst tabla → raflar → kapaklar → düğme
+kulplar (demonte gelir; kapak açılır, kulp önden, kulp vidası arkadan sıkılır).
