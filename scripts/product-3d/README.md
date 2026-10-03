@@ -176,3 +176,9 @@ Durdurulmuş modeli kaydetmeden önce `bitir` (ya da Esc) — yoksa parçalar s�
 `OzcanKurulum::IkiKapakliDolap.kur / oynat / kumanda / kaydet`. Adımlar: sol yan +
 arkalık → ayaklar + alt tabla → sağ yan → üst tabla → raflar → kapaklar → düğme
 kulplar (demonte gelir; kapak açılır, kulp önden, kulp vidası arkadan sıkılır).
+
+**Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
+başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
+serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
+sürer (konsoldan `serbest_kamera(true/false)`). Video ve önizleme her zaman oynatma
+kamerasıyla çekilir.

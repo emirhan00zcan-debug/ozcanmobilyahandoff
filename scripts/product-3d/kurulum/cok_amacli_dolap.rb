@@ -12,7 +12,7 @@
 #   load 'C:/.../scripts/product-3d/kurulum/cok_amacli_dolap.rb'
 #   OzcanKurulum::CokAmacliDolap.kur               # AÇIK MODELİ TEMİZLER, modeli sıfırdan kurar
 #   OzcanKurulum::CokAmacliDolap.oynat             # montaj animasyonunu ekranda oynatır
-#   OzcanKurulum::CokAmacliDolap.kumanda           # klavyeyle adım adım: → ← Enter Esc
+#   OzcanKurulum::CokAmacliDolap.kumanda           # klavyeyle adım adım: → ← Enter, K serbest kamera, Esc
 #   (konsoldan: sonraki, onceki, durdur, devam, adim(3), git(3), bitir)
 #   OzcanKurulum::CokAmacliDolap.kaydet('C:/kareler') # animasyonu PNG karelere yazar
 #
@@ -877,6 +877,13 @@ module OzcanKurulum
         @kameralar << [@t, @t + sure, kam[0], kam[1]]
         @t += sure
       end
+
+      # Konumu oynatma anında hesaplanan kamera (ör. sıkılan vidaya yakın çekim);
+      # ilk hesaplanan [göz, hedef] saklanır.
+      def kamera_dinamik(sure, &poz)
+        @kameralar << [@t, @t + sure, poz, nil]
+        @t += sure
+      end
     end
 
     def hareket(k, a, b, sure)
@@ -886,7 +893,25 @@ module OzcanKurulum
       end
     end
 
-    def vida_sik(id, cek = nil, tur: 4, sure: 1.1)
+    # Sıkılan vidaya yakın çekim: önden-yukarıdan, tornavidanın geldiği yana kaymış
+    # bakar; tornavida ve vida başı birlikte görünür. Konum oynatma anında hesaplanır.
+    def yakin_kamera(id, sure = 0.7)
+      @cz.kamera_dinamik(sure) do
+        v = @vidalar.find { |x| x[:id] == id }
+        ana = @parca[v[:parca]].transformation
+        dunya = ana
+        dunya *= v[:grup].transformation if v[:grup]
+        dunya *= v[:inst].transformation
+        bas = Geom::Point3d.new(-v[:bas_h].mm, 0, 0).transform(dunya)
+        w = v[:kapi] ? v[:w] : v[:w].transform(ana).normalize
+        bak = Geom::Vector3d.new(0.55 * w.x, 0.55 * w.y - 0.75, 0.55 * w.z + 0.45).normalize
+        h = bas.to_a.map(&:to_mm)
+        [h.zip(bak.to_a).map { |c, d| c + 450 * d }, h]
+      end
+    end
+
+    def vida_sik(id, cek = nil, tur: 4, sure: 1.1, yakin: true)
+      yakin_kamera(id) if yakin
       @cz.olay(0.45) { |s, u| s[:drv] = { id: id, uz: 1 - u, don: 0.0 } }
       @cz.olay(sure, false) do |s, u|
         s[:drv] = { id: id, uz: 0.0, don: 360.0 * tur * u }
@@ -909,6 +934,7 @@ module OzcanKurulum
       no = k == :kapak_ust ? 'ust' : 'alt'
       vida_sik("mentese_#{no}_1", nil, tur: 3, sure: 0.8)
       vida_sik("mentese_#{no}_2", nil, tur: 3, sure: 0.8)
+      z.kamera(0.8, KAM[kam])
       z.olay(1.4) { |s, u| s[:kapi][k] = 90.0 * (1 - u) }
     end
 
@@ -1008,14 +1034,17 @@ module OzcanKurulum
       cur = ks[idx]
       prev = idx > 0 ? ks[idx - 1] : cur
       u = cur[1] > cur[0] ? yumusat(((t - cur[0]) / (cur[1] - cur[0])).clamp(0.0, 1.0)) : 1.0
-      h = lerp3(prev[3], cur[3], u)
+      poz = ->(k) { k[2].is_a?(Proc) ? (k[3] ||= k[2].call) : [k[2], k[3]] }
+      pg, ph = poz.(prev)
+      cg, ch = poz.(cur)
+      h = lerp3(ph, ch, u)
       kure = lambda do |e, c|
         v = [e[0] - c[0], e[1] - c[1], e[2] - c[2]]
         r = Math.sqrt(v.sum { |x| x * x })
         [r, Math.atan2(v[1], v[0]), Math.asin(v[2] / r)]
       end
-      r0, a0, e0 = kure.(prev[2], prev[3])
-      r1, a1, e1 = kure.(cur[2], cur[3])
+      r0, a0, e0 = kure.(pg, ph)
+      r1, a1, e1 = kure.(cg, ch)
       da = a1 - a0
       da -= 2 * Math::PI while da > Math::PI
       da += 2 * Math::PI while da < -Math::PI
@@ -1074,8 +1103,15 @@ module OzcanKurulum
     def kare(t)
       @simdi = t
       uygula(durum(t))
-      kamera_uygula(t)
+      kamera_uygula(t) unless @serbest
       durum_yazisi
+    end
+
+    # Serbest kamera: oynatma kamerayı yönetmez, fareyle istenen açıdan bakılır.
+    def serbest_kamera(acik = !@serbest)
+      @serbest = acik
+      durum_yazisi
+      acik ? 'Serbest kamera açık: fareyle istediğin açıya çevir' : 'Serbest kamera kapalı: oynatma kamerası'
     end
 
     def hazirla(oran = 0.0)
@@ -1087,6 +1123,7 @@ module OzcanKurulum
         @arac_tag.visible = true
         SIRA.each { |k| @parca[k].layer.visible = true }
       end
+      return if @serbest && oran.zero? # serbest bakışta kullanıcının kamerasına dokunma
       c.perspective = true
       c.aspect_ratio = oran
       c.fov = oran > 0 ? VIDEO_FOV : DIKEY_FOV
@@ -1167,8 +1204,8 @@ module OzcanKurulum
 
     def durum_yazisi
       return unless @simdi
-      ek = oynuyor? ? '' : '   (durdu — → sonraki adım, ← önceki, Enter devam, Esc bitir)'
-      Sketchup.status_text = "#{baslik_at(@simdi)}#{ek}"
+      ek = oynuyor? ? '' : '   (durdu — → sonraki adım, ← önceki, Enter devam, K serbest kamera, Esc bitir)'
+      Sketchup.status_text = "#{baslik_at(@simdi)}#{ek}#{@serbest ? '   [serbest kamera]' : ''}"
     end
 
     # ------------------------------------------------------------------
@@ -1251,13 +1288,14 @@ module OzcanKurulum
       def initialize(mod) @mod = mod end
 
       def activate
-        Sketchup.status_text = 'Kurulum: → sonraki adım · ← önceki adım · Enter durdur/devam · Esc bitir'
+        Sketchup.status_text = 'Kurulum: → sonraki adım · ← önceki adım · Enter durdur/devam · K serbest kamera · Esc bitir'
       end
 
       def onKeyDown(key, _repeat, _flags, _view)
         case key
         when VK_RIGHT then @mod.sonraki
         when VK_LEFT then @mod.onceki
+        when 75 then @mod.serbest_kamera # K
         else return false
         end
         true
@@ -1286,18 +1324,21 @@ module OzcanKurulum
     # Tek kare (video ayarlarıyla) — kadraj ayarlamak için.
     def onizle(t, dosya, gen: 1280, yuk: 720)
       @m = Sketchup.active_model
+      serbest, @serbest = @serbest, false
       hazirla(gen.to_f / yuk)
       kare(t)
       @m.active_view.write_image(filename: dosya, width: gen, height: yuk, antialias: true, transparent: false)
       baslik_at(t)
     ensure
       bitir
+      @serbest = serbest
     end
 
     # Animasyonu PNG karelere yazar; basliklar.json video üstü yazılar içindir.
     def kaydet(klasor, fps: 25, gen: 1280, yuk: 720, bas: 0.0, son: nil)
       @m = Sketchup.active_model
       Dir.mkdir(klasor) unless File.directory?(klasor)
+      serbest, @serbest = @serbest, false
       hazirla(gen.to_f / yuk)
       son ||= sure
       n0 = (bas * fps).round
@@ -1312,6 +1353,7 @@ module OzcanKurulum
       "#{n1 - n0} kare yazıldı (#{n0}..#{n1 - 1}), toplam süre #{sure.round(2)} sn"
     ensure
       bitir
+      @serbest = serbest
     end
   end
 end
