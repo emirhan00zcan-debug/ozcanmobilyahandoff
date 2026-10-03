@@ -245,8 +245,7 @@ module OzcanKurulum
       end
       @mat = {
         govde: mk.('Meşe Melamin', [198, 162, 112]),
-        ic_beyaz: mk.('Arkalık İç Yüz', [238, 236, 230]),
-        hdf: mk.('Arkalık HDF (kahve)', [172, 128, 84]),
+        arka: mk.('Arkalık Beyaz', [240, 239, 234]),
         seffaf: mk.('Şeffaf Plastik', [205, 225, 238], 0.35),
         cinko: mk.('Çinko Kaplama', [160, 164, 170]),
         nikel: mk.('Nikel', [192, 196, 202]),
@@ -526,8 +525,7 @@ module OzcanKurulum
       d = parca_tanimi('Arkalık')
       bh = (YAN_UST + KANAL_DER - 0.5) - ORIJIN[:arkalik][2]
       kutu(d.entities, 0, 0, 0, IW + 2 * KANAL_DER - 1, ARKA_T, bh)
-      boya(d.entities, @mat[:ic_beyaz])
-      d.entities.grep(Sketchup::Face).each { |f| f.material = f.back_material = @mat[:hdf] if f.normal.y > 0.5 }
+      boya(d.entities, @mat[:arka])
       [d, ORIJIN[:arkalik]]
     end
 
