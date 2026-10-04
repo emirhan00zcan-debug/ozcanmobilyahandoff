@@ -209,6 +209,20 @@ kumanda / kaydet`. Farkları:
 - Siyah süslü kulp (160 mm vida aralığı), kapağın üst kenarından 4 cm aşağıda.
 - Adımlar: alt tabla → sağ yan → orta bölme → üst destek → baza → çekmece kapağı → kulp.
 
+### Kitaplık (`kurulum/kitaplik.rb`)
+
+80 × 97 × 22 cm, üç gözlü açık kitaplık: iki yan arasında dört yatay tabla, her gözde bir
+dikey bölme (alt ve üst gözde solda, ortada sağda), arka köşelerde dört 45° üçgen köşe
+parçası; arkalık yok. Ölçüler fotoğraflardan (18 mm panel kalınlığı referans).
+`OzcanKurulum::Kitaplik.kur / oynat / kumanda / kaydet`. Farkları:
+
+- Tüm birleşimler alyan (konfirmat 7×50) vida: panellerde Ø10 havşa yuvası açık gelir,
+  vidalar demonte; tornavida yerine L alyan anahtarı döner. En son tıpalar takılır.
+- Vida sayısı: yatay tablalar 16 (her yana 2), dikey bölmeler 12 (üstten 2, alttan 2),
+  köşe parçaları 8 (yandan ve tabladan birer).
+- Adımlar: sol yan + alt tabla → sağ yan (U) → ara tabla 1 → ara tabla 2 → üst tabla →
+  dikey bölmeler (alttan yukarı) → köşe parçaları → tıpalar.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
