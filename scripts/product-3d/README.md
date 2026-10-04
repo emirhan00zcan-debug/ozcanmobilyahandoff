@@ -177,6 +177,24 @@ Durdurulmuş modeli kaydetmeden önce `bitir` (ya da Esc) — yoksa parçalar s�
 arkalık → ayaklar + alt tabla → sağ yan → üst tabla → raflar → kapaklar → düğme
 kulplar (demonte gelir; kapak açılır, kulp önden, kulp vidası arkadan sıkılır).
 
+### Fırın mikrodalga dolabı (`kurulum/firin_mikrodalga_dolabi.rb`)
+
+60 × 180 × 62 cm boy dolap (ayaksız 175): üstte 51 cm sola açılan kapaklı bölme
+(içinde pimli raf), mikrodalga nişi (36,4 cm), fırın nişi (59 cm), altta 25 cm öne
+yatan klapa kapaklı bölme; 5 cm ayak. `OzcanKurulum::FirinMikrodalgaDolabi.kur /
+oynat / kumanda / kaydet`. Farkları:
+
+- Her köşede 3 açılı şeffaf çektirme; alt ve üst tabla sol yana yandan kayar, sağ yan
+  ikisine birden oturur.
+- Arkalık (3 mm, beyaz) arkadan hazır deliklere 24 çiviyle çakılır; çekiç animasyonlu.
+- Üç ara tabla gömme rafix'li: yanlardaki rafix pimlerine oturur, rafix'ler alttan
+  tornavidayla çeyrek tur çevrilir.
+- Üst kapağın menteşeleri sol yanda, alt klapanınkiler alt tablanın üstünde.
+- Krom çubuk kulp (192 mm): üst kapakta sağda dikey, klapada üstte yatay; ikişer kulp
+  vidası arkadan.
+- Adımlar: ayaklar + alt tabla → üst tabla → sağ yan → arkalık (çivi) → raf → ara
+  tablalar → kapaklar → kulplar.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan

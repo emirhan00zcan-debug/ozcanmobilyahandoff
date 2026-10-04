@@ -27,7 +27,7 @@ def yazi_tipi(boyut, kalin=False):
     return ImageFont.load_default()
 
 
-def baslik_ciz(im, metin, alfa, ilerleme):
+def baslik_ciz(im, metin, alfa, ilerleme=None):
     w, h = im.size
     s = h / 720
     kat = Image.new("RGBA", im.size, (0, 0, 0, 0))
@@ -48,8 +48,8 @@ def baslik_ciz(im, metin, alfa, ilerleme):
         fn = yazi_tipi(round(26 * s), kalin=True)
         d.text((x + rozet / 2, y + kutu_h / 2), no, font=fn, fill=(255, 255, 255, a), anchor="mm")
     d.text((x + rozet + pad, y + kutu_h / 2), govde, font=f, fill=KOYU + (a,), anchor="lm")
-    # alt ilerleme çubuğu
-    d.rectangle([0, h - round(5 * s), round(w * ilerleme), h], fill=KOYU + (200,))
+    if ilerleme is not None:  # alt ilerleme çubuğu (tek karelerde yok)
+        d.rectangle([0, h - round(5 * s), round(w * ilerleme), h], fill=KOYU + (200,))
     return Image.alpha_composite(im.convert("RGBA"), kat).convert("RGB")
 
 
