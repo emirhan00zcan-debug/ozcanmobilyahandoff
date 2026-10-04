@@ -195,6 +195,21 @@ oynat / kumanda / kaydet`. Farkları:
 - Adımlar: ayaklar + alt tabla → üst tabla → sağ yan → arkalık (çivi) → raf → ara
   tablalar → kapaklar → kulplar.
 
+### Fırın dolabı, tablasız (`kurulum/firin_dolabi.rb`)
+
+60 × 85 × 58 cm (kapakla 60) ankastre fırın alt dolabı: 10 cm ayarlı ayak ve önde baza,
+alt tabla üstünde 15,5 cm çekmece kapağı (öne yatan klapa), orta bölme üstünde 59,5 cm
+fırın nişi; üstte yanlardan vidalı ön destek parçası, arkalık yok. Ölçüler ürün
+fotoğraflarından (baza 10 cm referans). `OzcanKurulum::FirinDolabi.kur / oynat /
+kumanda / kaydet`. Farkları:
+
+- Orta bölme iki yanın arasına yukarıdan iner (erkek bölmenin altında, dişi yanlarda);
+  baza önden alt tablanın altına kayar, vidaları arkadan sıkılır. Bu dar yerlerde kısa
+  tornavida kullanılır.
+- Siyah süslü kulp (160 mm vida aralığı), kapağın üst kenarından 4 cm aşağıda.
+- Adımlar: ayaklar + alt tabla → sağ yan → orta bölme → üst destek → baza → çekmece
+  kapağı → kulp.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
