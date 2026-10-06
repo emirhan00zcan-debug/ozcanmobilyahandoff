@@ -235,6 +235,23 @@ biri alttaki rafa oturur (zikzak). Ölçüler fotoğraflardan (18 mm panel kalı
 - Alt tabla ve her raf arka tablaya arkadan ikişer alyan vidayla bağlanır (16 vida).
 - Adımlar: ayaklar → arka tabla + alt tabla → 1.–7. raf alttan yukarı.
 
+### Konsol (`kurulum/konsol.rb`)
+
+145 × 72,5 × 44,5 cm TV konsolu: beyaz gövde, membran (latte) kapak ve çekmece önleri
+(üst kenarda gömme kulp), 36 mm meşe üst tabla, kemerli baza. Yanlarda tek raflı kapaklı
+bölme, ortada alt çekmece / açık niş (23,5 cm) / üst çekmece. Ölçüler kullanıcıdan;
+fotoğrafla doğrulandı. `OzcanKurulum::Konsol.kur / oynat / kumanda / kaydet`. Farkları:
+
+- Şeffaf çektirmeler: dış yanlarda altta ve üstte üçer (üst tabla yukarıdan iner), orta
+  yanlarda ikişer (önden girip yana kayar), niş tablalarında her yanda iki (vidaları çekmece
+  boşluğundan), bazada ön üç, yanlarda ikişer (vidaları arkadaki boşluktan).
+- Çekmeceler minifixle kurulur: yanlardaki bulonlar ön ve arkanın uçlarına geçer, eksantrikler
+  yarım tur çevrilir; dip alttan çivilenir. Ray parçaları orta yanlarda ve çekmece yanlarında
+  takılı gelir; çekmece hizalanıp itilir.
+- Arkalık, ana çerçeve (yanlar + alt + üst tabla) kurulunca çakılır.
+- Adımlar: sol yan + alt tabla → sağ yan → üst tabla → arkalık → orta yanlar → alt çekmece →
+  üst çekmece → niş tablaları → raflar → kapaklar → baza.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
