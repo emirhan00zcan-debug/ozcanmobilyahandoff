@@ -223,6 +223,18 @@ parçası; arkalık yok. Ölçüler fotoğraflardan (18 mm panel kalınlığı r
 - Adımlar: sol yan + alt tabla → sağ yan (U) → ara tabla 1 → ara tabla 2 → üst tabla →
   dikey bölmeler (alttan yukarı) → köşe parçaları → tıpalar.
 
+### Çapraz kitaplık (`kurulum/capraz_kitaplik.rb`)
+
+60 × 140 × 30 cm ağaç biçimli kitaplık: yere basan dikey arka tablanın önünde, ayaklı alt
+tablanın üstünde yedi adet 45° çapraz raf; '\' raflar sol, '/' raflar sağ yandan iner ve her
+biri alttaki rafa oturur (zikzak). Ölçüler fotoğraflardan (18 mm panel kalınlığı referans).
+`OzcanKurulum::CaprazKitaplik.kur / oynat / kumanda / kaydet`. Farkları:
+
+- Rafların kesiti `RAFLAR` tablosundan (yön + yan kenardaki yükseklik) hesaplanır; uçları
+  yan kenarda düşey, iç uçları alttaki rafın üst yüzüne oturacak biçimde kesilir.
+- Alt tabla ve her raf arka tablaya arkadan ikişer alyan vidayla bağlanır (16 vida).
+- Adımlar: ayaklar → arka tabla + alt tabla → 1.–7. raf alttan yukarı.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
