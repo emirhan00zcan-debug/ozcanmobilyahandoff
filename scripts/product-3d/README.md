@@ -267,6 +267,24 @@ dikmesi, iki duvar boyunca yukarı doğru içe eğilen iki eğik dikme (krem, 6,
   eğik dikmeler raflara 5'er; vidalar dikmelerin duvar tarafındaki yuvalardan girer.
 - Adımlar: köşe dikmeleri (L) → raflar alttan üste → sol eğik dikme → sağ eğik dikme.
 
+### Beyaz Vera Konsol (`kurulum/vera_konsol.rb`)
+
+Üç kapaklı beyaz dolap, 94 × 71 × 48 cm (13 cm siyah konik ayak dahil): 18 mm beyaz gövde,
+36 mm tabla, oyma desenli membran kapaklar (20 + 53 + 20 cm; orta kapağın alt kenarı ~5 cm
+kavisli). Ortada geniş bölme (iç 51,5 × 50,5), iki yanda tek raflı dar bölme (raf altı 24 cm).
+Ölçüler Drive'daki ürün belgelerinden, fotoğrafla doğrulandı.
+`OzcanKurulum::VeraKonsol.kur / oynat / kumanda / kaydet`. Farkları:
+
+- Gövdenin tamamı şeffaf çektirmeyle (16): yanlar ve ara dikmeler alt ve üst tablaya ikişer;
+  dikmelerin çektirmeleri yan bölmelerde.
+- Arkalık geçmeli: yanların, alt ve üst tablanın kanalına (arka kenardan 10 mm) yukarıdan
+  indirilir, üst tabla üstüne kapanır.
+- Ayaklar alt tablanın altındaki tabanlara çevrilerek takılır; tabla, bölmelerin içinden üst
+  tablanın altından 6 vidayla bağlanır.
+- Yan kapaklar dış yanlara, orta kapak sağ ara dikmeye (yarım bindirme) menteşeli.
+- Adımlar: ayaklar → sol yan → sağ yan → ara dikmeler → arkalık → üst tabla → tabla → raflar →
+  kapaklar.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
