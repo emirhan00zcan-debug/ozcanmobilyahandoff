@@ -285,6 +285,21 @@ kavisli). Ortada geniş bölme (iç 51,5 × 50,5), iki yanda tek raflı dar böl
 - Adımlar: ayaklar → sol yan → sağ yan → ara dikmeler → arkalık → üst tabla → tabla → raflar →
   kapaklar.
 
+### 4 çekmeceli şifonyer (`kurulum/sifonyer.rb`)
+
+80 × 90 × 54 cm, ahşap desen (safir meşe): yanlar yere iner, önde 8 cm baza, 18 mm üst tabla,
+dört 80 × 20 çekmece önü, siyah kulp (128 mm). Ölçüler `scripts/kesim-listesi/urun-sifonyer.json`
+(Drive ölçülü görsel). `OzcanKurulum::Sifonyer.kur / oynat / kumanda / kaydet`. Farkları:
+
+- Raylar teleskopik değil, düz beyaz makaralı ray (kullanıcı): dolap parçası yanlarda (önde
+  tekerlek), çekmece parçası kutu yanlarının altında (arkada tekerlek); ikisi de takılı gelir.
+- Gövde şeffaf çektirmeyle: yanlar alt ve üst tablaya ikişer, baza alt tablaya iki (vidaları
+  arkadan, kısa tornavidayla); arkalık çakılır.
+- Çekmeceler konsoldaki gibi minifix + dip çivisi; kulp önden oturur, iki vidası kutunun içinden.
+  1. çekmece ayrıntılı, diğer üçü tek adımda birlikte kurulur.
+- Adımlar: sol yan + alt tabla → sağ yan → baza → üst tabla → arkalık → 1. çekmece → diğer üç
+  çekmece.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
