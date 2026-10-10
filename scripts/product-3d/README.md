@@ -208,6 +208,10 @@ kumanda / kaydet`. Farkları:
   tornavida kullanılır.
 - Siyah süslü kulp (160 mm vida aralığı), kapağın üst kenarından 4 cm aşağıda.
 - Adımlar: alt tabla → sağ yan → orta bölme → üst destek → baza → çekmece kapağı → kulp.
+- Tablalı varyasyon: `OzcanKurulum::FirinDolabi.kur(yol, varyant: :tablali)`. Üstte
+  60 × 65 × 3,6 cm dolu tabla (iki kat 18 mm, önde kapağı 3 cm geçer); yanların iç yüzünde
+  üstte köşebentler takılı gelir, tabla son adımda bunlara alttan 4 vidayla bağlanır.
+  Varyant modelde saklanır; kaydedilmiş dosya açılınca oynatma doğru varyantla kurulur.
 
 ### Kitaplık (`kurulum/kitaplik.rb`)
 

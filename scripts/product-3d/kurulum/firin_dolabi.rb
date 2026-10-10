@@ -1,19 +1,21 @@
 # encoding: UTF-8
-# Fırın Dolabı, tablasız varyasyon (60 x 86 x 60 cm, kapakla 62) — kurulum kılavuzu modeli.
+# Fırın Dolabı (60 x 86 x 60 cm, kapakla 62) — kurulum kılavuzu modeli; tablasız ve tablalı varyasyon.
 # Yanlar yere kadar iner; alt tabla yanların arasında, 10 cm bazanın üstünde. Alttan üste:
 # baza, alt tabla, 15,5 cm çekmece kapağı (alt tablaya menteşeli, öne yatan klapa;
 # arkasında 12 cm bölme), orta bölme, 58,5 cm fırın nişi; üstte yanlardan vidalı ön
-# destek parçası. Ayak ve arkalık yok.
+# destek parçası. Ayak ve arkalık yok. Tablalı varyasyonda bunların üstüne 60 x 65 x 3,6 cm dolu
+# tabla (iki kat 18 mm) oturur ve yanların iç yüzündeki köşebentlere alttan vidalanır (toplam 89,5 cm).
 #
 # Her panel ayrı bileşen; fabrikada takılı gelen parçalar (açılı vidalı şeffaf çektirme
 # erkek/dişi, menteşe tabanı ve gövdesi) panelin içinde ayrı bileşen. Kulp,
 # kulp vidaları ve üst destek vidaları demonte gelir. Kurulum sırası kullanıcının anlattığı gibidir:
 #   1 alt tabla (sol yana)  2 sağ yan  3 orta bölme  4 üst destek  5 baza
-#   6 çekmece kapağı  7 kulp
+#   6 çekmece kapağı  7 kulp  (tablalı: 8 tabla)
 #
 # SketchUp > Pencere > Ruby Konsolu:
 #   load 'C:/.../scripts/product-3d/kurulum/firin_dolabi.rb'
 #   OzcanKurulum::FirinDolabi.kur               # AÇIK MODELİ TEMİZLER, modeli sıfırdan kurar
+#   OzcanKurulum::FirinDolabi.kur(nil, varyant: :tablali) # tablalı varyasyon
 #   OzcanKurulum::FirinDolabi.oynat             # montaj animasyonunu ekranda oynatır
 #   OzcanKurulum::FirinDolabi.kumanda           # klavyeyle adım adım: → ← Enter, K serbest kamera, Esc
 #   (konsoldan: sonraki, onceki, durdur, devam, adim(3), git(3), bitir)
@@ -53,20 +55,25 @@ module OzcanKurulum
     KULP_ARA = 160.0     # kulp vida aralığı
     KULP = [KAPI_W / 2, KAPAK[1] - KAPAK[0] - 40].freeze # kulp merkezi (kapak-yerel x, z): üst kenardan 4 cm
     PLAKA_T = 3.0
+    TABLA_T = 36.0       # tablalı varyasyon: dolu tabla, iki kat 18 mm
+    TABLA_DER = 650.0    # arkası gövdeyle bir, önde kapağı 3 cm geçer
+    KOSEBENT_Y = [100.0, D - 80].freeze # tablayı tutan köşebentler, yanların iç yüzünde üstte
+    VARYANTLAR = %i[tablasiz tablali].freeze
 
     DIKEY_FOV = 30.0
     VIDEO_FOV = 50.0
 
     DICT = 'ozcan_kurulum'
     SIRA = %i[sol_yan alt_tabla sag_yan orta_bolme ust_destek baza kapak].freeze
+    TABLALI_EK = %i[tabla].freeze
     KAPILAR = %i[kapak].freeze
     ETIKET = {
       sol_yan: '01 Sol Yan', alt_tabla: '02 Alt Tabla', sag_yan: '03 Sağ Yan', orta_bolme: '04 Orta Bölme',
-      ust_destek: '05 Üst Destek', baza: '06 Baza', kapak: '07 Çekmece Kapağı'
+      ust_destek: '05 Üst Destek', baza: '06 Baza', kapak: '07 Çekmece Kapağı', tabla: '08 Tabla'
     }.freeze
     AD = {
       sol_yan: 'Sol Yan', alt_tabla: 'Alt Tabla', sag_yan: 'Sağ Yan', orta_bolme: 'Orta Bölme',
-      ust_destek: 'Üst Destek', baza: 'Baza', kapak: 'Çekmece Kapağı'
+      ust_destek: 'Üst Destek', baza: 'Baza', kapak: 'Çekmece Kapağı', tabla: 'Tabla'
     }.freeze
     LISTE_TAG = '00 Parça Listesi'
     ARAC_TAG = '99 Tornavida'
@@ -81,13 +88,15 @@ module OzcanKurulum
       5 =>    [[1200, -1300, 450], [300, 100, 100]],
       6 =>    [[1100, -1250, 650], [300, -100, 180]],
       7 =>    [[1000, -1100, 120], [300, -120, 150]],
+      8 =>    [[1600, -1800, 1800], [300, 200, 700]],
       bitti:  [[1600, -2000, 1450], [300, 290, 420]]
     }.freeze
 
     # Parçaların yerleşim orijini (bileşen orijini = parçanın min köşesi)
     ORIJIN = {
       sol_yan: [0, 0, 0], sag_yan: [W - T, 0, 0], alt_tabla: [T, 0, Z0], orta_bolme: [T, 0, ORTA_Z],
-      ust_destek: [T, 0, ZT - T], baza: [T, 0, 0], kapak: [KAPI_X0, -(KAPI_PAY + T), KAPAK[0]]
+      ust_destek: [T, 0, ZT - T], baza: [T, 0, 0], kapak: [KAPI_X0, -(KAPI_PAY + T), KAPAK[0]],
+      tabla: [0, D - TABLA_DER, ZT]
     }.freeze
 
     # ------------------------------------------------------------------
@@ -393,6 +402,16 @@ module OzcanKurulum
       d
     end
 
+    # Köşebent (L, 2 mm sac): yerel +x panelden içeri yatay kanat, z yukarı; z=0 yanın üst kenarı.
+    def kosebent_tanimi
+      d = @m.definitions.add('Köşebent 20x20')
+      e = d.entities
+      kutu(e, 0, -8, -20, 2, 8, 0)      # yana vidalı dikey kanat
+      kutu(e, 2, -8, -2, 20, 8, 0)      # tablanın altına gelen yatay kanat
+      boya(e, @mat[:nikel])
+      d
+    end
+
     # Siyah süslü kulp, 160 mm vida aralığı: yerel +x kapaktan dışarı, y kulp boyu.
     def kulp_tanimi
       d = @m.definitions.add('Siyah Kulp 160')
@@ -496,6 +515,15 @@ module OzcanKurulum
         vida_koy(e, @dvida, eksen(o, [sx, 0, 0], [0, 0, 1]), P(*o), Geom::Vector3d.new(sx, 0, 0), 40.0, 2.2,
                  Geom::Vector3d.new(-sx, 0, 0), "destek_#{taraf}_#{%w[on arka][i]}")
       end
+      if tablali?
+        xi = sx > 0 ? T : 0.0 # iç yüz
+        KOSEBENT_Y.each_with_index do |y, i|
+          e.add_instance(@kosebent, eksen([xi, y, ZT], [sx, 0, 0], [0, 0, 1]))
+          o = [xi + sx * 12, y, ZT - 2]
+          vida_koy(e, @vida16, eksen(o, [0, 0, 1], [1, 0, 0]), P(*o), Geom::Vector3d.new(0, 0, 1), 16.0, 2.5,
+                   Geom::Vector3d.new(0, 0, -1), "kosebent_#{taraf}_#{%w[on arka][i]}")
+        end
+      end
       [d, ORIJIN[parca]]
     end
 
@@ -540,6 +568,17 @@ module OzcanKurulum
       boya(e, @mat[:govde])
       cektirmeler(e, :baza)
       [d, ORIJIN[:baza]]
+    end
+
+    # Tablalı varyasyon: iki kat 18 mm'lik dolu tabla, yanların ve üst desteğin üstüne oturur.
+    def tabla
+      d = parca_tanimi(AD[:tabla])
+      [0, T].each do |z|
+        g = d.entities.add_group
+        kutu(g.entities, 0, 0, z, W, TABLA_DER, z + T)
+        boya(g.entities, @mat[:govde])
+      end
+      [d, ORIJIN[:tabla]]
     end
 
     def bar_tr(a, b)
@@ -593,7 +632,18 @@ module OzcanKurulum
     # ------------------------------------------------------------------
     # Model kurulumu
     # ------------------------------------------------------------------
-    def kur(kayit_yolu = nil)
+    def tablali?
+      @varyant == :tablali
+    end
+
+    # Kurulumdaki parçalar: tablalı varyasyonda tabla eklenir.
+    def sira
+      tablali? ? SIRA + TABLALI_EK : SIRA
+    end
+
+    def kur(kayit_yolu = nil, varyant: :tablasiz)
+      raise "Varyant: #{VARYANTLAR.join(', ')}" unless VARYANTLAR.include?(varyant)
+      @varyant = varyant
       @m = Sketchup.active_model
       @m.start_operation('Fırın dolabı kurulum modeli', true)
       @m.entities.clear!
@@ -601,6 +651,7 @@ module OzcanKurulum
       @m.definitions.purge_unused
       @m.materials.purge_unused
       @m.layers.purge_unused
+      @m.set_attribute(DICT, 'varyant', varyant.to_s)
       malzemeler
 
       @vida16 = vida_tanimi('Sunta Vidası 3.5x16', 3.8, 2.5, 1.75, 16)
@@ -617,14 +668,15 @@ module OzcanKurulum
       @kap = kap_tanimi
       @bag = bag_tanimi
       @kulp = kulp_tanimi
+      @kosebent = kosebent_tanimi
       arac = tornavida_tanimi
       kisa = kisa_tornavida_tanimi
 
-      tags = SIRA.map { |k| [k, @m.layers.add(ETIKET[k])] }.to_h
+      tags = sira.map { |k| [k, @m.layers.add(ETIKET[k])] }.to_h
       liste_tag = @m.layers.add(LISTE_TAG)
       arac_tag = @m.layers.add(ARAC_TAG)
 
-      SIRA.each do |k|
+      sira.each do |k|
         d, o = send(k)
         i = @m.entities.add_instance(d, tr(*o))
         i.name = AD[k]
@@ -644,7 +696,7 @@ module OzcanKurulum
       sahneler
       @m.commit_operation
       @m.save(kayit_yolu) if kayit_yolu
-      "Kuruldu: #{SIRA.size} parça, #{@vidalar.size} animasyonlu vida/kulp, #{@m.pages.size} sahne"
+      "Kuruldu (#{@varyant}): #{sira.size} parça, #{@vidalar.size} animasyonlu vida/kulp, #{@m.pages.size} sahne"
     end
 
     # Kutu içeriği: paneller yere yatırılmış, fabrikada takılı hırdavat üstte.
@@ -656,7 +708,8 @@ module OzcanKurulum
       yerlesim = {
         sol_yan: [rz.(90) * ry.(-90), 1400, 0], sag_yan: [rz.(90) * ry.(90), 2100, 0],
         alt_tabla: [bir, 2850, 0], orta_bolme: [rx.(180), 2850, 850],
-        kapak: [rx.(90), 3600, 0], baza: [rx.(90), 3600, 400], ust_destek: [bir, 3600, 700]
+        kapak: [rx.(90), 3600, 0], baza: [rx.(90), 3600, 400], ust_destek: [bir, 3600, 700],
+        tabla: [bir, 1450, 1050]
       }
       @m.entities.grep(Sketchup::ComponentInstance).select { |i| nit(i, :parca) && !%w[tornavida kisa_tornavida].include?(nit(i, :parca)) }.each do |ana|
         k = nit(ana, :parca).to_sym
@@ -675,6 +728,11 @@ module OzcanKurulum
       ekler = [[@kulp, [1900, -520, 0], [0, 0, 1], [1, 0, 0], 'Kulp (1)']]
       2.times { |i| ekler << [@kvida, [2600, -450 - i * 35, 4], [1, 0, 0], [0, 0, 1], i.zero? ? 'Kulp Vidası (2)' : nil] }
       4.times { |i| ekler << [@dvida, [3300, -450 - i * 35, 4], [1, 0, 0], [0, 0, 1], i.zero? ? 'Üst Destek Vidası (4)' : nil] }
+      if tablali?
+        KOSEBENT_VIDALARI.size.times do |i|
+          ekler << [@vida16, [2700, 1250 + i * 35, 4], [1, 0, 0], [0, 0, 1], i.zero? ? "Köşebent Vidası (#{KOSEBENT_VIDALARI.size})" : nil]
+        end
+      end
       ekler.each do |defn, o, x, z, ad|
         @m.entities.add_instance(defn, eksen(o, x, z)).layer = tag
         next unless ad
@@ -720,6 +778,10 @@ module OzcanKurulum
         ['7 Kulp', [], 7, 'Kulpu kapağın önüne koyup arkadan 2 kulp vidasıyla sıkın.'],
         ['8 Bitmiş Ürün', [], :bitti, 'Kurulum tamamlandı.']
       ]
+      if tablali?
+        tanim.insert(-2, ['8 Tabla', TABLALI_EK, 8, 'Tablayı yanların üstüne oturtun; köşebentlerden alttan 4 vidayla bağlayın.'])
+        tanim[-1][0] = '9 Bitmiş Ürün'
+      end
       acik = []
       tanim.each do |ad, yeni, kam, aciklama|
         acik += yeni
@@ -746,6 +808,7 @@ module OzcanKurulum
     # dosya yeniden açıldığında da çalışır).
     def bagla
       @m = Sketchup.active_model
+      @varyant = (@m.get_attribute(DICT, 'varyant') || 'tablasiz').to_sym
       @parca = {}
       @taban_tr = {}
       @arac = nil
@@ -759,7 +822,7 @@ module OzcanKurulum
           @taban_tr[k.to_sym] = i.transformation
         end
       end
-      raise 'Model bulunamadı — önce OzcanKurulum::FirinDolabi.kur' unless @parca.size == SIRA.size && @arac && @kisa_arac
+      raise 'Model bulunamadı — önce OzcanKurulum::FirinDolabi.kur' unless @parca.size == sira.size && @arac && @kisa_arac
       @vidalar = []
       @kollar = []
       @barlar = []
@@ -882,7 +945,8 @@ module OzcanKurulum
     end
 
     DESTEK_VIDALARI = %w[destek_sol_on destek_sol_arka destek_sag_on destek_sag_arka].freeze
-    DEMONTE = (%w[kulp kulpvida_1 kulpvida_2] + DESTEK_VIDALARI).freeze
+    KOSEBENT_VIDALARI = %w[kosebent_sol_on kosebent_sol_arka kosebent_sag_on kosebent_sag_arka].freeze
+    DEMONTE = (%w[kulp kulpvida_1 kulpvida_2] + DESTEK_VIDALARI + KOSEBENT_VIDALARI).freeze
 
     # Kapak açık (yatık) halde gelir, menteşe kolları alt tabladaki tabanlara kayar,
     # sabitleme vidaları sıkılır, kapak kapanır.
@@ -977,6 +1041,18 @@ module OzcanKurulum
       z.kamera(1.2, KAM[:bitti])
       z.bekle(0.3)
 
+      if tablali?
+        z.baslik('8 · Tablayı yanların üstüne oturtun, köşebentlerden alttan vidalayın')
+        z.kamera(1.2, KAM[8])
+        hareket(:tabla, [0, 0, 350], [0, 0, 0], 1.6)
+        z.an { |s, _| KOSEBENT_VIDALARI.each { |id| s[:v][id] = { adv: 1.0, ang: 0.0 } } }
+        KOSEBENT_VIDALARI.each_with_index do |id, i| # ilk vidaya önden-alttan, ön destek altından bak
+          vida_sik(id, nil, tur: 4, sure: 0.9, yakin: i.zero?, bak: [0.3, -0.6, -0.8])
+        end
+        z.kamera(0.8, KAM[8])
+        z.bekle(0.3)
+      end
+
       z.baslik('Kurulum tamamlandı')
       z.kamera(1.6, KAM[:bitti])
       z.olay(1.3) { |s, u| s[:kapi][:kapak] = 90.0 * u }
@@ -992,7 +1068,7 @@ module OzcanKurulum
 
     def ilk_durum
       { liste: true,
-        p: SIRA.map { |k| [k, { vis: false, off: [0, 0, 0] }] }.to_h,
+        p: sira.map { |k| [k, { vis: false, off: [0, 0, 0] }] }.to_h,
         v: @vidalar.map { |v| [v[:id], { adv: 1.0, ang: 0.0 }] }.to_h,
         kapi: KAPILAR.map { |k| [k, 0.0] }.to_h,
         drv: nil }
@@ -1044,7 +1120,7 @@ module OzcanKurulum
         c = @taban_tr[k]
         [k, c.inverse * kapi_R(k, s[:kapi][k]).inverse * c]
       end.to_h
-      SIRA.each do |k|
+      sira.each do |k|
         st = s[:p][k]
         off = st[:vis] ? st[:off] : UZAK
         t = tr(*off)
@@ -1100,10 +1176,10 @@ module OzcanKurulum
       bagla unless @parca && @parca.values.all?(&:valid?)
       c = @m.active_view.camera
       unless @eski_tag # duraklatılmış oynatma zaten hazır: eski hali tekrar kaydetme
-        @eski_tag = [@liste_tag.visible?, @arac_tag.visible?, SIRA.map { |k| @parca[k].layer.visible? }]
+        @eski_tag = [@liste_tag.visible?, @arac_tag.visible?, sira.map { |k| @parca[k].layer.visible? }]
         @eski_kam = [c.eye, c.target, c.up, c.fov, c.aspect_ratio]
         @arac_tag.visible = true
-        SIRA.each { |k| @parca[k].layer.visible = true }
+        sira.each { |k| @parca[k].layer.visible = true }
       end
       return if @serbest && oran.zero? # serbest bakışta kullanıcının kamerasına dokunma
       c.perspective = true
@@ -1114,7 +1190,7 @@ module OzcanKurulum
     # Montajlı son durum: tüm parçalar yerinde, vidalar sıkılı, kapak kapalı.
     def son_durum
       s = ilk_durum
-      SIRA.each { |k| s[:p][k] = { vis: true, off: [0, 0, 0] } }
+      sira.each { |k| s[:p][k] = { vis: true, off: [0, 0, 0] } }
       s[:v].each_key { |id| s[:v][id] = { adv: 0.0, ang: 0.0 } }
       s[:liste] = @liste_tag.visible?
       uygula(s)
@@ -1134,7 +1210,7 @@ module OzcanKurulum
       son_durum
       @liste_tag.visible = @eski_tag[0]
       @arac_tag.visible = @eski_tag[1]
-      SIRA.each_with_index { |k, i| @parca[k].layer.visible = @eski_tag[2][i] }
+      sira.each_with_index { |k, i| @parca[k].layer.visible = @eski_tag[2][i] }
       c = @m.active_view.camera
       c.set(*@eski_kam[0, 3])
       c.aspect_ratio = @eski_kam[4]
