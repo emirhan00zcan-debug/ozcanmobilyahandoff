@@ -252,6 +252,17 @@ fotoğrafla doğrulandı. `OzcanKurulum::Konsol.kur / oynat / kumanda / kaydet`.
 - Adımlar: sol yan + alt tabla → sağ yan → üst tabla → arkalık → orta yanlar → alt çekmece →
   üst çekmece → niş tablaları → raflar → kapaklar → baza.
 
+### Aren köşe saksılık (`kurulum/kose_saksilik.rb`)
+
+Köşe merdiven raf, taban 63 × 63, yükseklik 175 cm: duvar köşesinde L oluşturan iki köşe
+dikmesi, iki duvar boyunca yukarı doğru içe eğilen iki eğik dikme (krem, 6,5 cm) ve beş
+çeyrek daire meşe raf (63, 50, 40, 30, 22 cm; en alttaki yerden 6 cm, aralar 40 cm). Ölçüler
+ürün belgesinden. `OzcanKurulum::KoseSaksilik.kur / oynat / kumanda / kaydet`.
+
+- Tüm birleşimler alyan vida (25): köşe dikmeleri birbirine 5, her raf köşe dikmelerine 2,
+  eğik dikmeler raflara 5'er; vidalar dikmelerin duvar tarafındaki yuvalardan girer.
+- Adımlar: köşe dikmeleri (L) → raflar alttan üste → sol eğik dikme → sağ eğik dikme.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
