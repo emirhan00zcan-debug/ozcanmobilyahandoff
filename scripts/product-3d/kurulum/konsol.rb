@@ -1433,7 +1433,7 @@ module OzcanKurulum
       w = v[:w].transform(ana).normalize
       yuz = bas.offset(w, (ck[:uz] * 150).mm)
       yy = Z_AXIS.cross(w)
-      yy = X_AXIS.clone if yy.length < 1e-6
+      yy = X_AXIS.clone unless yy.valid? # alttan vuruşta (w dikey) çapraz çarpım sıfır
       yy.normalize!
       @cekic.move!(Geom::Transformation.axes(yuz, w, yy, w.cross(yy)))
     end

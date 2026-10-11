@@ -296,9 +296,10 @@ dört 80 × 20 çekmece önü, siyah kulp (128 mm). Ölçüler `scripts/kesim-li
 - Gövde şeffaf çektirmeyle: yanlar alt ve üst tablaya ikişer, baza alt tablaya iki (vidaları
   arkadan, kısa tornavidayla); arkalık çakılır.
 - Çekmeceler konsoldaki gibi minifix + dip çivisi; kulp önden oturur, iki vidası kutunun içinden.
-  1. çekmece ayrıntılı, diğer üçü tek adımda birlikte kurulur.
-- Adımlar: sol yan + alt tabla → sağ yan → baza → üst tabla → arkalık → 1. çekmece → diğer üç
-  çekmece.
+  1. çekmece beş ayrı adımda gösterilir (yanlar minifix bulonlarıyla uçlardaki deliklere →
+  eksantrikler yarım tur → dip çivileri → kulp → raylar); diğer üçü tek adımda birlikte kurulur.
+- Adımlar: sol yan + alt tabla → sağ yan → baza → üst tabla → arkalık → 1. çekmece (6-10) →
+  diğer üç çekmece.
 
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**

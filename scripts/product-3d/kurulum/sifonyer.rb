@@ -9,7 +9,8 @@
 # Her panel ayrı bileşen; fabrikada takılı gelen parçalar (şeffaf çektirme erkek/dişi, minifix eksantrik ve
 # bulonları, ray parçaları) panelin içinde ayrı bileşen. Kulplar, kulp vidaları ve çiviler demonte gelir.
 #   1 sol yan + alt tabla  2 sağ yan  3 baza  4 üst tabla  5 arkalık (çivi)
-#   6 1. çekmece (minifix, dip çivisi, kulp, raylara itilir)  7 diğer üç çekmece
+#   6-10 1. çekmece: yanlar (minifix bulonları) → eksantrikler → dip çivileri → kulp → raylar
+#   11 diğer üç çekmece
 #
 # SketchUp > Pencere > Ruby Konsolu:
 #   load 'C:/.../scripts/product-3d/kurulum/sifonyer.rb'
@@ -50,7 +51,7 @@ module OzcanKurulum
     KUTU_X0 = (W - KUTU_W) / 2 # kutuyla yan arasında 14 mm ray boşluğu
     RAY_L = 450.0
     RAY_Y0 = 3.0
-    KAM_ARA = 34.0       # minifix eksantriğinin panel ucuna uzaklığı
+    KAM_ARA = 24.0       # minifix eksantriğinin panel ucuna uzaklığı (bulon başı eksantriğin içine gelir)
     KULP_ARA = 128.0     # kulp vida aralığı
     KULP_Z = ON_H - 62   # kulp ekseni önün üst kenarından 6,2 cm aşağıda
     # c1 en üstteki çekmece. Kutu önün altından 35 mm yukarıda (üst çekmecede üst çektirmelerin altında
@@ -89,6 +90,11 @@ module OzcanKurulum
       3 =>     [[1500, -1700, 600], [400, 200, 80]],
       4 =>     [[1900, -2100, 2100], [400, 255, 550]],
       5 =>     [[2000, 2500, 1600], [400, 255, 450]],
+      c_yan:   [[380, -330, 1150], [0, -640, 790]],     # kutunun içinden sol ön köşe: bulon ve eksantrik
+      c_kam:   [[420, -1350, 1900], [400, -430, 780]],
+      c_dip:   [[1600, -1500, 150], [400, -420, 700]],
+      c_kulp:  [[650, -1750, 1050], [400, -670, 790]],
+      c_ray:   [[-800, -1600, 1250], [250, -200, 760]],
       hepsi:   [[2300, -2900, 1400], [400, -400, 400]],
       bitti:   [[2100, -2400, 1600], [400, 200, 450]]
     }.freeze
@@ -573,6 +579,7 @@ module OzcanKurulum
       x0 = KUTU_X0 + KUTU_T - ON_X0
       zk = h[:kutu_z] - h[:on_z]
       kutu(g.entities, x0, T, zk, x0 + KUTU_W - 2 * KUTU_T, T + KUTU_T, zk + KUTU_H)
+      bulon_delikleri(g.entities, x0, KUTU_W - 2 * KUTU_T, T + KUTU_T / 2, zk + KUTU_H / 2)
       boya(g.entities, @mat[:govde])
       [[x0 + KAM_ARA, 'sol'], [x0 + KUTU_W - 2 * KUTU_T - KAM_ARA, 'sag']].each do |x, taraf|
         o = [x, T + KUTU_T, zk + KUTU_H / 2]
@@ -587,6 +594,12 @@ module OzcanKurulum
                  Geom::Vector3d.new(0, -1, 0), 25.0, 2.3, wk, "#{c}_kulpvida_#{j + 1}")
       end
       [d, ORIJIN[:"#{c}_on"]]
+    end
+
+    # Minifix bulonunun gireceği Ø8 delikler: panelin iki ucunda, eksantriğin hizasına kadar.
+    def bulon_delikleri(e, x0, gen, y, z)
+      daire_it(e, P(x0, y, z), X_AXIS, 4, yon(1, 0, 0), KAM_ARA, 16)
+      daire_it(e, P(x0 + gen, y, z), X_AXIS, 4, yon(-1, 0, 0), KAM_ARA, 16)
     end
 
     def cekmece_yan(c, taraf)
@@ -610,6 +623,7 @@ module OzcanKurulum
       e = d.entities
       gen = KUTU_W - 2 * KUTU_T
       kutu(e, 0, 0, 0, gen, KUTU_T, KUTU_H)
+      bulon_delikleri(e, 0.0, gen, KUTU_T / 2, KUTU_H / 2)
       boya(e, @mat[:govde])
       [[KAM_ARA, 'sol'], [gen - KAM_ARA, 'sag']].each do |x, taraf|
         o = [x, 0, KUTU_H / 2]
@@ -772,9 +786,10 @@ module OzcanKurulum
         ['3 Baza', %i[baza], 3, 'Bazayı alt tablanın altına önden yerleştirin; 2 çektirme vidasını arkadan sıkın.'],
         ['4 Üst Tabla', %i[ust_tabla], 4, 'Üst tablayı yanların üstüne oturtun; 4 çektirme vidasını sıkın.'],
         ['5 Arkalık', %i[arkalik], 5, 'Arkalığı arkaya yerleştirip çivileri çakın.'],
-        ['6 1. Çekmece', CEKMECE_SIRA.select { |k| k.to_s.start_with?('c1') }, kam_cek(:c1), 'Yanları minifixle öne ve arkaya bağlayın, dibi çakın, kulpu takın, raylara oturtup itin.'],
-        ['7 Diğer Çekmeceler', CEKMECE_SIRA.reject { |k| k.to_s.start_with?('c1') }, :hepsi, 'Diğer üç çekmeceyi aynı şekilde kurup raylara itin.'],
-        ['8 Bitmiş Ürün', [], :bitti, 'Kurulum tamamlandı.']
+        ['6-10 1. Çekmece', CEKMECE_SIRA.select { |k| k.to_s.start_with?('c1') }, :c_ray,
+         'Yanları minifix bulonlarıyla öne ve arkaya geçirin, eksantrikleri yarım tur çevirin, dibi çakın, kulpu takın, raylara oturtup itin.'],
+        ['11 Diğer Çekmeceler', CEKMECE_SIRA.reject { |k| k.to_s.start_with?('c1') }, :hepsi, 'Diğer üç çekmeceyi aynı şekilde kurup raylara itin.'],
+        ['12 Bitmiş Ürün', [], :bitti, 'Kurulum tamamlandı.']
       ]
       acik = []
       tanim.each do |ad, yeni, kam, aciklama|
@@ -788,7 +803,7 @@ module OzcanKurulum
                       else true
                       end
         end
-        kamera_kur(*(kam.is_a?(Array) ? kam : KAM[kam]))
+        kamera_kur(*KAM[kam])
         p = @m.pages.add(ad)
         p.description = aciklama
       end
@@ -962,12 +977,6 @@ module OzcanKurulum
     def kam_idleri(c) %w[on_sol on_sag arka_sol arka_sag].map { |p| "#{c}_kam_#{p}" } end
     def dip_civileri(c) (1..DIP_CIVI.size).map { |i| "#{c}_civi_#{i}" } end
 
-    # Çekmecenin önde kurulduğu yere bakan kamera (yüksekliği çekmeceye göre)
-    def kam_cek(c)
-      z = CEKMECE[c][:on_z]
-      [[1700, -2300, z + 650], [400, -520, z + 60]]
-    end
-
     # Kulp önden oturur; iki kulp vidası kutunun içinden gelip sıkılır.
     def kulp_tak(c)
       z = @cz
@@ -979,33 +988,60 @@ module OzcanKurulum
       end
     end
 
-    # Çekmece önde kurulur: yanlar minifix bulonlarıyla ön ve arkanın uçlarına geçer, eksantrikler
-    # yarım tur çevrilir, dip alttan çakılır, kulp takılır; sonra raylara oturtulup içeri itilir.
+    # İlk çekmece önde, her işlem ayrı adım olarak kurulur (6-10): yanlar minifix bulonlarıyla ön ve
+    # arkanın uçlarındaki deliklere geçer; eksantrikler yarım tur çevrilip bulonları çeker; dip alttan
+    # çakılır; kulp takılır; çekmece raylara oturtulup içeri itilir.
     def cekmece_kur(c)
       z = @cz
       s0 = [0, -650, 0]
-      kam = kam_cek(c)
-      z.kamera(1.2, kam)
+      ad = CEKMECE[c][:ad]
+
+      z.baslik("6 · #{ad}: yanları ön ve arka panele geçirin — yanlardaki minifix bulonları uçlardaki deliklere girer")
+      z.kamera(1.2, KAM[:c_yan])
       z.an do |s, _|
         s[:p][:"#{c}_on"] = { vis: true, off: s0 }
         s[:p][:"#{c}_arka"] = { vis: true, off: s0 }
+        s[:p][:"#{c}_sol"] = { vis: true, off: [-160, -650, 0] }
+        s[:p][:"#{c}_sag"] = { vis: true, off: [160, -650, 0] }
       end
+      z.bekle(0.6)
+      z.olay(1.8) do |s, u|
+        s[:p][:"#{c}_sol"][:off] = lerp3([-160, -650, 0], s0, u)
+        s[:p][:"#{c}_sag"][:off] = lerp3([160, -650, 0], s0, u)
+      end
+      z.bekle(0.3)
+      z.kamera(1.0, KAM[:c_kam])
       z.bekle(0.4)
-      hareket(:"#{c}_sol", [-160, -650, 0], s0, 1.0)
-      hareket(:"#{c}_sag", [160, -650, 0], s0, 1.0)
+
+      z.baslik('7 · Dört minifix eksantriğini tornavidayla yarım tur saat yönünde çevirip sıkın')
       # ilk eksantriğe kutunun içinden, arkadan-yukarıdan bak (ön görüşü kapatmasın)
-      sirayla_sik(kam_idleri(c), kam, tur: 0.5, bak: [0.3, 1, 0.8])
-      hareket(:"#{c}_dip", [0, -650, -160], s0, 1.0)
+      sirayla_sik(kam_idleri(c), KAM[:c_kam], tur: 0.5, bak: [0.3, 1, 0.8])
+      z.kamera(0.8, KAM[:c_kam])
+      z.bekle(0.5)
+
+      z.baslik('8 · Dibi alttan kutuya oturtun; kenarları yanlarla hizalayıp yanlara ikişer, öne ve arkaya birer çivi çakın')
+      z.kamera(1.2, KAM[:c_dip])
+      hareket(:"#{c}_dip", [0, -650, -220], s0, 1.4)
       ids = dip_civileri(c)
       z.an { |s, _| ids.each { |id| s[:v][id] = { adv: 1.0, ang: 0.0 } } }
       yakin_kamera(ids.first, yon: [0.35, -1, -0.75])
       civi_cak(ids.first)
-      z.kamera(0.8, kam)
+      z.kamera(0.8, KAM[:c_dip])
       ids.drop(1).each { |id| civi_cak(id) }
+      z.bekle(0.5)
+
+      z.baslik('9 · Kulpu önden deliklere oturtun; iki kulp vidasını çekmecenin içinden takıp sıkın')
+      z.kamera(1.2, KAM[:c_kulp])
       kulp_tak(c)
-      z.kamera(0.8, kam)
-      cekmece_hareket(c, s0, [0, 0, 0], 1.8)
-      z.bekle(0.3)
+      z.kamera(0.8, KAM[:c_kulp])
+      z.bekle(0.5)
+
+      z.baslik('10 · Çekmecenin arka tekerleklerini dolaptaki rayların kanalına oturtun, sonuna kadar itin')
+      z.kamera(1.2, KAM[:c_ray])
+      cekmece_hareket(c, s0, [0, -480, 0], 1.2)
+      z.bekle(0.4)
+      cekmece_hareket(c, [0, -480, 0], [0, 0, 0], 1.8)
+      z.bekle(0.5)
     end
 
     # Kalan çekmeceler birlikte, aynı sırayla ama tek tek göstermeden kurulup raylara itilir.
@@ -1092,10 +1128,9 @@ module OzcanKurulum
       CIVILER.drop(1).each { |id| civi_cak(id) }
       z.bekle(0.3)
 
-      z.baslik('6 · 1. çekmeceyi minifixle kurun, dibini çakın, kulpunu takın; raylara oturtup itin')
-      cekmece_kur(:c1)
+      cekmece_kur(:c1) # adım 6-10
 
-      z.baslik('7 · Diğer üç çekmeceyi aynı şekilde kurup raylara itin')
+      z.baslik('11 · Diğer üç çekmeceyi aynı şekilde kurup raylara itin')
       cekmeceler_hizli(%i[c2 c3 c4])
 
       z.baslik('Kurulum tamamlandı')
@@ -1203,7 +1238,7 @@ module OzcanKurulum
       w = v[:w].transform(ana).normalize
       yuz = bas.offset(w, (ck[:uz] * 150).mm)
       yy = Z_AXIS.cross(w)
-      yy = X_AXIS.clone if yy.length < 1e-6
+      yy = X_AXIS.clone unless yy.valid? # alttan vuruşta (w dikey) çapraz çarpım sıfır
       yy.normalize!
       @cekic.move!(Geom::Transformation.axes(yuz, w, yy, w.cross(yy)))
     end
@@ -1325,7 +1360,7 @@ module OzcanKurulum
 
     # ------------------------------------------------------------------
     # Oynatma kontrolü (Ruby Konsolu'ndan ya da `kumanda` ile klavyeden).
-    # Adımlar başlıkların sırasıdır: 0 kutu içeriği, 1-7 montaj, 8 bitmiş ürün.
+    # Adımlar başlıkların sırasıdır: 0 kutu içeriği, 1-11 montaj, 12 bitmiş ürün.
     # ------------------------------------------------------------------
     # Adım sınırında durulan an sınırdan biraz öncedir: sonraki adımın anlık ilk
     # işi (ör. parça listesini gizleme) uygulanmaz, bitmiş adım kendi kamerasıyla kalır.
