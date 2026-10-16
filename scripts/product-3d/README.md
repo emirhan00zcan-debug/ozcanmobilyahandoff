@@ -301,24 +301,24 @@ dört 80 × 20 çekmece önü, siyah kulp (128 mm). Ölçüler `scripts/kesim-li
 - Adımlar: sol yan + alt tabla → sağ yan → baza → üst tabla → arkalık → 1. çekmece (6-10) →
   diğer üç çekmece.
 
-### Patili Konsol — kedi yatağı + mama istasyonu (`kurulum/patili_konsol.rb`)
+### Patili Konsol — kedi yatağı + kum bölmesi + mama çekmecesi (`kurulum/patili_konsol.rb`, `kurulum/patili_konsol_modern.rb`)
 
-Özcan Mobilya tasarımı (müşterinin gösterdiği evcil hayvan konsolundan esinlenildi), 120 × 70 × 51 cm,
-beyaz, önde 6 cm baza, gömme kulplu önler. `OzcanKurulum::PatiliKonsol.kur / oynat / kumanda / kaydet`.
+Özcan Mobilya tasarımı (müşterinin gösterdiği evcil hayvan konsolundan esinlenildi), 120 × 70 × 51 cm, iki
+üslup aynı ortak parçalardan üretilir: klasik (`OzcanKurulum::PatiliKonsol`, beyaz, önde baza, gömme kulp,
+kemerli ağız) ve modern (`OzcanKurulum::PatiliModern`, 36 mm yuvarlak köşeli meşe tabla, antrasit gölge baza,
+yarım ay parmak oyuklu kulpsuz önler, Ø31 yuvarlak ağız, baştan sona yarıklı kum çekmecesi, Ø20 yuvarlak giriş).
 
-- Solda kedi yatağı (iç 70 cm): yuvarlak tepeli ağız paneli (CNC), altı açık; eşiği çekilir yatak
-  tepsisinin önü (17,5 cm). Tepsi kaydırma pabuçlarıyla alt tablada kayar, minderle birlikte öne çıkar.
-  Sol yanda üç oval pencere, arkalıkta 15 havalandırma deliği ve ısıtmalı ped için kablo deliği.
-- Sağda mama kolonu (iç 44,6 cm): altta kap çekmecesi (kaydırma pabuçlu; çıkarılabilir kap tablası,
-  iki paslanmaz kap, damlama tepsisi; kap ağzı ~16 cm), ortada mama çekmecesi (kapaklı mama kabı),
-  üstte aksesuar çekmecesi; ikisi beyaz makaralı rayda. Sağ yanda iki tasma askısı.
-- Gövde şeffaf çektirmeyle (dikmenin çektirmeleri mama kolonu tarafında; ağız paneli sol yana ve
-  dikmeye içeriden), arkalık çakma; çekmeceler şifonyerdeki gibi minifix + dip çivisi.
-- Adımlar: sol yan + alt tabla → sağ yan → ara dikme → baza → ağız paneli → üst tabla → arkalık →
-  mama çekmecesi (8-11, adım adım) → aksesuar çekmecesi → kap çekmecesi + yatak tepsisi → minder →
-  kaplar → mama kabı → tasma askıları.
-- Tanıtım görselleri (kapalı, açık çekmeceler, sol yan, arka, ön) kurulum görsellerinin yanında
-  `Tanıtım` klasöründe.
+- Solda (iç 65 cm): altta kap çekmecesi (çıkarılabilir kap tablası, iki paslanmaz kap, damlama tepsisi; kap
+  ağzı ~16 cm), üstünde sabit yatak rafı ve rafta kayan yatak tepsisi (kabarık kenarlı minderle öne çıkar).
+- Sağda (iç 49,6 cm): kum çekmecesi (kum kabı çekmeceyle öne çıkar, önü havalandırma yarıklı); kedi sağ
+  yandaki girişten kabın üstüne girer. Üstte aksesuar çekmecesi (makaralı ray). Sağ yanda iki tasma askısı.
+  Mama kapları kum bölmesinden uzakta (kediler tuvaletinin yanında yemek yemez).
+- Arkalıkta yatağın ve kum bölmesinin arkasında havalandırma delikleri, ısıtmalı ped için kablo deliği.
+- Raysız çekmeceler kaydırma pabuçlarıyla kayar (rayları alt köşelerdeki çektirmelerle çakışırdı).
+- Adımlar: sol yan + alt tabla → sağ yan → ara dikme → baza → yatak rafı → ağız paneli → üst tabla →
+  arkalık → aksesuar çekmecesi (9-12, adım adım) → kum, kap ve yatak çekmeceleri → minder → kaplar →
+  kum kabı → tasma askıları.
+- Tanıtım görselleri kurulum görsellerinin yanında `Tanıtım` klasöründe (betik: her modülün `TANITIM` listesi).
 
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
