@@ -2,8 +2,8 @@
 # Kahve Köşesi Dolabı (80 x 175 x 40 cm) — model ve kurulum kılavuzu.
 # Müşterinin gösterdiği kahve istasyonundan, Özcan Mobilya üretim tarzına uyarlandı.
 # Gövde 18 mm kumtaşı sunta, gömme (yanların arasında) beyaz önler, altın rengi kısa çubuk kulplar, eğik meşe ayaklar.
-#   Altta (derinlik 40): tezgahın altından alt tablaya iki tek parça gömme kapak (içinde ara tabla + pimli raf); üstünde
-#   kumtaşı tezgah (yerden 89 cm).
+#   Altta (derinlik 40): üstte iki dikey gömme kapak (içinde pimli raf), altta tam genişlikte yukarıdan aşağı açılan
+#   klapa kapak (alt kenarından menteşeli, iki yanda klapa makası); aradaki raf pimli. Üstünde kumtaşı tezgah (89 cm).
 #   Üstte (derinlik 26): yanlar tezgahın üstünde kavisle geri çekilir; ortada pimli raf, rafın ve üst tablanın
 #   altında LED şerit, önde uçları kavisli kuşak, altlarında fincan kancaları.
 #   Arkalık ince duralit değil, ürünün kendi malzemesi: alt ve üst bölmede 18 mm kumtaşı panel. Üst arkalık tam
@@ -11,10 +11,10 @@
 #   18 mm sığlaşır.
 #
 # Her panel ayrı bileşen; fabrikada takılı gelenler (şeffaf çektirme erkek/dişi, minifix eksantrik ve bulonları,
-# menteşe tabanı ve gövdesi, raf pimleri, ayak tabanları, LED şeritler) panelin içinde. Ayaklar, kulplar ve
+# menteşe tabanı ve gövdesi, klapa makası, raf pimleri, ayak tabanları, LED şeritler) panelin içinde. Ayaklar, kulplar ve
 # vidaları, üst arkalık vidaları ve fincan kancaları ayrı gelir.
-#   1 ayaklar  2 sol yan + alt tabla  3 sağ yan  4 ara tabla  5 tezgah  6 alt arkalık  7 üst arkalık  8 üst tabla
-#   9 ön kuşak  10 raflar  11 kapaklar  12 kulplar  13 fincan kancaları
+#   1 ayaklar  2 sol yan + alt tabla  3 sağ yan  4 tezgah  5 alt arkalık  6 üst arkalık  7 üst tabla  8 ön kuşak
+#   9 raflar  10 kapaklar  11 klapa kapak  12 kulplar  13 fincan kancaları
 #
 # SketchUp > Pencere > Ruby Konsolu:
 #   load 'C:/.../scripts/product-3d/kurulum/kahve_kosesi.rb'
@@ -43,7 +43,7 @@ module OzcanKurulum
     AYAK_H = 160.0
     Z0 = AYAK_H          # alt tablanın alt yüzü; yanlar buradan başlar
     ZT = 1732.0          # yanların üst kenarı; üstünde 18 mm üst tabla → 1750
-    ARA_Z = 402.0        # ara tablanın alt yüzü (kapakların arkasında sabit raf)
+    ARA_Z = 402.0        # ara rafın alt yüzü (pimli; altında klapa, üstünde kapaklı bölme)
     TEZGAH_Z = 872.0     # tezgahın alt yüzü (üstü 890)
     RAF_Z = 640.0        # alt dolaptaki pimli raf
     UST_RAF_Z = 1270.0   # üst bölmedeki pimli raf
@@ -51,7 +51,6 @@ module OzcanKurulum
     KUSAK = { h: 130.0, orta: 50.0, uc: 30.0, r: 80.0 }.freeze # ön kuşak: uçlarda 13 cm, ortada 5 cm, kavisli
     PIM_R = 2.5
     CEK_Y = [70.0, 330.0].freeze                 # alt tabla ve tezgah birleşimleri
-    ARA_Y = [80.0, 320.0].freeze
     UST_Y = [200.0, 340.0].freeze                # üst tabla birleşimleri
     ALT_ARKA_Z = [500.0, 780.0].freeze           # alt arkalık çektirmeleri
     UST_ARKA_Z = [1000.0, 1600.0].freeze         # üst arkalığın yanlara arkadan vidaları
@@ -62,12 +61,16 @@ module OzcanKurulum
     # Gömme önler: yanların arasında, 2 mm aralıkla; kapaklar iç yüzdeki menteşe tabanlarına (gömme menteşe)
     ON_X = [T + 2, W - T - 2].freeze
     KAPI_W = (ON_X[1] - ON_X[0] - 3) / 2
-    # Tek parça kapak: tezgahın altından alt tablaya (ara tabla arkasında kalır); alt menteşe alt çektirmenin üstünde
-    KAPI_BOY = { z: [Z0 + 2, TEZGAH_Z - 2], mentese: [Z0 + T + 100, TEZGAH_Z - 80] }.freeze
+    UST_KAPI = { z: [ARA_Z + 2, TEZGAH_Z - 2], mentese: [ARA_Z + T + 80, TEZGAH_Z - 80] }.freeze # ara rafın üstü
+    # Klapa: ara rafın altında tam genişlik, alt kenarından alt tablaya menteşeli, yukarıdan aşağı açılır (90°'de
+    # iki yandaki klapa makası tutar). mentese: menteşelerin x'i (dünya).
     KAPI = {
-      kapak_sol: KAPI_BOY.merge(x0: ON_X[0], eksen: ON_X[0], yon: -1, panel: T, sx: 1),
-      kapak_sag: KAPI_BOY.merge(x0: ON_X[1] - KAPI_W, eksen: ON_X[1], yon: 1, panel: W - T, sx: -1)
+      kapak_sol: UST_KAPI.merge(x0: ON_X[0], eksen: ON_X[0], yon: -1, panel: T, sx: 1),
+      kapak_sag: UST_KAPI.merge(x0: ON_X[1] - KAPI_W, eksen: ON_X[1], yon: 1, panel: W - T, sx: -1),
+      klapa: { z: [Z0 + 2, ARA_Z - 1], x0: ON_X[0], gen: ON_X[1] - ON_X[0], klapa: true, mentese: [120.0, W - 120.0] }
     }.freeze
+    # Klapa makası: kol yan iç yüzünden 10 mm içeride; a = klapadaki plaka (kapak-yerel y, z), b = yandaki yuva (dünya y, z)
+    MAKAS = { x: 10.0, a: [T + 3, 150.0], b: [160.0, 290.0] }.freeze
     KAPILAR = KAPI.keys.freeze
     KAP_ZC = 24.0        # gömme menteşe: kap merkezi kapak kenarından ~22 mm
     KULP_ARA = 96.0
@@ -80,18 +83,19 @@ module OzcanKurulum
     VIDEO_FOV = 50.0
 
     DICT = 'ozcan_kurulum'
-    SIRA = (%i[alt_tabla sol_yan sag_yan ara_tabla tezgah alt_arka ust_arka ust_tabla kusak raf ust_raf] +
+    SIRA = (%i[alt_tabla sol_yan sag_yan tezgah alt_arka ust_arka ust_tabla kusak ara_tabla raf ust_raf] +
             KAPILAR).freeze
     AD = {
-      alt_tabla: 'Alt Tabla', sol_yan: 'Sol Yan', sag_yan: 'Sağ Yan', ara_tabla: 'Ara Tabla', tezgah: 'Tezgah',
+      alt_tabla: 'Alt Tabla', sol_yan: 'Sol Yan', sag_yan: 'Sağ Yan', ara_tabla: 'Ara Raf', tezgah: 'Tezgah',
       alt_arka: 'Alt Arkalık', ust_arka: 'Üst Arkalık', ust_tabla: 'Üst Tabla', kusak: 'Ön Kuşak', raf: 'Alt Raf',
-      ust_raf: 'Üst Raf', kapak_sol: 'Sol Kapak', kapak_sag: 'Sağ Kapak'
+      ust_raf: 'Üst Raf', kapak_sol: 'Sol Kapak', kapak_sag: 'Sağ Kapak', klapa: 'Klapa Kapak'
     }.freeze
     ETIKET = {
-      alt_tabla: '01 Alt Tabla', sol_yan: '02 Sol Yan', sag_yan: '03 Sağ Yan', ara_tabla: '04 Ara Tabla',
-      tezgah: '05 Tezgah', alt_arka: '06 Alt Arkalık', ust_arka: '07 Üst Arkalık', ust_tabla: '08 Üst Tabla',
-      kusak: '09 Ön Kuşak', raf: '10 Raflar', ust_raf: '10 Raflar'
-    }.merge(KAPILAR.map { |k| [k, '11 Kapaklar'] }.to_h).freeze
+      alt_tabla: '01 Alt Tabla', sol_yan: '02 Sol Yan', sag_yan: '03 Sağ Yan', tezgah: '04 Tezgah',
+      alt_arka: '05 Alt Arkalık', ust_arka: '06 Üst Arkalık', ust_tabla: '07 Üst Tabla', kusak: '08 Ön Kuşak',
+      ara_tabla: '09 Raflar', raf: '09 Raflar', ust_raf: '09 Raflar', kapak_sol: '10 Kapaklar', kapak_sag: '10 Kapaklar',
+      klapa: '11 Klapa Kapak'
+    }.freeze
     LISTE_TAG = '00 Parça Listesi'
     ARAC_TAG = '99 Tornavida'
     DEKOR_TAG = 'Dekor (fincanlar, makine)'
@@ -102,14 +106,14 @@ module OzcanKurulum
       1 =>     [[1500, -1300, 650], [400, 200, 220]],
       2 =>     [[2400, -2900, 2200], [400, 200, 860]],
       3 =>     [[-1700, -2900, 2200], [400, 200, 860]],
-      4 =>     [[2100, -2700, 1700], [400, 150, 760]],
-      5 =>     [[2200, -2800, 2000], [400, 150, 870]],
-      6 =>     [[1900, 2500, 1500], [400, 300, 550]],
-      7 =>     [[2400, 3300, 2400], [400, 300, 1050]],
-      8 =>     [[2400, -3200, 3000], [400, 250, 1150]],
-      9 =>     [[1300, -2000, 1300], [400, 200, 1550]],
-      10 =>    [[2200, -3000, 2000], [400, 200, 900]],
+      4 =>     [[2200, -2800, 2000], [400, 150, 870]],
+      5 =>     [[1900, 2500, 1500], [400, 300, 550]],
+      6 =>     [[2400, 3300, 2400], [400, 300, 1050]],
+      7 =>     [[2400, -3200, 3000], [400, 250, 1150]],
+      8 =>     [[1300, -2000, 1300], [400, 200, 1550]],
+      9 =>     [[2200, -3000, 1900], [400, 200, 800]],
       kapak:   [[1600, -2300, 1300], [400, 0, 640]],
+      klapa:   [[1500, -1900, 1000], [400, -50, 300]],
       kulp:    [[1400, -2100, 1000], [400, -150, 450]],
       kanca:   [[800, -1300, 1150], [400, 250, 1450]],
       bitti:   [[2300, -3400, 2100], [400, 200, 870]]
@@ -117,7 +121,7 @@ module OzcanKurulum
     # Tanıtım görselleri: ad, açık kapak açıları, [göz, hedef]
     TANITIM = [
       ['1_on_capraz', {}, [[1900, -3200, 1550], [400, 200, 870]]],
-      ['2_kapaklar_acik', { kapak_sol: 100, kapak_sag: 100 }, [[1600, -2900, 1400], [400, 0, 780]]],
+      ['2_kapaklar_acik', { kapak_sol: 100, kapak_sag: 100, klapa: 90 }, [[1600, -2900, 1400], [400, 0, 780]]],
       ['3_on', {}, [[400, -4000, 1000], [400, 200, 875]]],
       ['4_yan', {}, [[3200, -1400, 1350], [400, 200, 875]]],
       ['5_ust_bolme', {}, [[1300, -2300, 1500], [400, 250, 1300]]]
@@ -125,7 +129,7 @@ module OzcanKurulum
 
     # Parçaların yerleşim orijini (bileşen orijini = parçanın min köşesi)
     ORIJIN = {
-      alt_tabla: [T, GERI, Z0], sol_yan: [0, 0, Z0], sag_yan: [W - T, 0, Z0], ara_tabla: [T, GERI, ARA_Z],
+      alt_tabla: [T, GERI, Z0], sol_yan: [0, 0, Z0], sag_yan: [W - T, 0, Z0], ara_tabla: [T + 1.75, GERI + 2, ARA_Z],
       tezgah: [T, 0, TEZGAH_Z], alt_arka: [T, D - T, Z0], ust_arka: [0, D - T, TEZGAH_Z], ust_tabla: [0, HY, ZT],
       kusak: [T, HY, ZT - KUSAK[:h]], raf: [T + 1.75, GERI + 2, RAF_Z], ust_raf: [T + 1.75, HY + 2, UST_RAF_Z],
     }.merge(KAPI.map { |k, h| [k, [h[:x0], 0, h[:z][0]]] }.to_h).freeze
@@ -570,6 +574,14 @@ module OzcanKurulum
       d
     end
 
+    # Klapa makası kolu: yerel +x boyunca 10 mm (bar_tr ile iki uç arasına gerilir), yana 3 mm, yukarı 12 mm.
+    def makas_tanimi
+      d = @m.definitions.add('Klapa Makası Kolu')
+      kutu(d.entities, 0, -1.5, -6, 10, 1.5, 6)
+      boya(d.entities, @mat[:nikel])
+      d
+    end
+
     # Fincan kancası: yerel +x yukarı (panele vidalanan kısım x∈[0, 12]), kanca aşağıda, ucu yerel +z'ye döner.
     def kanca_tanimi
       d = @m.definitions.add('Fincan Kancası')
@@ -623,7 +635,7 @@ module OzcanKurulum
 
     # Tüm çektirmeler dünya koordinatında: k = iç köşe noktası, ex/ey/ez bağlantı çerçevesi
     # (x erkeğin panelinden uzağa, z dişinin panelinden uzağa). Alt tabla sol yana yandan kayar, sağ yan ona
-    # oturur; ara tabla ve tezgah önden girip iner (tezgahın çektirmeleri altında, görünmez); alt arkalık arkadan
+    # oturur; tezgah önden girip iner (çektirmeleri altında, görünmez); ara raf pimli (çektirmesiz); alt arkalık arkadan
     # girer (vidaları içeriden); üst arkalık çektirmesiz, arkadan vidalanır; üst tabla yukarıdan iner; ön kuşak üst
     # tablanın altına önden kayar.
     def baglantilar
@@ -632,9 +644,6 @@ module OzcanKurulum
         CEK_Y.zip(%w[on arka]).each do |y, yer|
           l << { id: "alt_#{t}_#{yer}", disi: :alt_tabla, erkek: yan, k: [xs, y, Z0 + T], ex: [sx, 0, 0], ez: [0, 0, 1] }
           l << { id: "tez_#{t}_#{yer}", disi: yan, erkek: :tezgah, k: [xs, y, TEZGAH_Z], ex: [0, 0, -1], ez: [sx, 0, 0] }
-        end
-        ARA_Y.zip(%w[on arka]).each do |y, yer|
-          l << { id: "ara_#{t}_#{yer}", disi: :ara_tabla, erkek: yan, k: [xs, y, ARA_Z + T], ex: [sx, 0, 0], ez: [0, 0, 1] }
         end
         UST_Y.zip(%w[on arka]).each do |y, yer|
           l << { id: "ust_#{t}_#{yer}", disi: yan, erkek: :ust_tabla, k: [xs, y, ZT], ex: [0, 0, -1], ez: [sx, 0, 0] }
@@ -689,7 +698,7 @@ module OzcanKurulum
       [[0, 0], [D, 0], [D, za], [D - T, za], [D - T, h], [HY, h]] + kavis + [[0, zt]]
     end
 
-    # Yan: kapak menteşe tabanları, raf pimleri, çektirmeler.
+    # Yan: kapak menteşe tabanları, klapa makası yuvası, raf pimleri, çektirmeler.
     def dis_yan(k, sx)
       d = parca_tanimi(AD[k])
       e = d.entities
@@ -700,7 +709,13 @@ module OzcanKurulum
       KAPI.each_value.select { |h| h[:sx] == sx }.flat_map { |h| h[:mentese] }.each do |hz|
         e.add_instance(@taban, mentese_cerceve([xi, T, hz - Z0], sx))
       end
-      [[GERI + 2, 340.0, RAF_Z], [HY + 2, UST_D - T - 4, UST_RAF_Z]].each do |y0, der, z|
+      g = e.add_group # klapa makası yuvası (kolun ucu buna vidalanır)
+      g.name = 'Klapa Makası Yuvası'
+      yb, zb = MAKAS[:b]
+      kutu(g.entities, [xi, xi + sx * (MAKAS[:x] - 1.5)].min, yb - 18, zb - Z0 - 14,
+           [xi, xi + sx * (MAKAS[:x] - 1.5)].max, yb + 18, zb - Z0 + 14)
+      boya(g.entities, @mat[:nikel])
+      [[GERI + 2, 340.0, ARA_Z], [GERI + 2, 340.0, RAF_Z], [HY + 2, UST_D - T - 4, UST_RAF_Z]].each do |y0, der, z|
         [y0 + 40, y0 + der - 40].each { |y| e.add_instance(@pim, eksen([xi, y, z - PIM_R - Z0], [sx, 0, 0], [0, 0, 1])) }
       end
       [d, ORIJIN[k]]
@@ -728,10 +743,10 @@ module OzcanKurulum
         o = [lx, ly, -TABAN_T]
         vida_koy(e, @ayak, eksen_v(o, xv), P(*o), xv, 40.0, 0.0, xv.reverse, AYAKLAR[i])
       end
+      KAPI[:klapa][:mentese].each { |hx| e.add_instance(@taban, klapa_cerceve([hx - T, T - GERI, T])) }
       [d, ORIJIN[:alt_tabla]]
     end
 
-    def ara_tabla; [tabla(:ara_tabla, D - T - GERI), ORIJIN[:ara_tabla]]; end
     def tezgah; [tabla(:tezgah, D - T), ORIJIN[:tezgah]]; end
 
     # Arkalıklar: ince duralit değil, ürünün kendi malzemesi — 18 mm kumtaşı. Alt arkalık yanların arasında,
@@ -804,12 +819,16 @@ module OzcanKurulum
       [d, ORIJIN[:kusak]]
     end
 
-    def raf
-      d = parca_tanimi(AD[:raf])
+    # Ara raf ve alt raf: dört raf pimine oturur, çektirmesiz.
+    def raf_paneli(k)
+      d = parca_tanimi(AD[k])
       kutu(d.entities, 0, 0, 0, W - 2 * T - 3.5, 340, T)
       boya(d.entities, @mat[:govde])
-      [d, ORIJIN[:raf]]
+      [d, ORIJIN[k]]
     end
+
+    def ara_tabla; raf_paneli(:ara_tabla); end
+    def raf; raf_paneli(:raf); end
 
     # Üst raf: altında önde LED şerit ve fincan kancaları.
     def ust_raf
@@ -822,20 +841,37 @@ module OzcanKurulum
       [d, ORIJIN[:ust_raf]]
     end
 
-    # Gömme kapak: yanların arasında, yan iç yüzündeki tabanlara gömme menteşeyle. Kapak-yerel orijin = sol ön alt köşe.
+    # Klapa menteşesinin çerçevesi: alt tablanın üst yüzünde, yerel z yukarı (yan kapaklardaki çerçevenin yatık hali).
+    def klapa_cerceve(o)
+      Geom::Transformation.axes(P(*o), X_AXIS, Y_AXIS, Z_AXIS)
+    end
+
+    # Gömme kapak: yanların arasında, yan iç yüzündeki tabanlara gömme menteşeyle; klapa alt kenarından alt tablaya.
+    # Kapak-yerel orijin = sol ön alt köşe.
     def kapak(k)
       h = KAPI[k]
       d = parca_tanimi(AD[k])
       e = d.entities
+      gen = h[:gen] || KAPI_W
       yuk = h[:z][1] - h[:z][0]
-      kutu(e, 0, 0, 0, KAPI_W, T, yuk)
-      sx = h[:sx]
-      xi = h[:panel] - h[:x0]
-      hdler = h[:mentese].map { |hz| mentese_cerceve([xi, T, hz - h[:z][0]], sx) }
+      kutu(e, 0, 0, 0, gen, T, yuk)
+      hdler = if h[:klapa]
+                h[:mentese].map { |hx| klapa_cerceve([hx - h[:x0], T, Z0 + T - h[:z][0]]) }
+              else
+                h[:mentese].map { |hz| mentese_cerceve([h[:panel] - h[:x0], T, hz - h[:z][0]], h[:sx]) }
+              end
       hdler.each { |hd| daire_it(e, P(0, 0, KAP_ZC).transform(hd), Y_AXIS, 17.5, yon(0, -1, 0), 12.5, 32) }
-      kx = sx > 0 ? KAPI_W - 40 : 40.0
-      kz = yuk - [140, yuk / 2].min
-      delik = [-1, 1].map { |s| [kx, kz + s * KULP_ARA / 2] }
+      if h[:klapa] # yatay kulp, üst kenarın ortasında
+        kx = gen / 2
+        kz = yuk - 45
+        delik = [-1, 1].map { |s| [kx + s * KULP_ARA / 2, kz] }
+        kulp_z = [0, 0, 1]
+      else
+        kx = h[:sx] > 0 ? gen - 40 : 40.0
+        kz = yuk - [140, yuk / 2].min
+        delik = [-1, 1].map { |s| [kx, kz + s * KULP_ARA / 2] }
+        kulp_z = [1, 0, 0]
+      end
       delik.each { |x, z| daire_it(e, P(x, 0, z), Y_AXIS, 2.5, yon(0, 1, 0), T, 16) }
       boya(e, @mat[:on])
       no = k.to_s.sub('kapak_', '')
@@ -856,8 +892,9 @@ module OzcanKurulum
         vida_koy(ge, @mvida, lt, P(0, 34, 8).transform(hd), Geom::Vector3d.new(0, 0, -1).transform(hd), 4.0, 2.3, w,
                  "mentese_#{no}_#{i + 1}", true)
       end
+      klapa_makaslari(e, gen, h) if h[:klapa]
       kulp = "kulp_#{k}"
-      vida_koy(e, @kulp, eksen([kx, 0, kz], [0, -1, 0], [1, 0, 0]), P(kx, 0, kz), Geom::Vector3d.new(0, 1, 0), 60.0, 0.0,
+      vida_koy(e, @kulp, eksen([kx, 0, kz], [0, -1, 0], kulp_z), P(kx, 0, kz), Geom::Vector3d.new(0, 1, 0), 60.0, 0.0,
                Geom::Vector3d.new(0, -1, 0), kulp)
       delik.each_with_index do |(x, z), j|
         vida_koy(e, @kvida, eksen([x, T, z], [0, -1, 0], [0, 0, 1]), P(x, T, z), Geom::Vector3d.new(0, -1, 0), 25.0, 2.3,
@@ -868,6 +905,31 @@ module OzcanKurulum
 
     def kapak_sol; kapak(:kapak_sol); end
     def kapak_sag; kapak(:kapak_sag); end
+    def klapa; kapak(:klapa); end
+
+    # Klapa makası (iki yanda): plakası klapada fabrikada takılı; kol, kapak açıldıkça uzar ve 90°'de durdurur.
+    # Kolun ucu yan iç yüzündeki yuvaya tek vidayla bağlanır.
+    def klapa_makaslari(e, gen, h)
+      ya, za = MAKAS[:a]
+      yb, zb = MAKAS[:b]
+      [[1, 'sol'], [-1, 'sag']].each do |sx, t|
+        x = sx > 0 ? MAKAS[:x] + T - h[:x0] : gen - (MAKAS[:x] + T - h[:x0]) # yan iç yüzünden MAKAS[:x]
+        g = e.add_group
+        g.name = 'Klapa Makası'
+        ge = g.entities
+        kutu(ge, x - 7, T, za - 14, x + 7, T + 5, za + 14)
+        boya(ge, @mat[:nikel])
+        a = P(x, ya, za)
+        b = P(x, yb, zb - h[:z][0])
+        kol = ge.add_instance(@makas, bar_tr(a, b))
+        nitelik(kol, bar: true, a: a.to_a, b: b.to_a)
+        o = [x + sx * 1.5, yb, zb - h[:z][0]]
+        w = Geom::Vector3d.new(sx * 0.75, -0.55, 0.35)
+        w.normalize!
+        vida_koy(ge, @mvida, eksen(o, [-sx, 0, 0], [0, 0, 1]), P(*o), Geom::Vector3d.new(-sx, 0, 0), 4.0, 2.3, w,
+                 "makas_#{t}", true)
+      end
+    end
 
     def bar_tr(a, b)
       v = b - a
@@ -903,6 +965,7 @@ module OzcanKurulum
       @kol = kol_tanimi
       @kap = kap_tanimi
       @bag = bag_tanimi
+      @makas = makas_tanimi
       @ayak_taban = ayak_taban_tanimi
       @ayak = ayak_tanimi
       @kulp = kulp_tanimi
@@ -954,7 +1017,7 @@ module OzcanKurulum
         alt_arka: [rx.(-90), 2300, 0], ust_arka: [rx.(-90), 3200, 0], ust_tabla: [rx.(180), 4100, 0],
         tezgah: [bir, 2300, 950], alt_tabla: [bir, 3200, 950], ara_tabla: [bir, 4100, 950],
         raf: [bir, 2300, 1500], ust_raf: [bir, 3200, 1500], kusak: [rx.(90), 4100, 1500],
-        kapak_sol: [rx.(90), 2750, 2000], kapak_sag: [rx.(90), 3350, 2000]
+        kapak_sol: [rx.(90), 2300, 2000], kapak_sag: [rx.(90), 2850, 2000], klapa: [rx.(90), 3400, 2000]
       }
       etiket = AD
       @m.entities.grep(Sketchup::ComponentInstance).select { |i| nit(i, :parca) && !%w[tornavida kisa_tornavida cekic].include?(nit(i, :parca)) }.each do |ana|
@@ -1014,14 +1077,14 @@ module OzcanKurulum
         ['1 Ayaklar', %i[alt_tabla], 1, 'Ayakları alt tablanın altındaki eğik tabanlara çevirerek takın.'],
         ['2 Sol Yan + Alt Tabla', %i[sol_yan], 2, 'Alt tablayı sol yandaki 2 şeffaf çektirmeye geçirip vidaları sıkın.'],
         ['3 Sağ Yan', %i[sag_yan], 3, 'Sağ yanı alt tabladaki 2 çektirmeye oturtup vidaları sıkın.'],
-        ['4 Ara Tabla', %i[ara_tabla], 4, 'Ara tablayı önden sürüp 4 çektirmeye oturtun, vidaları sıkın.'],
-        ['5 Tezgah', %i[tezgah], 5, 'Tezgahı önden sürüp yanlardaki 4 çektirmeye oturtun, vidaları alttan sıkın.'],
-        ['6 Alt Arkalık', %i[alt_arka], 6, 'Alt arkalığı arkadan yerleştirin, 4 çektirme vidasını içeriden sıkın.'],
-        ['7 Üst Arkalık', %i[ust_arka], 7, 'Üst arkalığı tezgahın üstüne arkadan yerleştirin, yanların arka kenarına 4 vidayla arkadan vidalayın.'],
-        ['8 Üst Tabla', %i[ust_tabla], 8, 'Üst tablayı yanların üstüne oturtun, 4 çektirme vidasını sıkın.'],
-        ['9 Ön Kuşak', %i[kusak], 9, 'Ön kuşağı üst tablanın altına önden sürüp 2 çektirme vidasını sıkın.'],
-        ['10 Raflar', %i[raf ust_raf], 10, 'Rafları raf pimlerinin üzerine yerleştirin.'],
-        ['11 Kapaklar', KAPILAR, :kapak, 'İki kapaktaki menteşe gövdelerini yanlardaki tabanlara geçirip vidaları sıkın.'],
+        ['4 Tezgah', %i[tezgah], 4, 'Tezgahı önden sürüp yanlardaki 4 çektirmeye oturtun, vidaları alttan sıkın.'],
+        ['5 Alt Arkalık', %i[alt_arka], 5, 'Alt arkalığı arkadan yerleştirin, 4 çektirme vidasını içeriden sıkın.'],
+        ['6 Üst Arkalık', %i[ust_arka], 6, 'Üst arkalığı tezgahın üstüne arkadan yerleştirin, yanların arka kenarına 4 vidayla arkadan vidalayın.'],
+        ['7 Üst Tabla', %i[ust_tabla], 7, 'Üst tablayı yanların üstüne oturtun, 4 çektirme vidasını sıkın.'],
+        ['8 Ön Kuşak', %i[kusak], 8, 'Ön kuşağı üst tablanın altına önden sürüp 2 çektirme vidasını sıkın.'],
+        ['9 Raflar', %i[ara_tabla raf ust_raf], 9, 'Ara rafı, alt rafı ve üst rafı raf pimlerinin üzerine yerleştirin (çektirme yok).'],
+        ['10 Kapaklar', %i[kapak_sol kapak_sag], :kapak, 'İki kapaktaki menteşe gövdelerini yanlardaki tabanlara geçirip vidaları sıkın.'],
+        ['11 Klapa Kapak', %i[klapa], :klapa, 'Klapanın menteşe gövdelerini alt tabladaki tabanlara geçirip vidaları sıkın; makas kollarını yanlardaki yuvalara vidalayın.'],
         ['12 Kulplar', [], :kulp, 'Kulpları önden takıp vidalarını kapağın arkasından sıkın.'],
         ['13 Fincan Kancaları', [], :kanca, 'Fincan kancalarını üst tablanın ve üst rafın altındaki deliklere çevirerek takın.'],
         ['14 Bitmiş Ürün', [], :bitti, 'Kurulum tamamlandı.']
@@ -1100,10 +1163,17 @@ module OzcanKurulum
         w: Geom::Vector3d.new(*nit(i, :w)), kapi: nit(i, :kapi), kisa: nit(i, :kisa) }
     end
 
-    # aci > 0 açık: gömme kapak dış ön köşesindeki dikey eksende açılır (sol kapak sola, sağ kapak sağa).
+    # aci > 0 açık: gömme kapak dış ön köşesindeki dikey eksende açılır (sol kapak sola, sağ kapak sağa);
+    # klapa alt ön kenarındaki yatay eksende öne-aşağı açılır.
     def kapi_R(k, aci)
       h = KAPI[k]
+      return Geom::Transformation.rotation(P(0, 0, h[:z][0]), X_AXIS, aci.degrees) if h[:klapa]
       Geom::Transformation.rotation(P(h[:eksen], 0, 0), Z_AXIS, h[:yon] * aci.degrees)
+    end
+
+    # Tam açık açı: klapa makası 90°'de tutar.
+    def acik_aci(k)
+      KAPI[k][:klapa] ? 90.0 : 95.0
     end
 
     # Vida: ang derece döner, adv (0 = sıkılı, 1 = gevşek) oranında geri çıkar
@@ -1212,15 +1282,22 @@ module OzcanKurulum
       (0...n).map { |i| [k, bas.map { |v| v * (n - i) / n.to_f }, bas.map { |v| v * (n - i - 1) / n.to_f }] }
     end
 
+    # Kapak açık gelir, menteşe gövdeleri tabanlara geçer, vidalar sıkılır, kapanır. Klapada ayrıca makas kolları
+    # yanlardaki yuvalara vidalanır.
     def kapak_tak(k)
       z = @cz
-      z.kamera(1.2, KAM[:kapak])
+      kam = KAPI[k][:klapa] ? KAM[:klapa] : KAM[:kapak]
+      z.kamera(1.2, kam)
       z.an { |s, _| s[:kapi][k] = 90.0 }
       hareket(k, [0, -420, 0], [0, 0, 0], 1.8)
       no = k.to_s.sub('kapak_', '')
       vida_sik("mentese_#{no}_1", nil, tur: 3, sure: 0.8)
       vida_sik("mentese_#{no}_2", nil, tur: 3, sure: 0.8, yakin: false)
-      z.kamera(0.8, KAM[:kapak])
+      if KAPI[k][:klapa]
+        vida_sik('makas_sol', nil, tur: 3, sure: 0.8)
+        vida_sik('makas_sag', nil, tur: 3, sure: 0.8)
+      end
+      z.kamera(0.8, kam)
       z.olay(1.4) { |s, u| s[:kapi][k] = 90.0 * (1 - u) }
     end
 
@@ -1238,10 +1315,10 @@ module OzcanKurulum
     def kulplari_tak
       z = @cz
       z.kamera(1.2, KAM[:kulp])
-      z.olay(1.0) { |s, u| KAPILAR.each { |k| s[:kapi][k] = 95.0 * u } }
+      z.olay(1.0) { |s, u| KAPILAR.each { |k| s[:kapi][k] = acik_aci(k) * u } }
       KAPILAR.each_with_index { |k, i| kulp_tak("kulp_#{k}", i.zero?) }
       z.kamera(0.8, KAM[:kulp])
-      z.olay(1.0) { |s, u| KAPILAR.each { |k| s[:kapi][k] = 95.0 * (1 - u) } }
+      z.olay(1.0) { |s, u| KAPILAR.each { |k| s[:kapi][k] = acik_aci(k) * (1 - u) } }
       z.bekle(0.3)
     end
 
@@ -1289,67 +1366,62 @@ module OzcanKurulum
       z.kamera(0.8, KAM[3])
       z.bekle(0.3)
 
-      z.baslik('4 · Ara tablayı önden sürüp dört çektirmeye oturtun, vidaları sıkın')
+      z.baslik('4 · Tezgahı önden sürüp yanlardaki dört çektirmeye oturtun, vidaları alttan sıkın')
       z.kamera(1.2, KAM[4])
-      hareket(:ara_tabla, [0, -500, 40], [0, 0, 40], 1.4)
-      hareket(:ara_tabla, [0, 0, 40], [0, 0, 2], 0.6)
-      ids = %w[sol sag].flat_map { |t| %w[on arka].map { |y| "ara_#{t}_#{y}" } }
-      sirayla_sik(ids, KAM[4], cekler: cek_listesi(:ara_tabla, [0, 0, 2], ids.size))
-      z.kamera(0.8, KAM[4])
-      z.bekle(0.3)
-
-      z.baslik('5 · Tezgahı önden sürüp yanlardaki dört çektirmeye oturtun, vidaları alttan sıkın')
-      z.kamera(1.2, KAM[5])
       hareket(:tezgah, [0, -500, 40], [0, 0, 40], 1.4)
       hareket(:tezgah, [0, 0, 40], [0, 0, 2], 0.6)
       ids = %w[sol sag].flat_map { |t| %w[on arka].map { |y| "tez_#{t}_#{y}" } }
-      sirayla_sik(ids, KAM[5], cekler: cek_listesi(:tezgah, [0, 0, 2], ids.size))
+      sirayla_sik(ids, KAM[4], cekler: cek_listesi(:tezgah, [0, 0, 2], ids.size))
+      z.kamera(0.8, KAM[4])
+      z.bekle(0.3)
+
+      z.baslik('5 · Alt arkalığı (18 mm kumtaşı) arkadan yerleştirin, dört çektirme vidasını içeriden sıkın')
+      z.kamera(1.2, KAM[5])
+      hareket(:alt_arka, [0, 400, 0], [0, 2, 0], 1.6)
+      ids = %w[sol sag].flat_map { |t| %w[alt ust].map { |y| "aa_#{t}_#{y}" } }
+      sirayla_sik(ids, KAM[5], cekler: cek_listesi(:alt_arka, [0, 2, 0], ids.size), bak: [0.3, -1, 0.4])
       z.kamera(0.8, KAM[5])
       z.bekle(0.3)
 
-      z.baslik('6 · Alt arkalığı (18 mm kumtaşı) arkadan yerleştirin, dört çektirme vidasını içeriden sıkın')
+      z.baslik('6 · Üst arkalığı tezgahın üstüne arkadan oturtun, yanların arka kenarına dört vidayla arkadan vidalayın')
       z.kamera(1.2, KAM[6])
-      hareket(:alt_arka, [0, 400, 0], [0, 2, 0], 1.6)
-      ids = %w[sol sag].flat_map { |t| %w[alt ust].map { |y| "aa_#{t}_#{y}" } }
-      sirayla_sik(ids, KAM[6], cekler: cek_listesi(:alt_arka, [0, 2, 0], ids.size), bak: [0.3, -1, 0.4])
-      z.kamera(0.8, KAM[6])
-      z.bekle(0.3)
-
-      z.baslik('7 · Üst arkalığı tezgahın üstüne arkadan oturtun, yanların arka kenarına dört vidayla arkadan vidalayın')
-      z.kamera(1.2, KAM[7])
       hareket(:ust_arka, [0, 400, 0], [0, 0, 0], 1.6)
       z.an { |s, _| ARKA_VIDALARI.each { |id| s[:v][id] = { adv: 1.0, ang: 0.0 } } }
       z.bekle(0.3)
-      sirayla_sik(ARKA_VIDALARI, KAM[7], tur: 5, bak: [0.5, 1, 0.35])
+      sirayla_sik(ARKA_VIDALARI, KAM[6], tur: 5, bak: [0.5, 1, 0.35])
+      z.kamera(0.8, KAM[6])
+      z.bekle(0.3)
+
+      z.baslik('7 · Üst tablayı yanların üstüne oturtun, dört çektirme vidasını sıkın')
+      z.kamera(1.2, KAM[7])
+      hareket(:ust_tabla, [0, 0, 300], [0, 0, 2], 1.8)
+      ids = %w[sol sag].flat_map { |t| %w[on arka].map { |y| "ust_#{t}_#{y}" } }
+      sirayla_sik(ids, KAM[7], cekler: cek_listesi(:ust_tabla, [0, 0, 2], ids.size))
       z.kamera(0.8, KAM[7])
       z.bekle(0.3)
 
-      z.baslik('8 · Üst tablayı yanların üstüne oturtun, dört çektirme vidasını sıkın')
+      z.baslik('8 · Ön kuşağı üst tablanın altına önden sürün, iki çektirme vidasını sıkın')
       z.kamera(1.2, KAM[8])
-      hareket(:ust_tabla, [0, 0, 300], [0, 0, 2], 1.8)
-      ids = %w[sol sag].flat_map { |t| %w[on arka].map { |y| "ust_#{t}_#{y}" } }
-      sirayla_sik(ids, KAM[8], cekler: cek_listesi(:ust_tabla, [0, 0, 2], ids.size))
+      hareket(:kusak, [0, -350, 0], [0, -2, 0], 1.4)
+      ids = %w[1 2].map { |i| "kusak_#{i}" }
+      sirayla_sik(ids, KAM[8], cekler: cek_listesi(:kusak, [0, -2, 0], ids.size), bak: [0.3, -0.7, -0.6])
       z.kamera(0.8, KAM[8])
       z.bekle(0.3)
 
-      z.baslik('9 · Ön kuşağı üst tablanın altına önden sürün, iki çektirme vidasını sıkın')
+      z.baslik('9 · Ara rafı, alt rafı ve üst rafı raf pimlerinin üzerine yerleştirin')
       z.kamera(1.2, KAM[9])
-      hareket(:kusak, [0, -350, 0], [0, -2, 0], 1.4)
-      ids = %w[1 2].map { |i| "kusak_#{i}" }
-      sirayla_sik(ids, KAM[9], cekler: cek_listesi(:kusak, [0, -2, 0], ids.size), bak: [0.3, -0.7, -0.6])
-      z.kamera(0.8, KAM[9])
-      z.bekle(0.3)
-
-      z.baslik('10 · Rafları raf pimlerinin üzerine yerleştirin')
-      z.kamera(1.2, KAM[10])
-      %i[raf ust_raf].each do |k|
+      %i[ara_tabla raf ust_raf].each do |k|
         hareket(k, [0, -450, 40], [0, 0, 40], 1.2)
         hareket(k, [0, 0, 40], [0, 0, 0], 0.4)
       end
       z.bekle(0.3)
 
-      z.baslik('11 · İki kapağın menteşe gövdelerini yanlardaki tabanlara geçirin, vidaları sıkın')
-      KAPILAR.each { |k| kapak_tak(k) }
+      z.baslik('10 · İki kapağın menteşe gövdelerini yanlardaki tabanlara geçirin, vidaları sıkın')
+      %i[kapak_sol kapak_sag].each { |k| kapak_tak(k) }
+      z.bekle(0.3)
+
+      z.baslik('11 · Klapa kapağı alt tabladaki menteşe tabanlarına geçirin; makas kollarını yanlara vidalayın')
+      kapak_tak(:klapa)
       z.bekle(0.3)
 
       z.baslik('12 · Kulpları önden takın; vidalarını kapağın arkasından sıkın')
@@ -1360,9 +1432,9 @@ module OzcanKurulum
 
       z.baslik('Kurulum tamamlandı')
       z.kamera(1.6, KAM[:bitti])
-      z.olay(1.3) { |s, u| KAPILAR.each { |k| s[:kapi][k] = 95.0 * u } }
+      z.olay(1.3) { |s, u| KAPILAR.each { |k| s[:kapi][k] = acik_aci(k) * u } }
       z.bekle(0.8)
-      z.olay(1.3) { |s, u| KAPILAR.each { |k| s[:kapi][k] = 95.0 * (1 - u) } }
+      z.olay(1.3) { |s, u| KAPILAR.each { |k| s[:kapi][k] = acik_aci(k) * (1 - u) } }
       z.bekle(1.2)
       @cz
     end

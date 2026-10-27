@@ -326,15 +326,18 @@ Müşterinin gösterdiği kahve istasyonundan üretim tarzımıza uyarlandı: 80
 üst bölme 26 cm; kumtaşı gövde, gömme beyaz önler, altın çubuk kulplar, dışa eğik konik meşe ayaklar
 (çevrilerek takılır). `OzcanKurulum::KahveKosesi.kur / oynat / kumanda / kaydet`.
 
-- Altta iki tek parça gömme kapak: tezgahın altından alt tablaya (gömme menteşe); içte sabit ara tabla ve
-  pimli raf. Üstünde kumtaşı tezgah (yerden 89 cm; çektirmeleri altında, görünmez).
+- Altta üç ön: üstte iki dikey gömme kapak (gömme menteşe, içte pimli raf); altta tam genişlikte, yukarıdan
+  aşağı açılan klapa kapak (alt kenarından alt tablaya iki gömme menteşe, iki yanda 90°'de tutan klapa makası,
+  yatay kulp). Aradaki raf çektirmesiz, dört raf pimine oturur. Üstünde kumtaşı tezgah (yerden 89 cm;
+  çektirmeleri altında, görünmez).
 - Yanlar tek parça, tezgahın üstünde iç kavisle (R120) üst bölme derinliğine çekilir. Üst bölmede pimli raf;
   rafın ve üst tablanın altında LED şerit; önde uçları kavisli ön kuşak; altlarında fincan kancaları.
 - Arkalık ince duralit değil, ürünün kendi malzemesi: alt ve üst bölmede 18 mm kumtaşı panel. Alt arkalık
   yanlar arasına çektirmeyle; üst arkalık tam genişlikte yanların arka kenarına biner (yanlar tezgahın
   üstünde 18 mm geri çekilir) ve dört vidayla arkadan vidalanır, açık üst bölmede çektirme görünmez.
-- Adımlar: ayaklar → sol yan + alt tabla → sağ yan → ara tabla → tezgah → alt arkalık → üst arkalık →
-  üst tabla → ön kuşak → raflar → iki kapak → kulplar → fincan kancaları (13 adım).
+- Adımlar: ayaklar → sol yan + alt tabla → sağ yan → tezgah → alt arkalık → üst arkalık → üst tabla →
+  ön kuşak → raflar (ara raf, alt raf, üst raf) → iki kapak → klapa kapak + makaslar → kulplar →
+  fincan kancaları (13 adım).
 - Tanıtım görselleri (dekor katmanıyla: fincanlar, kavanozlar, kahve makinesi) `Tanıtım` klasöründe, 4:5.
 
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
