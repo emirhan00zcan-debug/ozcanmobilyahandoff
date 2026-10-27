@@ -320,6 +320,22 @@ yarım ay parmak oyuklu kulpsuz önler, Ø31 yuvarlak ağız, baştan sona yarı
   kum kabı → tasma askıları.
 - Tanıtım görselleri kurulum görsellerinin yanında `Tanıtım` klasöründe (betik: her modülün `TANITIM` listesi).
 
+### Kahve köşesi dolabı (`kurulum/kahve_kosesi.rb`)
+
+Müşterinin gösterdiği kahve istasyonundan üretim tarzımıza uyarlandı: 80 × 175 cm, alt dolap derinliği 40,
+üst bölme 26 cm; kumtaşı gövde, gömme beyaz önler, altın çubuk kulplar, dışa eğik konik meşe ayaklar
+(çevrilerek takılır). `OzcanKurulum::KahveKosesi.kur / oynat / kumanda / kaydet`.
+
+- Altta iki gömme kapak (gömme menteşe, içte pimli raf) ve raylı çekmece (minifix + dip çivisi); üstünde
+  kumtaşı tezgah (yerden 89 cm; çektirmeleri altında, görünmez).
+- Yanlar tek parça, tezgahın üstünde iç kavisle (R120) üst bölme derinliğine çekilir. Üst bölmede pimli raf;
+  rafın ve üst tablanın altında LED şerit; önde uçları kavisli ön kuşak; altlarında fincan kancaları.
+- Arkalık ince duralit değil, ürünün kendi malzemesi: alt ve üst bölmede 18 mm kumtaşı panel, yanlara
+  çektirmeyle.
+- Adımlar: ayaklar → sol yan + alt tabla → sağ yan → ara tabla → tezgah → alt arkalık → üst arkalık →
+  üst tabla → ön kuşak → raflar → çekmece (11-14) → kapaklar → kulplar → fincan kancaları.
+- Tanıtım görselleri (dekor katmanıyla: fincanlar, kavanozlar, kahve makinesi) `Tanıtım` klasöründe, 4:5.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
