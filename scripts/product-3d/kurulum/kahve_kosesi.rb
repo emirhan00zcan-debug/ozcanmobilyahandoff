@@ -2,7 +2,7 @@
 # Kahve Köşesi Dolabı (80 x 175 x 40 cm) — model ve kurulum kılavuzu.
 # Müşterinin gösterdiği kahve istasyonundan, Özcan Mobilya üretim tarzına uyarlandı.
 # Gövde 18 mm kumtaşı sunta, gömme (yanların arasında) beyaz önler, altın rengi kısa çubuk kulplar, eğik meşe ayaklar.
-#   Altta (derinlik 40): üstte iki uzun kapak (içinde pimli raf), ara tablanın altında iki kısa kapak; üstünde
+#   Altta (derinlik 40): tezgahın altından alt tablaya iki tek parça gömme kapak (içinde ara tabla + pimli raf); üstünde
 #   kumtaşı tezgah (yerden 89 cm).
 #   Üstte (derinlik 26): yanlar tezgahın üstünde kavisle geri çekilir; ortada pimli raf, rafın ve üst tablanın
 #   altında LED şerit, önde uçları kavisli kuşak, altlarında fincan kancaları.
@@ -43,7 +43,7 @@ module OzcanKurulum
     AYAK_H = 160.0
     Z0 = AYAK_H          # alt tablanın alt yüzü; yanlar buradan başlar
     ZT = 1732.0          # yanların üst kenarı; üstünde 18 mm üst tabla → 1750
-    ARA_Z = 402.0        # ara tablanın alt yüzü (altında çekmece, üstünde kapaklı bölme)
+    ARA_Z = 402.0        # ara tablanın alt yüzü (kapakların arkasında sabit raf)
     TEZGAH_Z = 872.0     # tezgahın alt yüzü (üstü 890)
     RAF_Z = 640.0        # alt dolaptaki pimli raf
     UST_RAF_Z = 1270.0   # üst bölmedeki pimli raf
@@ -53,7 +53,7 @@ module OzcanKurulum
     CEK_Y = [70.0, 330.0].freeze                 # alt tabla ve tezgah birleşimleri
     ARA_Y = [80.0, 320.0].freeze
     UST_Y = [200.0, 340.0].freeze                # üst tabla birleşimleri
-    ALT_ARKA_Z = [500.0, 780.0].freeze           # alt arkalık çektirmeleri (çekmece kutusundan uzak)
+    ALT_ARKA_Z = [500.0, 780.0].freeze           # alt arkalık çektirmeleri
     UST_ARKA_Z = [1000.0, 1600.0].freeze         # üst arkalığın yanlara arkadan vidaları
     KUSAK_X = [200.0, 600.0].freeze
     AYAK_XY = [[70, 70], [W - 70, 70], [70, D - 80], [W - 70, D - 80]].freeze
@@ -62,13 +62,11 @@ module OzcanKurulum
     # Gömme önler: yanların arasında, 2 mm aralıkla; kapaklar iç yüzdeki menteşe tabanlarına (gömme menteşe)
     ON_X = [T + 2, W - T - 2].freeze
     KAPI_W = (ON_X[1] - ON_X[0] - 3) / 2
-    UST_KAPI = { z: [404.0, 870.0], mentese: [ARA_Z + T + 80, TEZGAH_Z - 80] }.freeze # ara tablanın üstü
-    ALT_KAPI = { z: [162.0, 401.0], mentese: [Z0 + T + 42, ARA_Z - 52] }.freeze         # ara tablanın altı
+    # Tek parça kapak: tezgahın altından alt tablaya (ara tabla arkasında kalır); alt menteşe alt çektirmenin üstünde
+    KAPI_BOY = { z: [Z0 + 2, TEZGAH_Z - 2], mentese: [Z0 + T + 100, TEZGAH_Z - 80] }.freeze
     KAPI = {
-      kapak_sol: UST_KAPI.merge(x0: ON_X[0], eksen: ON_X[0], yon: -1, panel: T, sx: 1),
-      kapak_sag: UST_KAPI.merge(x0: ON_X[1] - KAPI_W, eksen: ON_X[1], yon: 1, panel: W - T, sx: -1),
-      alt_kapak_sol: ALT_KAPI.merge(x0: ON_X[0], eksen: ON_X[0], yon: -1, panel: T, sx: 1),
-      alt_kapak_sag: ALT_KAPI.merge(x0: ON_X[1] - KAPI_W, eksen: ON_X[1], yon: 1, panel: W - T, sx: -1)
+      kapak_sol: KAPI_BOY.merge(x0: ON_X[0], eksen: ON_X[0], yon: -1, panel: T, sx: 1),
+      kapak_sag: KAPI_BOY.merge(x0: ON_X[1] - KAPI_W, eksen: ON_X[1], yon: 1, panel: W - T, sx: -1)
     }.freeze
     KAPILAR = KAPI.keys.freeze
     KAP_ZC = 24.0        # gömme menteşe: kap merkezi kapak kenarından ~22 mm
@@ -87,8 +85,7 @@ module OzcanKurulum
     AD = {
       alt_tabla: 'Alt Tabla', sol_yan: 'Sol Yan', sag_yan: 'Sağ Yan', ara_tabla: 'Ara Tabla', tezgah: 'Tezgah',
       alt_arka: 'Alt Arkalık', ust_arka: 'Üst Arkalık', ust_tabla: 'Üst Tabla', kusak: 'Ön Kuşak', raf: 'Alt Raf',
-      ust_raf: 'Üst Raf', kapak_sol: 'Sol Kapak', kapak_sag: 'Sağ Kapak', alt_kapak_sol: 'Sol Alt Kapak',
-      alt_kapak_sag: 'Sağ Alt Kapak'
+      ust_raf: 'Üst Raf', kapak_sol: 'Sol Kapak', kapak_sag: 'Sağ Kapak'
     }.freeze
     ETIKET = {
       alt_tabla: '01 Alt Tabla', sol_yan: '02 Sol Yan', sag_yan: '03 Sağ Yan', ara_tabla: '04 Ara Tabla',
@@ -117,10 +114,10 @@ module OzcanKurulum
       kanca:   [[800, -1300, 1150], [400, 250, 1450]],
       bitti:   [[2300, -3400, 2100], [400, 200, 870]]
     }.freeze
-    # Tanıtım görselleri: ad, açık kapak açıları ve çekmece (mm), [göz, hedef]
+    # Tanıtım görselleri: ad, açık kapak açıları, [göz, hedef]
     TANITIM = [
       ['1_on_capraz', {}, [[1900, -3200, 1550], [400, 200, 870]]],
-      ['2_kapaklar_acik', { kapak_sol: 100, kapak_sag: 100, alt_kapak_sol: 100, alt_kapak_sag: 100 }, [[1600, -2900, 1400], [400, 0, 780]]],
+      ['2_kapaklar_acik', { kapak_sol: 100, kapak_sag: 100 }, [[1600, -2900, 1400], [400, 0, 780]]],
       ['3_on', {}, [[400, -4000, 1000], [400, 200, 875]]],
       ['4_yan', {}, [[3200, -1400, 1350], [400, 200, 875]]],
       ['5_ust_bolme', {}, [[1300, -2300, 1500], [400, 250, 1300]]]
@@ -692,7 +689,7 @@ module OzcanKurulum
       [[0, 0], [D, 0], [D, za], [D - T, za], [D - T, h], [HY, h]] + kavis + [[0, zt]]
     end
 
-    # Yan: dört kapağın menteşe tabanları, raf pimleri, çektirmeler.
+    # Yan: kapak menteşe tabanları, raf pimleri, çektirmeler.
     def dis_yan(k, sx)
       d = parca_tanimi(AD[k])
       e = d.entities
@@ -871,8 +868,6 @@ module OzcanKurulum
 
     def kapak_sol; kapak(:kapak_sol); end
     def kapak_sag; kapak(:kapak_sag); end
-    def alt_kapak_sol; kapak(:alt_kapak_sol); end
-    def alt_kapak_sag; kapak(:alt_kapak_sag); end
 
     def bar_tr(a, b)
       v = b - a
@@ -958,9 +953,8 @@ module OzcanKurulum
         sol_yan: [rz.(90) * ry.(-90), 1300, 0], sag_yan: [rz.(90) * ry.(90), 1800, 0],
         alt_arka: [rx.(-90), 2300, 0], ust_arka: [rx.(-90), 3200, 0], ust_tabla: [rx.(180), 4100, 0],
         tezgah: [bir, 2300, 950], alt_tabla: [bir, 3200, 950], ara_tabla: [bir, 4100, 950],
-        raf: [bir, 2300, 1450], ust_raf: [bir, 3200, 1450], kusak: [rx.(90), 4100, 1450],
-        kapak_sol: [rx.(90), 2300, 1950], kapak_sag: [rx.(90), 2850, 1950],
-        alt_kapak_sol: [rx.(90), 3400, 1950], alt_kapak_sag: [rx.(90), 3950, 1950]
+        raf: [bir, 2300, 1500], ust_raf: [bir, 3200, 1500], kusak: [rx.(90), 4100, 1500],
+        kapak_sol: [rx.(90), 2750, 2000], kapak_sag: [rx.(90), 3350, 2000]
       }
       etiket = AD
       @m.entities.grep(Sketchup::ComponentInstance).select { |i| nit(i, :parca) && !%w[tornavida kisa_tornavida cekic].include?(nit(i, :parca)) }.each do |ana|
@@ -1027,7 +1021,7 @@ module OzcanKurulum
         ['8 Üst Tabla', %i[ust_tabla], 8, 'Üst tablayı yanların üstüne oturtun, 4 çektirme vidasını sıkın.'],
         ['9 Ön Kuşak', %i[kusak], 9, 'Ön kuşağı üst tablanın altına önden sürüp 2 çektirme vidasını sıkın.'],
         ['10 Raflar', %i[raf ust_raf], 10, 'Rafları raf pimlerinin üzerine yerleştirin.'],
-        ['11 Kapaklar', KAPILAR, :kapak, 'Dört kapaktaki menteşe gövdelerini yanlardaki tabanlara geçirip vidaları sıkın.'],
+        ['11 Kapaklar', KAPILAR, :kapak, 'İki kapaktaki menteşe gövdelerini yanlardaki tabanlara geçirip vidaları sıkın.'],
         ['12 Kulplar', [], :kulp, 'Kulpları önden takıp vidalarını kapağın arkasından sıkın.'],
         ['13 Fincan Kancaları', [], :kanca, 'Fincan kancalarını üst tablanın ve üst rafın altındaki deliklere çevirerek takın.'],
         ['14 Bitmiş Ürün', [], :bitti, 'Kurulum tamamlandı.']
@@ -1354,7 +1348,7 @@ module OzcanKurulum
       end
       z.bekle(0.3)
 
-      z.baslik('11 · Dört kapağın menteşe gövdelerini yanlardaki tabanlara geçirin, vidaları sıkın')
+      z.baslik('11 · İki kapağın menteşe gövdelerini yanlardaki tabanlara geçirin, vidaları sıkın')
       KAPILAR.each { |k| kapak_tak(k) }
       z.bekle(0.3)
 
