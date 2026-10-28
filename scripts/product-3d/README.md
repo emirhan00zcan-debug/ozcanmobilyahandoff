@@ -351,7 +351,8 @@ kullanıcı onayı 28.10.2026). Duvara asılan 45 × 14,8 × 125 cm dolap; kapal
 - 8 mm arkalık dört kenarından kanalda (arka kenardan 10 mm); üst köşelerde askı kancaları için 20 × 40 kesik.
 - Tam bindirme aynalı kapak (3 mm akrilik ayna), solda 3 frenli menteşe (kap kenardan 22,5 mm); sağ kenarda
   200 mm siyah kenar profil kulp.
-- Duvara: iki ayarlı asma dolap askısı + 414 mm ray; altta arkalıktan iki vida + Ø25 pul. Alt kenar yerden 600 mm.
+- Duvara: iki ayarlı asma dolap askısı + 414 mm ray; altta arkalıktan iki vida + Ø25 pul, arkalarında Ø25 × 10
+  plastik takoz (arkalık–duvar boşluğu; arkalığa fabrikada yapışık). Alt kenar yerden 600 mm.
 - Ütü masası mekanizması YER TUTUCU (tabla 900 × 300 × 25, braket 320 × 260 × 40, pivot iç tabandan 262 mm);
   numune ölçülünce güncellenecek. Braketi arkalıktan duvara 4 vida.
 - Kurulum sırası (bulonlar yüzünden tariften farklı): kavelalar → sol yan iki tablaya → sol minifiksler → arkalık

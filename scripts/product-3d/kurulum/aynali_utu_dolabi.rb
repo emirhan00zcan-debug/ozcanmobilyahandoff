@@ -6,9 +6,11 @@
 # Gövde mat beyaz 18 mm sunta, tablalar yanların arasında (minifiks + kavela), 8 mm arkalık kanalda. Tam bindirme
 # aynalı kapak (3 mm akrilik ayna), solda 3 frenli menteşe, sağ kenarda siyah kenar profil kulp. Dolap duvardaki
 # askı rayına iki ayarlı askıyla asılır, altta arkalıktan iki vida + Ø25 pulla sabitlenir; alt kenar yerden 600 mm.
+# Alt vidaların arkasında Ø25 x 10 plastik takoz (arkalık–duvar boşluğu; arkalığın arkasına fabrikada yapışık gelir,
+# dolap kapandıktan sonra o boşluğa erişilemez).
 #
 # Her panel ayrı bileşen; fabrikada takılı gelenler (minifiks bulonları, menteşe tabanları ve gövdeleri, askılar,
-# kapaktaki ayna) panelin içinde. Minifiks gövdeleri, kavelalar, minifiks kapakları, kancalar, kulp, askı rayı ve
+# kapaktaki ayna, arkalıktaki takozlar) panelin içinde. Minifiks gövdeleri, kavelalar, minifiks kapakları, kancalar, kulp, askı rayı ve
 # vida-dübel-pul ayrı gelir; mekanizma kendi kutusunda.
 #   1 kavelalar  2 sol yan  3 sol minifiksler  4 arkalık  5 sağ yan + minifiksler  6 minifiks kapakları
 #   7 kancalar  8 askı rayı  9 dolabı asma  10 alt vidalar  11 ütü masası mekanizması  12 kapak  13 kulp
@@ -57,6 +59,7 @@ module OzcanKurulum
     ALT_VIDA = { z: IZ + 50, x: [T + 60, W - T - 60] }.freeze      # arkalıktan duvara, Ø25 pullu
     KANCA_Z = [IZ + 900, IZ + 1050].freeze # sol iç yan, arka yarı
     KANCA_Y = 88.0
+    TAKOZ = { r: 12.5, boy: 10.0 }.freeze # alt vidaların arkasında, arkalık ile duvar arasında
     # Mekanizma (yer tutucu): ortalı; tabla katlıyken pivot 262'den 1162'ye, braket 100–360 arası
     MASA = { gen: 300.0, boy: 900.0, kal: 25.0, pivot: IZ + 262 }.freeze
     BRAKET = { gen: 320.0, h: 260.0, der: 40.0, z0: IZ + 100 }.freeze
@@ -307,6 +310,7 @@ module OzcanKurulum
         yansima: mk.('Ayna Yansıması', [255, 255, 255]),
         kulp: mk.('Siyah Mat Alüminyum', [36, 36, 38]),
         krom: mk.('Krom', [205, 208, 214]),
+        takoz: mk.('Plastik Takoz', [236, 236, 232]),
         kavela: mk.('Kavela (kayın)', [214, 182, 140]),
         mfkapak: mk.('Beyaz Minifiks Kapağı', [250, 250, 248]),
         aski: mk.('Askı Gövdesi (beyaz plastik)', [232, 232, 230]),
@@ -837,7 +841,7 @@ module OzcanKurulum
     def ust_tabla; tabla(:ust_tabla); end
 
     # Arkalık 8 mm: dört kenarı kanalda; üst köşelerde askı kancaları için 20 x 40 kesik. Altta iki duvar vidası
-    # (Ø25 pullu) iç tabandan 50 mm yukarıda, yanlardan 60 mm içeride.
+    # (Ø25 pullu) iç tabandan 50 mm yukarıda, yanlardan 60 mm içeride; arkalarında Ø25 x 10 takoz.
     def arkalik
       d = parca_tanimi(AD[:arkalik])
       e = d.entities
@@ -853,6 +857,9 @@ module OzcanKurulum
         o = [x - ox, -1.5, ALT_VIDA[:z] - oz]
         vida_koy(e, @pvida, eksen(o, [0, 1, 0], [0, 0, 1]), P(*o), Geom::Vector3d.new(0, 1, 0), 60.0, 3.0,
                  Geom::Vector3d.new(0.2, -1, 0.35).normalize, ALT_VIDALAR[i])
+        # Ø25 x 10 takoz: arkalığın arkasında (fabrikada yapışık), vida içinden geçer; arkalık eğilmeden duvara basar
+        torna(e, [[0, 2.8], [0, TAKOZ[:r]], [TAKOZ[:boy], TAKOZ[:r]], [TAKOZ[:boy], 2.8]], 24, @mat[:takoz])
+          .transform!(eksen([x - ox, ARKA_T + 0.1, ALT_VIDA[:z] - oz], [0, 1, 0], [0, 0, 1]))
       end
       [d, ORIJIN[:arkalik]]
     end
