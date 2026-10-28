@@ -340,6 +340,26 @@ Müşterinin gösterdiği kahve istasyonundan üretim tarzımıza uyarlandı: 80
   fincan kancaları (13 adım).
 - Tanıtım görselleri (dekor katmanıyla: fincanlar, kavanozlar, kahve makinesi) `Tanıtım` klasöründe, 4:5.
 
+### Aynalı ütü dolabı (`kurulum/aynali_utu_dolabi.rb`)
+
+Ürün araştırmasından çıkan ilk yeni ürün (tarif: `research_notes/Urun firsatlari 2026-10-28/tarif-01-aynali-utu-dolabi.txt`,
+kullanıcı onayı 28.10.2026). Duvara asılan 45 × 14,8 × 125 cm dolap; kapalıyken boy aynası, içinde duvara katlanan
+90 × 30 ütü masası. `OzcanKurulum::UtuDolabi.kur / oynat / kumanda / kaydet`.
+
+- Mat beyaz 18 mm gövde; tablalar yanların arasında, her birleşimde 2 minifiks (uzun kenardan 32, kısa kenardan
+  36 mm) + 1 kavela (72 mm). Üst tablanın eksantrikleri dış yüzden (içte askılar var), beyaz kapakla kapanır.
+- 8 mm arkalık dört kenarından kanalda (arka kenardan 10 mm); üst köşelerde askı kancaları için 20 × 40 kesik.
+- Tam bindirme aynalı kapak (3 mm akrilik ayna), solda 3 frenli menteşe (kap kenardan 22,5 mm); sağ kenarda
+  200 mm siyah kenar profil kulp.
+- Duvara: iki ayarlı asma dolap askısı + 414 mm ray; altta arkalıktan iki vida + Ø25 pul. Alt kenar yerden 600 mm.
+- Ütü masası mekanizması YER TUTUCU (tabla 900 × 300 × 25, braket 320 × 260 × 40, pivot iç tabandan 262 mm);
+  numune ölçülünce güncellenecek. Braketi arkalıktan duvara 4 vida.
+- Kurulum sırası (bulonlar yüzünden tariften farklı): kavelalar → sol yan iki tablaya → sol minifiksler → arkalık
+  açık sağdan kanala → sağ yan + minifiksler → minifiks kapakları → kancalar → ray → asma → alt vidalar →
+  mekanizma → kapak → kulp (13 adım).
+- Tanıtım: kapalı (aynada oda yansıması, doku `aynali_utu_dolabi_yansima.png`), kapak açık, masa açık (ütü,
+  gömlek, sprey), kulp-menteşe yakın çekim, ölçü görseli. Duvar-zemin, dekor ve ölçü ayrı katmanlarda.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
