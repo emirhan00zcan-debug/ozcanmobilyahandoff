@@ -222,7 +222,8 @@ kumanda / kaydet`. Farkları:
 - Yanların üstünde köşebentlere alttan vidalı 36 mm tabla (60 G × 65 D, önde ~3 cm taşar).
 - Arkalık 3 mm, arkaya 16 çiviyle.
 - 600 × 155 tam bindirme klapa kapak, alt tablaya iki menteşeyle bağlı, aşağı açılır; siyah klasik kulp takılı gelir.
-- Bağlantılar şeffaf çektirme: baza 2, alt tabla 4, orta tabla 4. Üst destek parçası yok.
+- Bağlantılar: alt ve orta tabla şeffaf çektirme (4 + 4); baza çektirmesiz, alt tablanın üstünden 3 vidayla
+  (4×40, bazanın üst kenarına). Üst destek parçası yok.
 
 `OzcanKurulum::FirinDolabiTablali.kur / oynat / kumanda / kaydet`.
 

@@ -7,7 +7,8 @@
 # (60 G x 65 D, önde ~3 cm taşar). Arkalık 3 mm, arkaya çivili. Her şey 18 mm beyaz sunta.
 #
 # Her panel ayrı bileşen; fabrikada takılı gelenler (şeffaf çektirmeler, köşebentler, menteşe tabanları, kapaktaki
-# kulp) panelin içinde. Ayaklar ve vidaları, menteşeler ve vidaları, köşebent vidaları, çiviler ve arkalık ayrı gelir.
+# kulp) panelin içinde. Baza çektirmesiz: alt tablanın üstünden 3 vidayla. Ayaklar ve vidaları, baza vidaları,
+# menteşeler ve vidaları, köşebent vidaları, çiviler ve arkalık ayrı gelir.
 # Kurulum sırası kullanıcının verdiği gibidir:
 #   1 baza + ayaklar (alt tabla grubu önde bekler)  2 yanlar orta tablaya  3 alt tabla grubu yanlara (alttan oturur)
 #   4 üst tabla  5 arkalık  6 kapak menteşeleri  7 kapak alt tablaya
@@ -42,7 +43,7 @@ module OzcanKurulum
     ARKA_T = 3.0
     TABLA_Y0 = D + ARKA_T - TABLA_DER # tablanın ön kenarı (-47): arkada arkalıkla hizalı
     CEKTIRME_Y = [60.0, D - 60].freeze
-    BAZA_X = [130.0, W - 130].freeze  # bazayı alt tablaya bağlayan çektirmeler
+    BAZA_VIDA_X = [120.0, W / 2, W - 120].freeze # baza alt tablaya üstten 3 vidayla (4x40), bazanın üst kenarına
     KOSEBENT_Y = [100.0, D - 80].freeze
     AYAK_XY = [[70.0, 70.0], [W - 70, 70.0], [70.0, D - 50], [W - 70, D - 50]].freeze # bazanın arkasında ve arkada
     AYAK_VIDA = [[-17, -17], [17, -17], [17, 17], [-17, 17]].freeze
@@ -83,7 +84,7 @@ module OzcanKurulum
 
     # Kamera noktaları [göz, hedef] (mm)
     KAM = {
-      liste:   [[2600, -2000, 5600], [2600, 520, 0]],
+      liste:   [[2600, -2300, 5900], [2600, 330, 0]],
       1 =>     [[1500, -2650, 950], [300, -580, 90]],
       2 =>     [[2000, -3000, 1500], [300, -150, 360]],
       3 =>     [[1800, -2600, 1250], [300, -150, 320]],
@@ -106,7 +107,8 @@ module OzcanKurulum
     KOSEBENT_VIDALARI = %w[sol sag].flat_map { |t| %w[on arka].map { |y| "kosebent_#{t}_#{y}" } }.freeze
     CIVILER = (1..CIVI_XZ.size).map { |i| "civi_#{i}" }.freeze
     MENTESE_KAP_VIDALARI = (1..2).flat_map { |i| (1..2).map { |j| "mentese_#{i}_kap_#{j}" } }.freeze
-    DEMONTE = (AYAKLAR + AYAK_VIDALARI + KOSEBENT_VIDALARI + CIVILER + MENTESE_KAP_VIDALARI).freeze
+    BAZA_VIDALARI = (1..BAZA_VIDA_X.size).map { |i| "baza_vida_#{i}" }.freeze
+    DEMONTE = (AYAKLAR + AYAK_VIDALARI + BAZA_VIDALARI + KOSEBENT_VIDALARI + CIVILER + MENTESE_KAP_VIDALARI).freeze
 
     # ------------------------------------------------------------------
     # Geometri yardımcıları
@@ -564,8 +566,8 @@ module OzcanKurulum
     # Tüm çektirmeler dünya koordinatında: k = iç köşe noktası, ex/ey/ez bağlantı çerçevesi
     # (x erkeğin panelinden uzağa, z dişinin panelinden uzağa). Yanlar orta tablaya yandan geçer; alt tabla grubu
     # yanların arasına alttan oturur (vida alt tablanın üstünde, orta tablanın altında — kısa tornavida). Orta tabla
-    # vidaları yanın iç yüzünde, tablanın altında (kısa tornavida). Baza önden alt tablanın altına kayar (vida alt
-    # tablanın altında, bazanın arkasında — kısa tornavida).
+    # vidaları yanın iç yüzünde, tablanın altında (kısa tornavida). Baza çektirmesiz: alt tablanın üstünden
+    # vidalanır (alt_tabla bileşeninde).
     def baglantilar
       l = []
       [[:sol_yan, T, 1, 'sol'], [:sag_yan, W - T, -1, 'sag']].each do |yan, xs, sx, taraf|
@@ -575,10 +577,6 @@ module OzcanKurulum
           l << { id: "orta_#{taraf}_#{yer}", disi: yan, erkek: :orta_tabla, k: [xs, y, ORTA_Z], ex: [0, 0, -1],
                  ez: [sx, 0, 0], kisa: true }
         end
-      end
-      BAZA_X.zip(%w[sol sag]).each do |x, taraf|
-        l << { id: "baza_#{taraf}", disi: :alt_tabla, erkek: :baza, k: [x, T, Z0], ex: [0, 1, 0], ey: [1, 0, 0],
-               ez: [0, 0, -1], kisa: true }
       end
       l
     end
@@ -635,8 +633,8 @@ module OzcanKurulum
     def sol_yan; yan(:sol_yan, 1); end
     def sag_yan; yan(:sag_yan, -1); end
 
-    # Alt tabla: yanların arasında; altında baza çektirmeleri ve 4 ayak (demonte, 4'er vida), üstünde önde kapak
-    # menteşe tabanları (fabrikada takılı).
+    # Alt tabla: yanların arasında; ön kenarından bazaya üstten 3 vida (demonte), altında 4 ayak (demonte, 4'er vida),
+    # üstünde önde kapak menteşe tabanları (fabrikada takılı).
     def alt_tabla
       d = parca_tanimi(AD[:alt_tabla])
       e = d.entities
@@ -644,6 +642,12 @@ module OzcanKurulum
       boya(e, @mat[:govde])
       cektirmeler(e, :alt_tabla)
       MENTESE_X.each { |hx| e.add_instance(@taban, klapa_cerceve([hx - T, 0, T])) }
+      wb = Geom::Vector3d.new(0.2, -0.45, 1).normalize # tornavida üstten
+      BAZA_VIDA_X.each_with_index do |x, i|
+        o = [x - T, T / 2, T]
+        vida_koy(e, @bvida, eksen(o, [0, 0, -1], [1, 0, 0]), P(*o), Geom::Vector3d.new(0, 0, -1), 40.0, 2.8, wb,
+                 BAZA_VIDALARI[i])
+      end
       wv = Geom::Vector3d.new(0.2, -0.35, -1).normalize # tornavida alttan
       AYAK_XY.each_with_index do |(x, y), i|
         lx = x - T
@@ -667,7 +671,7 @@ module OzcanKurulum
       [d, ORIJIN[:orta_tabla]]
     end
 
-    # Baza 600 x 100: önde, ön yüzü yanların ön kenarıyla bir; iki çektirmeyle alt tablanın altına (arkadan vidalı).
+    # Baza 600 x 100: önde, ön yüzü yanların ön kenarıyla bir; alt tablanın üstünden üst kenarına 3 vidayla.
     def baza
       d = parca_tanimi(AD[:baza])
       kutu(d.entities, 0, 0, 0, W, T, Z0)
@@ -802,6 +806,7 @@ module OzcanKurulum
       @tvida = vida_tanimi('Taban Vidası M4', 3.5, 2.2, 2, 9)
       @mvida = vida_tanimi('Menteşe Sabitleme Vidası', 3.8, 2.3, 2, 4)
       @cvida = vida_tanimi('Çektirme Vidası (açılı)', 4, 2.5, 2.5, 14)
+      @bvida = vida_tanimi('Sunta Vidası 4x40', 4.2, 2.8, 2, 40)
       @civi = civi_tanimi
       @disi = disi_tanimi
       @erkek = erkek_tanimi
@@ -882,11 +887,12 @@ module OzcanKurulum
         @m.entities.add_text(ad, P(x, y - 150, 0), Geom::Vector3d.new(0, -110.mm, 0)).layer = tag
       end
       ek.(@ayak, 4, 1250, -500, 110, 'Ayarlı Ayak (4)', [[0, 1, 0], [0, 0, 1], 32], 'ayak')
-      ek.(@vida16, 16, 1950, -500, 22, 'Ayak Vidası (16)', [[0, 1, 0], [0, 0, 1], 4], 'ayak_vidasi')
-      ek.(mentese_liste_tanimi, 2, 2650, -500, 110, 'Menteşe (2)', [[1, 0, 0], [0, 0, 1], 0], 'mentese')
-      ek.(@vida16h, 4, 3150, -500, 30, 'Menteşe Vidası (4)', [[0, 1, 0], [0, 0, 1], 4], 'mentese_vidasi')
-      ek.(@vida16, 4, 3650, -500, 30, 'Köşebent Vidası (4)', [[0, 1, 0], [0, 0, 1], 4], 'kosebent_vidasi')
-      ek.(@civi, 16, 4250, -500, 16, 'Arkalık Çivisi (16)', [[0, 1, 0], [0, 0, 1], 3], 'civi')
+      ek.(@vida16, 16, 2050, -500, 22, 'Ayak Vidası (16)', [[0, 1, 0], [0, 0, 1], 4], 'ayak_vidasi')
+      ek.(@bvida, 3, 2850, -500, 40, 'Baza Vidası 4x40 (3)', [[0, 1, 0], [0, 0, 1], 5], 'baza_vidasi')
+      ek.(@vida16, 4, 3550, -500, 30, 'Köşebent Vidası (4)', [[0, 1, 0], [0, 0, 1], 4], 'kosebent_vidasi')
+      ek.(mentese_liste_tanimi, 2, 1250, -950, 110, 'Menteşe (2)', [[1, 0, 0], [0, 0, 1], 0], 'mentese')
+      ek.(@vida16h, 4, 2050, -950, 30, 'Menteşe Vidası (4)', [[0, 1, 0], [0, 0, 1], 4], 'mentese_vidasi')
+      ek.(@civi, 16, 2850, -950, 16, 'Arkalık Çivisi (16)', [[0, 1, 0], [0, 0, 1], 3], 'civi')
     end
 
     def stil
@@ -918,7 +924,7 @@ module OzcanKurulum
     def sahneler
       tanim = [
         ['0 Kutu İçeriği', [], :liste, 'Paneller ve fabrikada takılı çektirmeler, köşebentler, menteşe tabanları ve kulp; ayaklar, menteşeler, vidalar ve çiviler ayrı.'],
-        ['1 Baza ve Ayaklar', %i[alt_tabla baza], 1, 'Bazayı alt tablanın altındaki 2 çektirmeye geçirip arkadan vidalayın; 4 ayağı 4\'er vidayla takın.'],
+        ['1 Baza ve Ayaklar', %i[alt_tabla baza], 1, 'Bazayı alt tablanın ön kenarının altına hizalayıp üstten 3 vidayla vidalayın; 4 ayağı 4\'er vidayla takın.'],
         ['2 Yanlar ve Orta Tabla', %i[sol_yan sag_yan orta_tabla], 2, 'Yanları orta tablanın iki ucuna geçirin; yanlardaki 4 çektirme vidasını sıkın.'],
         ['3 Alt Tabla', [], 3, 'Bazası ve ayakları takılı alt tablayı yanların arasına alttan oturtun, 4 çektirme vidasını sıkın.'],
         ['4 Üst Tabla', %i[tabla], 4, 'Üst tablayı yanların üstüne oturtun; 4 köşebent vidasını alttan sıkın.'],
@@ -1151,15 +1157,16 @@ module OzcanKurulum
       z.kamera(0, KAM[:liste])
       z.bekle(3.5)
 
-      z.baslik('1 · Bazayı alt tablaya vidalayın, ayakları takın')
+      z.baslik('1 · Bazayı alt tablaya üstten üç vidayla vidalayın, ayakları takın')
       z.an do |s, _|
         s[:liste] = false
         s[:p][:alt_tabla] = { vis: true, off: ALT_DIS }
       end
       z.kamera(1.2, KAM[1])
-      hareket(:baza, ALT_DIS.zip([0, -320, 0]).map(&:sum), ALT_DIS.zip([0, -2, 0]).map(&:sum), 1.6)
-      ids = %w[baza_sol baza_sag]
-      sirayla_sik(ids, KAM[1], cekler: cek_dis(:baza, ALT_DIS, [0, -2, 0], ids.size), bak: [0.3, 1, -0.6])
+      hareket(:baza, ALT_DIS.zip([0, -320, -60]).map(&:sum), ALT_DIS, 1.6)
+      goster(BAZA_VIDALARI)
+      z.bekle(0.3)
+      sirayla_sik(BAZA_VIDALARI, KAM[1], tur: 5, bak: [0.35, -1, 0.9])
       z.kamera(1.0, KAM[1])
       elle_tak(AYAKLAR)
       goster(AYAK_VIDALARI)

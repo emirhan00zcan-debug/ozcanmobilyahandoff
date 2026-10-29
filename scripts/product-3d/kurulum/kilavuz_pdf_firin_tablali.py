@@ -27,12 +27,13 @@ PARCALAR = [('A', 'Sol yan', 'sol_yan'), ('B', 'Sağ yan', 'sag_yan'), ('C', 'Al
             ('D', 'Orta tabla', 'orta_tabla'), ('E', 'Üst tabla (36 mm)', 'tabla'), ('F', 'Baza', 'baza'),
             ('G', 'Klapa kapak (kulplu)', 'kapak'), ('H', 'Arkalık (3 mm)', 'arkalik')]
 HIRDAVAT = [('ayak', 'Ayarlı ayak', '4 adet'), ('ayak_vidasi', 'Ayak vidası 3,5×16', '16 adet'),
+            ('baza_vidasi', 'Baza vidası 4×40', '3 adet'),
             ('mentese', 'Menteşe', '2 adet'), ('mentese_vidasi', 'Menteşe vidası', '4 adet'),
             ('kosebent_vidasi', 'Köşebent vidası 3,5×16', '4 adet'), ('civi', 'Arkalık çivisi', '16 adet')]
 ADIMLAR = [
     ('Bazayı alt tablaya vidalayın, ayakları takın',
-     'F bazasını C alt tablanın altındaki iki çektirmeye önden geçirin, vidaları arkadan sıkın. '
-     'Dört ayağı alt tablanın altına dörder vidayla takın.', 'c', 'Baza · 2 çektirme vidası\nAyaklar · 16 vida'),
+     'F bazasını C alt tablanın ön kenarının altına hizalayın; alt tablanın üstünden üç vidayla bazaya vidalayın. '
+     'Dört ayağı alt tablanın altına dörder vidayla takın.', 'c', 'Baza · 3 vida (4×40)\nAyaklar · 16 vida'),
     ('Yanları orta tablaya monte edin',
      'A sol yanı ve B sağ yanı D orta tablanın iki ucuna geçirin. Yanların iç yüzündeki dört çektirme vidasını alttan '
      'sıkın; dar yerde kısa tornavida kullanın.', 'c', 'Çektirme vidası · 4 adet'),
@@ -154,17 +155,19 @@ def kapak_sayfasi(doc):
         yazi(s, x + 24, y + 23, '1 adet', 7.2, renk=GRI)
         resim(s, fitz.Rect(x + 8, y + 28, x + hg - 8, y + hy - 4), kirp(os.path.join(EK, f'parca_{anahtar}.png')))
     y = 390 + 2 * hy + 14
-    hb, hh = (W - 2 * M) / 3, 62
-    s.draw_rect(fitz.Rect(M, y, W - M, y + 2 * hh), color=CIZGI, width=0.8)
+    hb, hh = (W - 2 * M) / 3, 50
+    satir = (len(HIRDAVAT) + 2) // 3
+    s.draw_rect(fitz.Rect(M, y, W - M, y + satir * hh), color=CIZGI, width=0.8)
     for i, (anahtar, ad, adet) in enumerate(HIRDAVAT):
         x, yy = M + (i % 3) * hb, y + (i // 3) * hh
         resim(s, fitz.Rect(x + 6, yy + 6, x + 76, yy + hh - 6), kirp(os.path.join(EK, f'parca_{anahtar}.png')))
-        yazi(s, x + 82, yy + 27, ad, 7.8)
-        yazi(s, x + 82, yy + 38, adet, 7.4, renk=GRI)
+        yazi(s, x + 82, yy + 22, ad, 7.8)
+        yazi(s, x + 82, yy + 33, adet, 7.4, renk=GRI)
         if i % 3:
             s.draw_line((x, yy + 8), (x, yy + hh - 8), color=CIZGI, width=0.6)
-    paragraf(s, fitz.Rect(M, y + 2 * hh + 8, W - M, y + 2 * hh + 40),
-             'Bağlantı elemanları (şeffaf çektirmeler, köşebentler, menteşe tabanları) ve kulp panellere takılı gelir. '
+    paragraf(s, fitz.Rect(M, y + satir * hh + 8, W - M, y + satir * hh + 40),
+             'Bağlantı elemanları (şeffaf çektirmeler, köşebentler, menteşe tabanları) ve kulp panellere takılı gelir; '
+             'baza alt tablaya vidayla bağlanır. '
              'Kuruluma başlamadan önce parçaları kontrol edin.', 7.8)
 
 
