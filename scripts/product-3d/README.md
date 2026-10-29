@@ -212,6 +212,27 @@ kumanda / kaydet`. Farkları:
   60 × 65 × 3,6 cm dolu tabla (iki kat 18 mm, önde kapağı 3 cm geçer); yanların iç yüzünde
   üstte köşebentler takılı gelir, tabla son adımda bunlara alttan 4 vidayla bağlanır.
   Varyant modelde saklanır; kaydedilmiş dosya açılınca oynatma doğru varyantla kurulur.
+  ESKİ: tablalı ürün 29.10.2026'da fotoğraflara göre yeniden çizildi (aşağıda); bu varyant yalnız arşiv.
+
+### Fırın dolabı, tablalı — yeniden çizim (`kurulum/firin_dolabi_tablali.rb`)
+
+Ürün fotoğraflarına ve tarife göre (research_notes/Firin dolabi tablali 2026-10-29) 60 × 60 × 89 cm:
+- 10 cm ayarlı ayaklar (arkada ve bazanın arkasında) + önde 600 × 100 baza.
+- Yanlar 100–854; aralarında alt tabla ve orta tabla, alt bölme iç 120, fırın boşluğu iç 585.
+- Yanların üstünde köşebentlere alttan vidalı 36 mm tabla (60 G × 65 D, önde ~3 cm taşar).
+- Arkalık 3 mm, arkaya 16 çiviyle.
+- 600 × 155 tam bindirme klapa kapak, alt tablaya iki menteşeyle bağlı, aşağı açılır; siyah klasik kulp takılı gelir.
+- Bağlantılar şeffaf çektirme: baza 2, alt tabla 4, orta tabla 4. Üst destek parçası yok.
+
+`OzcanKurulum::FirinDolabiTablali.kur / oynat / kumanda / kaydet`.
+
+- Kullanıcının 7 adımı: baza + ayaklar → alt tabla yanlara → orta tabla → üst tabla → arkalık (çivi) →
+  kapak menteşeleri (kapağa) → kapak alt tablaya. Son karede örnek ankastre fırın yerleşir (kutuda yok).
+- Menteşe gövdeleri ayrı parça (`mentese_1/2`), kapakla aynı eksende döner: 6. adımda kapağa vidalanır,
+  7. adımda kolları alt tabladaki tabanlara geçer.
+- PDF kılavuz: `kurulum/kilavuz_pdf_firin_tablali.py <çıktı.pdf> <adım kareleri> <ek görseller>`
+  (Aren kılavuzu biçimi: kapak + paket içeriği, sayfa başına 2 adım + yakın çekim dairesi, kurulum tamamlandı +
+  destek kutusu).
 
 ### Kitaplık (`kurulum/kitaplik.rb`)
 
