@@ -9,8 +9,8 @@
 # Her panel ayrı bileşen; fabrikada takılı gelenler (şeffaf çektirmeler, köşebentler, menteşe tabanları, kapaktaki
 # kulp) panelin içinde. Ayaklar ve vidaları, menteşeler ve vidaları, köşebent vidaları, çiviler ve arkalık ayrı gelir.
 # Kurulum sırası kullanıcının verdiği gibidir:
-#   1 baza + ayaklar  2 alt tabla yanlara  3 orta tabla  4 üst tabla  5 arkalık  6 kapak menteşeleri
-#   7 kapak alt tablaya
+#   1 baza + ayaklar (alt tabla grubu önde bekler)  2 yanlar orta tablaya  3 alt tabla grubu yanlara (alttan oturur)
+#   4 üst tabla  5 arkalık  6 kapak menteşeleri  7 kapak alt tablaya
 #
 # SketchUp > Pencere > Ruby Konsolu:
 #   load 'C:/.../scripts/product-3d/kurulum/firin_dolabi_tablali.rb'
@@ -58,6 +58,8 @@ module OzcanKurulum
     CIVI_XZ = ([9.0, W - 9].product([150.0, 300.0, 450.0, 600.0, 750.0]) +
                [150.0, 300.0, 450.0].product([Z0 + T / 2, ORTA_Z + T / 2])).freeze
     KAPAK_DIS = [0.0, -450.0, 300.0].freeze # menteşeler takılırken kapak (90° açık) önde bekler
+    ALT_DIS = [0.0, -850.0, 0.0].freeze     # baza ve ayaklar takılırken alt tabla grubu önde; 3. adımda yerine
+    ALT_GRUBU = %i[alt_tabla baza].freeze
     FIRIN = { x: [2.5, W - 2.5], z: [ORTA_Z + T + 2, ZT - 2], y: -22.0 }.freeze # son karede örnek ankastre fırın
     PLAKA_T = 3.0
 
@@ -82,9 +84,9 @@ module OzcanKurulum
     # Kamera noktaları [göz, hedef] (mm)
     KAM = {
       liste:   [[2600, -2000, 5600], [2600, 520, 0]],
-      1 =>     [[1500, -1700, 950], [300, 260, 90]],
-      2 =>     [[1900, -2400, 1500], [300, 300, 430]],
-      3 =>     [[1700, -2200, 1350], [300, 250, 380]],
+      1 =>     [[1500, -2650, 950], [300, -580, 90]],
+      2 =>     [[2000, -3000, 1500], [300, -150, 360]],
+      3 =>     [[1800, -2600, 1250], [300, -150, 320]],
       4 =>     [[1800, -2300, 1750], [300, 250, 600]],
       5 =>     [[1800, 2700, 1400], [300, 400, 450]],
       6 =>     [[750, -2350, 1350], [300, -380, 380]],
@@ -560,14 +562,16 @@ module OzcanKurulum
     end
 
     # Tüm çektirmeler dünya koordinatında: k = iç köşe noktası, ex/ey/ez bağlantı çerçevesi
-    # (x erkeğin panelinden uzağa, z dişinin panelinden uzağa). Yanlar alt tablaya yandan kayar (vida alt tablanın
-    # üstünde); orta tabla önden girip iner (vida yanın iç yüzünde, altta — kısa tornavida); baza önden alt tablanın
-    # altına kayar (vida alt tablanın altında, bazanın arkasında — kısa tornavida).
+    # (x erkeğin panelinden uzağa, z dişinin panelinden uzağa). Yanlar orta tablaya yandan geçer; alt tabla grubu
+    # yanların arasına alttan oturur (vida alt tablanın üstünde, orta tablanın altında — kısa tornavida). Orta tabla
+    # vidaları yanın iç yüzünde, tablanın altında (kısa tornavida). Baza önden alt tablanın altına kayar (vida alt
+    # tablanın altında, bazanın arkasında — kısa tornavida).
     def baglantilar
       l = []
       [[:sol_yan, T, 1, 'sol'], [:sag_yan, W - T, -1, 'sag']].each do |yan, xs, sx, taraf|
         CEKTIRME_Y.zip(%w[on arka]).each do |y, yer|
-          l << { id: "alt_#{taraf}_#{yer}", disi: :alt_tabla, erkek: yan, k: [xs, y, Z0 + T], ex: [sx, 0, 0], ez: [0, 0, 1] }
+          l << { id: "alt_#{taraf}_#{yer}", disi: :alt_tabla, erkek: yan, k: [xs, y, Z0 + T], ex: [sx, 0, 0], ez: [0, 0, 1],
+                 kisa: true } # orta tabla üstte: 120 mm bölmede kısa tornavida
           l << { id: "orta_#{taraf}_#{yer}", disi: yan, erkek: :orta_tabla, k: [xs, y, ORTA_Z], ex: [0, 0, -1],
                  ez: [sx, 0, 0], kisa: true }
         end
@@ -915,8 +919,8 @@ module OzcanKurulum
       tanim = [
         ['0 Kutu İçeriği', [], :liste, 'Paneller ve fabrikada takılı çektirmeler, köşebentler, menteşe tabanları ve kulp; ayaklar, menteşeler, vidalar ve çiviler ayrı.'],
         ['1 Baza ve Ayaklar', %i[alt_tabla baza], 1, 'Bazayı alt tablanın altındaki 2 çektirmeye geçirip arkadan vidalayın; 4 ayağı 4\'er vidayla takın.'],
-        ['2 Alt Tabla ve Yanlar', %i[sol_yan sag_yan], 2, 'Yanları alt tablanın çektirmelerine geçirip 4 vidayı sıkın.'],
-        ['3 Orta Tabla', %i[orta_tabla], 3, 'Orta tablayı önden sürüp yanlardaki 4 çektirmeye oturtun, vidaları sıkın.'],
+        ['2 Yanlar ve Orta Tabla', %i[sol_yan sag_yan orta_tabla], 2, 'Yanları orta tablanın iki ucuna geçirin; yanlardaki 4 çektirme vidasını sıkın.'],
+        ['3 Alt Tabla', [], 3, 'Bazası ve ayakları takılı alt tablayı yanların arasına alttan oturtun, 4 çektirme vidasını sıkın.'],
         ['4 Üst Tabla', %i[tabla], 4, 'Üst tablayı yanların üstüne oturtun; 4 köşebent vidasını alttan sıkın.'],
         ['5 Arkalık', %i[arkalik], 5, 'Arkalığı arkaya yerleştirip yanlara, alt ve orta tablaya 16 çiviyle çakın.'],
         ['6 Kapak Menteşeleri', %i[kapak], 6, 'İki menteşeyi kapaktaki 35 mm yuvalara oturtup 2\'şer vidayla sabitleyin.'],
@@ -1130,6 +1134,11 @@ module OzcanKurulum
       @cz.olay(sure) { |s, u| ids.each { |id| s[:v][id] = { adv: 1 - u, ang: 0.0 } } }
     end
 
+    # Çektirme sıkılırken parça son milimetreleri kapatır; parça bir taban ofsetinde (ör. önde beklerken) çalışır.
+    def cek_dis(k, taban, bas, n)
+      (0...n).map { |i| [k, taban.zip(bas).map { |t, b| t + b * (n - i) / n.to_f }, taban.zip(bas).map { |t, b| t + b * (n - i - 1) / n.to_f }] }
+    end
+
     # Kapak ve menteşe gövdeleri aynı açıda döner.
     def kapak_aci(s, aci)
       KAPAK_GRUBU.each { |k| s[:kapi][k] = aci }
@@ -1145,12 +1154,12 @@ module OzcanKurulum
       z.baslik('1 · Bazayı alt tablaya vidalayın, ayakları takın')
       z.an do |s, _|
         s[:liste] = false
-        s[:p][:alt_tabla] = { vis: true, off: [0, 0, 0] }
+        s[:p][:alt_tabla] = { vis: true, off: ALT_DIS }
       end
       z.kamera(1.2, KAM[1])
-      hareket(:baza, [0, -320, 0], [0, -2, 0], 1.6)
+      hareket(:baza, ALT_DIS.zip([0, -320, 0]).map(&:sum), ALT_DIS.zip([0, -2, 0]).map(&:sum), 1.6)
       ids = %w[baza_sol baza_sag]
-      sirayla_sik(ids, KAM[1], cekler: cek_listesi(:baza, [0, -2, 0], ids.size), bak: [0.3, 1, -0.6])
+      sirayla_sik(ids, KAM[1], cekler: cek_dis(:baza, ALT_DIS, [0, -2, 0], ids.size), bak: [0.3, 1, -0.6])
       z.kamera(1.0, KAM[1])
       elle_tak(AYAKLAR)
       goster(AYAK_VIDALARI)
@@ -1159,24 +1168,25 @@ module OzcanKurulum
       z.kamera(0.8, KAM[1])
       z.bekle(0.3)
 
-      z.baslik('2 · Alt tablayı yanlara vidalayın')
+      z.baslik('2 · Yanları orta tablanın iki ucuna geçirin, yanlardaki dört çektirme vidasını sıkın')
+      z.an { |s, _| s[:p][:orta_tabla] = { vis: true, off: [0, 0, 0] } }
       z.kamera(1.2, KAM[2])
       hareket(:sol_yan, [-400, 0, 0], [-2, 0, 0], 1.6)
-      ids = %w[alt_sol_on alt_sol_arka]
+      ids = %w[orta_sol_on orta_sol_arka]
       sirayla_sik(ids, KAM[2], cekler: cek_listesi(:sol_yan, [-2, 0, 0], ids.size))
       z.kamera(0.8, KAM[2])
       hareket(:sag_yan, [400, 0, 0], [2, 0, 0], 1.6)
-      ids = %w[alt_sag_on alt_sag_arka]
-      sirayla_sik(ids, KAM[2], cekler: cek_listesi(:sag_yan, [2, 0, 0], ids.size), bak: [-0.4, -1, 0.6])
+      ids = %w[orta_sag_on orta_sag_arka]
+      sirayla_sik(ids, KAM[2], cekler: cek_listesi(:sag_yan, [2, 0, 0], ids.size))
       z.kamera(0.8, KAM[2])
       z.bekle(0.3)
 
-      z.baslik('3 · Orta tablayı yanlara vidalayın')
+      z.baslik('3 · Alt tablayı (bazası ve ayakları takılı) yanların arasına alttan oturtun, dört vidayı sıkın')
       z.kamera(1.2, KAM[3])
-      hareket(:orta_tabla, [0, -550, 40], [0, 0, 40], 1.6)
-      hareket(:orta_tabla, [0, 0, 40], [0, 0, 2], 0.6)
-      ids = %w[sol sag].flat_map { |t| %w[on arka].map { |y| "orta_#{t}_#{y}" } }
-      sirayla_sik(ids, KAM[3], cekler: cek_listesi(:orta_tabla, [0, 0, 2], ids.size))
+      toplu(ALT_GRUBU, ALT_DIS, [0, 0, -70], 1.8)
+      toplu(ALT_GRUBU, [0, 0, -70], [0, 0, 0], 0.9)
+      ids = %w[sol sag].flat_map { |t| %w[on arka].map { |y| "alt_#{t}_#{y}" } }
+      sirayla_sik(ids, KAM[3])
       z.kamera(0.8, KAM[3])
       z.bekle(0.3)
 

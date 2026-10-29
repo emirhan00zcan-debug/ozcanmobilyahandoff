@@ -226,7 +226,8 @@ kumanda / kaydet`. Farkları:
 
 `OzcanKurulum::FirinDolabiTablali.kur / oynat / kumanda / kaydet`.
 
-- Kullanıcının 7 adımı: baza + ayaklar → alt tabla yanlara → orta tabla → üst tabla → arkalık (çivi) →
+- Kullanıcının 7 adımı: baza + ayaklar alt tablaya (grup önde bekler) → yanlar orta tablaya → alt tabla grubu
+  yanların arasına alttan oturur (vidalar 120 mm bölmede, kısa tornavida) → üst tabla → arkalık (çivi) →
   kapak menteşeleri (kapağa) → kapak alt tablaya. Son karede örnek ankastre fırın yerleşir (kutuda yok).
 - Menteşe gövdeleri ayrı parça (`mentese_1/2`), kapakla aynı eksende döner: 6. adımda kapağa vidalanır,
   7. adımda kolları alt tabladaki tabanlara geçer.

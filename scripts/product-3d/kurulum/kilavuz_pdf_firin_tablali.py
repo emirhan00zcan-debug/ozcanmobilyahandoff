@@ -33,12 +33,12 @@ ADIMLAR = [
     ('Bazayı alt tablaya vidalayın, ayakları takın',
      'F bazasını C alt tablanın altındaki iki çektirmeye önden geçirin, vidaları arkadan sıkın. '
      'Dört ayağı alt tablanın altına dörder vidayla takın.', 'c', 'Baza · 2 çektirme vidası\nAyaklar · 16 vida'),
-    ('Alt tablayı yanlara vidalayın',
-     'A sol yanı ve B sağ yanı alt tablanın çektirmelerine geçirin. Her yanda öndeki ve arkadaki çektirme vidasını sıkın.',
-     'c', 'Çektirme vidası · 4 adet'),
-    ('Orta tablayı yanlara vidalayın',
-     'D orta tablayı önden sürüp yanlardaki dört çektirmeye oturtun. Vidaları alttan sıkın; dar yerde kısa tornavida kullanın.',
-     'a', 'Çektirme vidası · 4 adet'),
+    ('Yanları orta tablaya monte edin',
+     'A sol yanı ve B sağ yanı D orta tablanın iki ucuna geçirin. Yanların iç yüzündeki dört çektirme vidasını alttan '
+     'sıkın; dar yerde kısa tornavida kullanın.', 'c', 'Çektirme vidası · 4 adet'),
+    ('Alt tabla grubunu yanlara monte edin',
+     'Bazası ve ayakları takılı C alt tablayı yanların arasına alttan oturtun. Alt tablanın üstündeki dört çektirme '
+     'vidasını sıkın.', 'a', 'Çektirme vidası · 4 adet'),
     ('Üst tablayı vidalayın',
      'E üst tablayı yanların üstüne, arkası gövdeyle hizalı oturtun. Yanlardaki dört köşebentten alttan vidalayın.',
      'a', 'Köşebent vidası · 4 adet'),
