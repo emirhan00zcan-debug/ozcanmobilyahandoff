@@ -384,6 +384,20 @@ kullanıcı onayı 28.10.2026). Duvara asılan 45 × 14,8 × 125 cm dolap; kapal
 - Tanıtım: kapalı (aynada oda yansıması, doku `aynali_utu_dolabi_yansima.png`), kapak açık, masa açık (ütü,
   gömlek, sprey), kulp-menteşe yakın çekim, ölçü görseli. Duvar-zemin, dekor ve ölçü ayrı katmanlarda.
 
+### Kora kombi kabini (`kurulum/kora_kombi_kabini.rb`)
+
+Tarif A1 (research_notes/Urun firsatlari 2026-11-21/tarif-A-kora-kombi-kabini.txt): duvardaki kombinin etrafını
+saran, arkası açık asma kabin, 70 × 41,8 × 120 cm. `OzcanKurulum::KoraKombiKabini.kur / oynat / kumanda / kaydet`.
+
+- Kabinin altı = kombinin altı − 250 mm (modelde yerden 1000). Alt tabla ve üst ön tabla 200 mm derin; arkadaki
+  200 mm boru ve baca geçişi; üst arka şerit 4 raf pimine oturur, sökülür.
+- Beyaz MDF tam bindirme kapaklar (her biri 3 menteşe), altta ve üstte 8'er CNC havalandırma yarığı (10 × 247,
+  yarık kenarları bantsız doğal bej MDF); siyah 128 mm dikey kulp.
+- Tablalar minifiks + kavelayla; iki ayarlı askı + 664 mm ray, altta iki L köşebent duvara.
+- Yer tutucu kombi (440 × 720 × 330, borular ve koaksiyel baca) ayrı katmanda, duvarla birlikte görünür.
+- Adımlar: kavelalar → sol yan → sol minifiksler → sağ yan → minifiks kapakları → ray → asma → L köşebentler →
+  raf pimleri + arka şerit → kapaklar → kulplar (11).
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
