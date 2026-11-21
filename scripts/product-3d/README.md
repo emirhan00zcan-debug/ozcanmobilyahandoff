@@ -326,6 +326,11 @@ dört 80 × 20 çekmece önü, siyah kulp (128 mm). Ölçüler `scripts/kesim-li
 
 ### Patili Konsol — kedi yatağı + kum bölmesi + mama çekmecesi (`kurulum/patili_konsol.rb`, `kurulum/patili_konsol_modern.rb`)
 
+**21.11.2026 güncellemesi (modern):** çektirmeler ufikle değişti, arkalık yanların, alt tablanın ve meşe tablanın
+kanalına geçer (çivi yok). Sıra: gölge bazalar (alt tabla kaldırılmışken) → sol yan → sağ yan → dikme → raf pimleri +
+yatak rafı → arkalık (yukarıdan) → ağız paneli (sol yanın ön kenarına) → meşe tabla (8 ufik; ağız panelinin üst kenarı
+da tablaya bağlanır). Çekmeceler ufikli, dipleri çivili. Klasik `patili_konsol.rb` eski kuralda kaldı.
+
 Özcan Mobilya tasarımı (müşterinin gösterdiği evcil hayvan konsolundan esinlenildi), 120 × 70 × 51 cm, iki
 üslup aynı ortak parçalardan üretilir: klasik (`OzcanKurulum::PatiliKonsol`, beyaz, önde baza, gömme kulp,
 kemerli ağız) ve modern (`OzcanKurulum::PatiliModern`, 36 mm yuvarlak köşeli meşe tabla, antrasit gölge baza,
