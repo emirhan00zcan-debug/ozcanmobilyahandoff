@@ -411,6 +411,18 @@ Safir Meşe üst tabla, beyaz MDF ön panelde 22 CNC "çıta" yarığı (18 × 6
 - Yer tutucu PKKP 600 × 800 petek (vanalar, purjör) duvar, süpürgelik ve pencereyle birlikte görünür.
 - Adımlar: kavelalar → sol yan → sağ yan → arka kuşak → keçeler → duvara sabitleme → raf pimleri + ön panel (7).
 
+### Roven komodin (`kurulum/roven_komodin.rb`)
+
+Tarif C (research_notes/Urun firsatlari 2026-11-21/tarif-C-roven-komodin.txt): 45 × 43 × 50 cm, 2 çekmeceli, Roven
+şifonyerin takım parçası. `sifonyer.rb`'den türetildi: yapı, Safir Meşe 18 mm, makaralı ray (burada 350 mm), siyah
+128 mm yatay kulp, çektirme ve çekmece minifiksleri aynı. `OzcanKurulum::RovenKomodin.kur / oynat / kumanda / kaydet`.
+
+- Kablo geçişi: arkalık üstte 30 mm kısa (Z 452–482), üst tablanın arka kenarında ortada 100 × 25 mm kesik (R10).
+- Adımlar şifonyerle aynı sırada: sol yan + alt tabla → sağ yan → baza → üst tabla → arkalık → üst çekmece (6–10)
+  → alt çekmece (11) → 12 lamba ve şarj kablosu kesikten arkaya sarkıtılıp prize takılır (duvar, süpürgelik, priz).
+- Tanıtım katmanları: `Dekor (tanıtım)` (yatak, kitap), `Çekmece İçi (tanıtım)` (210 mm açık üst çekmecede kitap,
+  krem, gözlük), `Ölçüler`. Takım görseli `sifonyer_kurulum.skp`'yi geçici bileşen olarak yükler, sonra siler.
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
