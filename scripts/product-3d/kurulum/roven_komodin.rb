@@ -6,10 +6,13 @@
 # (toplam derinlik 430), önde 80 mm baza. Arkalık üstte 30 mm kısa (Z 452-482 kablo boşluğu); üst tablanın arka
 # kenarında ortada 100 x 25 mm kablo kesiği (iç köşeler R10). Ray 350 mm.
 #
-# Her panel ayrı bileşen; fabrikada takılı gelen parçalar (şeffaf çektirme erkek/dişi, minifix eksantrik ve
-# bulonları, ray parçaları) panelin içinde ayrı bileşen. Kulplar, kulp vidaları ve çiviler demonte gelir.
-#   1 sol yan + alt tabla  2 sağ yan  3 baza  4 üst tabla  5 arkalık (çivi)
-#   6-10 üst çekmece: yanlar (minifix bulonları) → eksantrikler → dip çivileri → kulp → raylar
+# Bağlantılar 21.11.2026 kuralına göre (çektirme yok; suntada ufik, arkalık kanalda): ufik = CNC'de panel yüzüne
+# açılan anahtar deliği biçimli cebe bastırılan beyaz plastik gövde; vidası sıkılınca karşı panele vidalı çelik pimin
+# başını kavrar (cep pimin girdiği uçtan 36 mm içeride). Arkalık yanların ve alt tablanın kanalına yukarıdan iner.
+# Her panel ayrı bileşen; fabrikada takılı gelen parçalar (ufik pimleri, ray parçaları) panelin içinde. Ufikler,
+# kulplar, kulp vidaları ve çekmece dibi çivileri demonte gelir.
+#   1 sol yan + alt tabla  2 sağ yan  3 arkalık (kanala)  4 baza  5 üst tabla
+#   6-10 üst çekmece: yanlar (ufik pimleri) → ufikler → dip çivileri → kulp → raylar
 #   11 alt çekmece  12 lamba ve şarj kablosu kesikten arkaya, prize
 #
 # SketchUp > Pencere > Ruby Konsolu:
@@ -21,7 +24,7 @@
 #   OzcanKurulum::RovenKomodin.kaydet('C:/kareler') # animasyonu PNG karelere yazar
 #
 # Koordinatlar mm: X genişlik (0 = sol dış yüz), Y derinlik (0 = gövde ön yüzü, +Y arkaya;
-# çekmece önleri Y<0'da, arkalık Y=400..403, duvar Y=450), Z yükseklik (0 = zemin).
+# çekmece önleri Y<0'da, arkalık Y=387..390 kanalda, duvar Y=450), Z yükseklik (0 = zemin).
 
 module OzcanKurulum
   module RovenKomodin
@@ -32,8 +35,12 @@ module OzcanKurulum
     # ------------------------------------------------------------------
     W = 450.0            # gövde ve üst tabla genişliği
     T = 18.0             # panel kalınlığı
-    D = 400.0            # yan derinliği; + 3 mm çakma arkalık
+    D = 400.0            # yan derinliği (arkalık 10 mm içeride kanalda)
     ARKA_T = 3.0
+    KANAL_Y = D - 10 - ARKA_T # arkalığın ön yüzü
+    KANAL_DER = 8.0
+    UF_ARA = 36.0        # ufik cebi pimin girdiği uçtan 36 mm içeride (uzun kenardan 32)
+    UF_Y = [32.0, D - 45].freeze # yan ↔ alt tabla ve üst tabla (kanalın önünde)
     Z0 = 80.0            # baza yüksekliği = alt tablanın alt yüzü; yanlar yere kadar
     ZT = 482.0           # yanların üst kenarı; üstünde 18 mm üst tabla → 500
     ARKA_KISA = 30.0     # arkalık üstte kısa: Z 452-482 kablo boşluğu
@@ -117,7 +124,7 @@ module OzcanKurulum
     # Parçaların yerleşim orijini (bileşen orijini = parçanın min köşesi)
     ORIJIN = {
       sol_yan: [0, 0, 0], sag_yan: [W - T, 0, 0], alt_tabla: [T, 0, Z0], baza: [T, 0, 0],
-      ust_tabla: [0, D + ARKA_T - TABLA_DER, ZT], arkalik: [0, D, Z0], kablo: [0, 0, 0]
+      ust_tabla: [0, D - TABLA_DER, ZT], arkalik: [T - KANAL_DER, KANAL_Y, Z0 + T - KANAL_DER], kablo: [0, 0, 0]
     }.merge(CEKMECE.flat_map { |c, h|
       kz = h[:kutu_z]
       [[:"#{c}_on", [ON_X0, -(KAPI_PAY + T), h[:on_z]]], [:"#{c}_sol", [KUTU_X0, -KAPI_PAY, kz]],
@@ -126,15 +133,17 @@ module OzcanKurulum
     }.to_h).freeze
 
     # Arkalık çivileri: yanların ve alt tablanın arka kenarına (arkalık-yerel x, z)
-    CIVI = [160, 300, 440].flat_map { |z| [[T / 2, z - Z0], [W - T / 2, z - Z0]] } +
-           [110, 340].map { |x| [x, T / 2] }
-    CIVILER = (1..CIVI.size).map { |i| format('civi_%02d', i) }.freeze
+    CIVILER = [].freeze
     # Çekmece dibi çivileri (dip-yerel x, y): yanlara ikişer, öne ve arkaya birer
     DIP_CIVI = [[KUTU_T / 2, 60], [KUTU_T / 2, KUTU_D - 60], [KUTU_W - KUTU_T / 2, 60], [KUTU_W - KUTU_T / 2, KUTU_D - 60],
                 [KUTU_W / 2, KUTU_T / 2], [KUTU_W / 2, KUTU_D - KUTU_T / 2]].freeze
     DIP_CIVILER = CEKMECE.keys.flat_map { |c| (1..DIP_CIVI.size).map { |i| "#{c}_civi_#{i}" } }.freeze
     KULPLAR = CEKMECE.keys.flat_map { |c| ["#{c}_kulp", "#{c}_kulpvida_1", "#{c}_kulpvida_2"] }.freeze
-    DEMONTE = (CIVILER + DIP_CIVILER + KULPLAR).freeze
+    UF = { alt_sol: %w[uf_alt_sol_1 uf_alt_sol_2], alt_sag: %w[uf_alt_sag_1 uf_alt_sag_2], baza: %w[uf_baza_1 uf_baza_2],
+           ust: %w[uf_ust_sol_1 uf_ust_sol_2 uf_ust_sag_1 uf_ust_sag_2] }.freeze
+    CEK_UF = CEKMECE.keys.flat_map { |c| %w[on_sol on_sag arka_sol arka_sag].map { |p| "#{c}_uf_#{p}" } }.freeze
+    UFIKLER = (UF.values.flatten + CEK_UF).freeze
+    DEMONTE = (DIP_CIVILER + KULPLAR + UFIKLER + UFIKLER.map { |u| "#{u}_v" }).freeze
 
     # ------------------------------------------------------------------
     # Geometri yardımcıları
@@ -286,6 +295,7 @@ module OzcanKurulum
         m
       end
       @mat = {
+        ufik: mk.('Ufik (beyaz plastik)', [250, 250, 248]),
         govde: mk.('Safir Meşe', [198, 152, 102]),
         arka: mk.('Arkalık (duralit)', [188, 156, 116]),
         dip: mk.('Çekmece Dibi', [228, 216, 192]),
@@ -504,23 +514,58 @@ module OzcanKurulum
         .transform!(eksen([a.(4.5), RAY_L - 14, zb - 8.5], [sx, 0, 0], [0, 0, 1]))
     end
 
-    # Tüm çektirmeler dünya koordinatında: k = iç köşe noktası, ex/ey/ez bağlantı çerçevesi
-    # (x erkeğin panelinden uzağa, z dişinin panelinden uzağa). Alt tabla sol yana yandan kayar,
-    # sağ yan ona oturur; üst tabla yukarıdan iner (erkek tablada); baza alt tablanın altına
-    # önden kayar, vidaları arkadaki boşluktan kısa tornavidayla.
+    # --- Ufik (modüler bağlantı elemanı) ---
+    # Cep hattı (u, v): u cepten pimin girdiği uca doğru; Ø20 göbek uçtan 36 mm içeride, Ø10 boyun uca doğru.
+    def ufik_hatti(pay = 0.0)
+      plaka_hatti([[0, 0, 10 - pay], [22, 0, 5 - pay]])
+    end
+
+    # Beyaz plastik gövde: yerel +x uca doğru, +z panelden dışarı; üst yüzü panel yüzüyle bir, 11,5 mm gömülü.
+    def ufik_tanimi
+      d = @m.definitions.add('Ufik Bağlantı Elemanı')
+      e = d.entities
+      it(e, ufik_hatti(0.3).map { |x, y| P(x, y, 0) }, yon(0, 0, -1), 11.5)
+      daire_it(e, P(0, 0, 0), Z_AXIS, 4.5, yon(0, 0, -1), 1.5, 20) # vida başı yuvası
+      boya(e, @mat[:ufik])
+      d
+    end
+
+    # Çelik pim: dişli kısmı panelde (x<0), başlı şaftı yerel +x yönünde karşı panelin ucuna girer; başı cebe gelir.
+    def ufik_pim_tanimi
+      d = @m.definitions.add('Ufik Pimi (çelik)')
+      torna(d.entities, [[-8, 0], [-8, 2.5], [0, 2.5], [0, 3.5], [2, 3.5], [2, 2.5], [30, 2.5], [31, 4], [35, 4],
+                         [36, 2], [36, 0]], 16, @mat[:cinko])
+      d
+    end
+
+    # Cep (CNC) + gövde (demonte, elle bastırılır) + sıkma vidası (demonte). o: göbek merkezi panel yüzünde
+    # (parça-yerel), n: yüz normali (dışa), t: pimin girdiği uca doğru. Uçtan cebe Ø8 pim deliği (kalınlığın ortası).
+    def ufik_cep(e, o, n, t, id, kisa: false, w: nil)
+      nv = Geom::Vector3d.new(*n)
+      bv = (nv * Geom::Vector3d.new(*t)).to_a
+      nokta = ->(u, v, h = 0) { P(*o.each_index.map { |i| o[i] + u * t[i] + v * bv[i] - h * n[i] }) }
+      it(e, ufik_hatti.map { |u, v| nokta.(u, v) }, nv.reverse, 12)
+      daire_it(e, nokta.(UF_ARA, 0, T / 2), Geom::Vector3d.new(*t), 4, Geom::Vector3d.new(*t).reverse, 12, 16)
+      vida_koy(e, @ufik, eksen(o, t, n), P(*o), nv.reverse, 14.0, 0.0, nv, id)
+      w ||= Geom::Vector3d.new(*n.each_index.map { |i| n[i] - 0.35 * t[i] }).normalize
+      vida_koy(e, @ufvida, eksen(o, n.map(&:-@), t), P(*o), nv.reverse, 5.0, 1.5, w, "#{id}_v", false, kisa)
+    end
+
+    # Pim karşı panelin yüzüne vidalı (fabrikada takılı): p yüzdeki nokta, d yüzden dışarı (cebe doğru).
+    def ufik_pim(e, p, d)
+      z = d[2].abs > 0.9 ? [1, 0, 0] : [0, 0, 1]
+      e.add_instance(@ufpim, eksen(p, d, z))
+    end
+
+    # Arkalık kanalı: nokta.(y, s) ile verilen yüzde boydan boya, arkalıktan 1 mm geniş, KANAL_DER derin.
+    def kanal(e, nokta, v)
+      it(e, [[KANAL_Y - 0.5, 0], [KANAL_Y + ARKA_T + 0.5, 0], [KANAL_Y + ARKA_T + 0.5, 1], [KANAL_Y - 0.5, 1]]
+                .map { |y, s| nokta.(y, s) }, v, KANAL_DER)
+    end
+
+    # Çektirme yok (21.11.2026): bağlantılar ufikle, panellerin içinde.
     def baglantilar
-      l = []
-      [[:sol_yan, T, 1, 'sol'], [:sag_yan, W - T, -1, 'sag']].each do |yan, xs, sx, taraf|
-        CEK_Y.zip(%w[on arka]).each do |y, yer|
-          l << { id: "alt_#{taraf}_#{yer}", disi: :alt_tabla, erkek: yan, k: [xs, y, Z0 + T], ex: [sx, 0, 0], ez: [0, 0, 1] }
-          l << { id: "ust_#{taraf}_#{yer}", disi: yan, erkek: :ust_tabla, k: [xs, y, ZT], ex: [0, 0, -1], ez: [sx, 0, 0] }
-        end
-      end
-      BAZA_X.each_with_index do |x, i|
-        l << { id: "baza_#{i + 1}", disi: :alt_tabla, erkek: :baza, k: [x, T, Z0], ex: [0, 1, 0], ey: [1, 0, 0],
-               ez: [0, 0, -1], kisa: true }
-      end
-      l
+      []
     end
 
     # Verilen eksenlerle konum (sol el de olabilir: ayna simetrik yerleşim)
@@ -544,14 +589,18 @@ module OzcanKurulum
       end
     end
 
-    # Yan: yere kadar iner; çektirmeler ve her çekmece için rayın dolap parçası.
+    # Yan: yere kadar iner; iç yüzde arkalık kanalı, alt tablanın ufik pimleri, üst tablanın ufik cepleri ve her
+    # çekmece için rayın dolap parçası.
     def dis_yan(k, sx)
       d = parca_tanimi(AD[k])
       e = d.entities
       kutu(e, 0, 0, 0, T, D, ZT)
-      boya(e, @mat[:govde])
       xi = sx > 0 ? T : 0.0 # iç yüz
-      cektirmeler(e, k)
+      kanal(e, ->(y, s) { P(xi, y, s * ZT) }, yon(-sx, 0, 0))
+      t = sx > 0 ? 'sol' : 'sag'
+      UF_Y.each_with_index { |y, i| ufik_cep(e, [xi, y, ZT - UF_ARA], [sx, 0, 0], [0, 0, 1], "uf_ust_#{t}_#{i + 1}") }
+      boya(e, @mat[:govde])
+      UF_Y.each { |y| ufik_pim(e, [xi, y, Z0 + T / 2], [sx, 0, 0]) }
       CEKMECE.each_value { |h| ray_dolap(e, xi, sx, h[:kutu_z] - ARKA_T) }
       [d, ORIJIN[k]]
     end
@@ -561,9 +610,16 @@ module OzcanKurulum
 
     def alt_tabla
       d = parca_tanimi(AD[:alt_tabla])
-      kutu(d.entities, 0, 0, 0, W - 2 * T, D, T)
-      boya(d.entities, @mat[:govde])
-      cektirmeler(d.entities, :alt_tabla)
+      e = d.entities
+      gen = W - 2 * T
+      kutu(e, 0, 0, 0, gen, D, T)
+      kanal(e, ->(y, s) { P(s * gen, y, T) }, yon(0, 0, -1))
+      UF_Y.each_with_index do |y, i|
+        ufik_cep(e, [UF_ARA, y, T], [0, 0, 1], [-1, 0, 0], "uf_alt_sol_#{i + 1}", kisa: true)
+        ufik_cep(e, [gen - UF_ARA, y, T], [0, 0, 1], [1, 0, 0], "uf_alt_sag_#{i + 1}", kisa: true)
+      end
+      boya(e, @mat[:govde])
+      BAZA_X.each { |x| ufik_pim(e, [x - T, T / 2, 0], [0, 0, -1]) }
       [d, ORIJIN[:alt_tabla]]
     end
 
@@ -577,35 +633,30 @@ module OzcanKurulum
             kose.(x0 + r, y0 + r, -Math::PI / 2, -Math::PI) + [[x0, TABLA_DER], [0, TABLA_DER]]
       it(d.entities, hat.map { |x, y| P(x, y, 0) }, yon(0, 0, 1), T)
       boya(d.entities, @mat[:govde])
-      cektirmeler(d.entities, :ust_tabla)
+      dy = TABLA_DER - D
+      [T / 2, W - T / 2].each { |x| UF_Y.each { |y| ufik_pim(d.entities, [x, y + dy, 0], [0, 0, -1]) } }
       [d, ORIJIN[:ust_tabla]]
     end
 
-    # Baza: yanların arasında, alt tablanın altında önde.
+    # Baza: yanların arasında, alt tablanın altında önde; arka yüzünde iki ufik cebi (alt tablanın pimlerine).
     def baza
       d = parca_tanimi(AD[:baza])
       kutu(d.entities, 0, 0, 0, W - 2 * T, T, Z0)
+      BAZA_X.each_with_index { |x, i| ufik_cep(d.entities, [x - T, T, Z0 - UF_ARA], [0, 1, 0], [0, 0, 1], UF[:baza][i], kisa: true) }
       boya(d.entities, @mat[:govde])
-      cektirmeler(d.entities, :baza)
       [d, ORIJIN[:baza]]
     end
 
-    # 3 mm çakma arkalık: yanların ve alt tablanın arka kenarına çivilenir; altında baza boşluğu, üstünde
-    # 30 mm kablo boşluğu kalır.
+    # 3 mm arkalık: yanların ve alt tablanın kanalına yukarıdan iner; üstünde 30 mm kablo boşluğu kalır.
     def arkalik
       d = parca_tanimi(AD[:arkalik])
-      e = d.entities
-      kutu(e, 0, 0, 0, W, ARKA_T, ZT - Z0 - ARKA_KISA)
-      boya(e, @mat[:arka])
-      CIVI.each_with_index do |(x, z), i|
-        vida_koy(e, @civi, eksen([x, ARKA_T, z], [0, -1, 0], [0, 0, 1]), P(x, ARKA_T, z), Geom::Vector3d.new(0, -1, 0),
-                 16.0, 1.2, Geom::Vector3d.new(0, 1, 0), CIVILER[i])
-      end
+      kutu(d.entities, 0, 0, 0, W - 2 * T + 2 * KANAL_DER, ARKA_T, ZT - ARKA_KISA - (Z0 + T - KANAL_DER))
+      boya(d.entities, @mat[:arka])
       [d, ORIJIN[:arkalik]]
     end
 
-    # --- Çekmece: desenli ön + kutu önü (minifix eksantrikleri), iki yan (bulonlar ve rayın çekmece
-    # parçası), arka (eksantrikler), 3 mm dip (alttan çivilenir). Yanlar ön ile arkanın uçlarını kavrar.
+    # --- Çekmece: desenli ön + kutu önü (ufik cepleri), iki yan (ufik pimleri ve rayın çekmece
+    # parçası), arka (ufik cepleri), 3 mm dip (alttan çivilenir). Yanlar ön ile arkanın uçlarını kavrar.
     # Kulp önden oturur, iki vidası kutunun içinden girer (demonte). ---
     def cekmece_on(c)
       h = CEKMECE[c]
@@ -619,14 +670,12 @@ module OzcanKurulum
       g = e.add_group # kutu önü, desenli önün arkasında
       x0 = KUTU_X0 + KUTU_T - ON_X0
       zk = h[:kutu_z] - h[:on_z]
-      kutu(g.entities, x0, T, zk, x0 + KUTU_W - 2 * KUTU_T, T + KUTU_T, zk + KUTU_H)
-      bulon_delikleri(g.entities, x0, KUTU_W - 2 * KUTU_T, T + KUTU_T / 2, zk + KUTU_H / 2)
-      boya(g.entities, @mat[:govde])
-      [[x0 + KAM_ARA, 'sol'], [x0 + KUTU_W - 2 * KUTU_T - KAM_ARA, 'sag']].each do |x, taraf|
-        o = [x, T + KUTU_T, zk + KUTU_H / 2]
-        vida_koy(e, @kam, eksen(o, [0, -1, 0], [0, 0, 1]), P(*o), Geom::Vector3d.new(0, -1, 0), 0.01, 0.0,
-                 Geom::Vector3d.new(0, 1, 0), "#{c}_kam_on_#{taraf}", false, true)
+      ic = KUTU_W - 2 * KUTU_T
+      kutu(g.entities, x0, T, zk, x0 + ic, T + KUTU_T, zk + KUTU_H)
+      [[x0 + UF_ARA, -1, 'sol'], [x0 + ic - UF_ARA, 1, 'sag']].each do |x, s, taraf|
+        ufik_cep(g.entities, [x, T + KUTU_T, zk + KUTU_H / 2], [0, 1, 0], [s, 0, 0], "#{c}_uf_on_#{taraf}", kisa: true)
       end
+      boya(g.entities, @mat[:govde])
       vida_koy(e, @kulp, eksen([kx, 0, KULP_Z], [0, -1, 0], [0, 0, 1]), P(kx, 0, KULP_Z), Geom::Vector3d.new(0, 1, 0),
                60.0, 0.0, Geom::Vector3d.new(0, -1, 0), "#{c}_kulp")
       wk = Geom::Vector3d.new(0, 0.77, 0.64) # kutunun içinden, üstten eğik
@@ -652,7 +701,7 @@ module OzcanKurulum
       sol = taraf == 'sol'
       xi = sol ? KUTU_T : 0.0 # iç yüz
       [KUTU_T / 2, KUTU_D - KUTU_T / 2].each do |y| # ön ve arka panelin uç ortası
-        e.add_instance(@bulon, eksen([xi, y, KUTU_H / 2], [sol ? 1 : -1, 0, 0], [0, 0, 1]))
+        ufik_pim(e, [xi, y, KUTU_H / 2], [sol ? 1 : -1, 0, 0])
       end
       ray_cekmece(e, sol ? 0.0 : KUTU_T, sol ? -1 : 1, -ARKA_T)
       [d, ORIJIN[k]]
@@ -664,13 +713,10 @@ module OzcanKurulum
       e = d.entities
       gen = KUTU_W - 2 * KUTU_T
       kutu(e, 0, 0, 0, gen, KUTU_T, KUTU_H)
-      bulon_delikleri(e, 0.0, gen, KUTU_T / 2, KUTU_H / 2)
-      boya(e, @mat[:govde])
-      [[KAM_ARA, 'sol'], [gen - KAM_ARA, 'sag']].each do |x, taraf|
-        o = [x, 0, KUTU_H / 2]
-        vida_koy(e, @kam, eksen(o, [0, 1, 0], [0, 0, 1]), P(*o), Geom::Vector3d.new(0, 1, 0), 0.01, 0.0,
-                 Geom::Vector3d.new(0, -1, 0), "#{c}_kam_arka_#{taraf}", false, true)
+      [[UF_ARA, -1, 'sol'], [gen - UF_ARA, 1, 'sag']].each do |x, s, taraf|
+        ufik_cep(e, [x, 0, KUTU_H / 2], [0, -1, 0], [s, 0, 0], "#{c}_uf_arka_#{taraf}", kisa: true)
       end
+      boya(e, @mat[:govde])
       [d, ORIJIN[k]]
     end
 
@@ -881,7 +927,7 @@ module OzcanKurulum
       d = @m.definitions.add('Ölçüler')
       e = d.entities
       h = ZT + T
-      y0 = D + ARKA_T - TABLA_DER
+      y0 = D - TABLA_DER
       yo = y0 - 1
       zu = h + 70
       cubuk(e, [0, yo, zu], [W, yo, zu])
@@ -892,9 +938,9 @@ module OzcanKurulum
       [0, h].each { |z| cubuk(e, [W + 4, yo, z], [xr + 22, yo, z], 1.4) }
       yazi(e, '500', [xr + 40, yo, h / 2], :dik)
       xd = W + 1
-      cubuk(e, [xd, y0, h + 45], [xd, D + ARKA_T, h + 45])
-      [y0, D + ARKA_T].each { |y| cubuk(e, [xd, y, h + 12], [xd, y, h + 65], 1.4) }
-      yazi(e, '430', [xd + 1, (y0 + D + ARKA_T) / 2, h + 100], :yan, 46.0)
+      cubuk(e, [xd, y0, h + 45], [xd, D, h + 45])
+      [y0, D].each { |y| cubuk(e, [xd, y, h + 12], [xd, y, h + 65], 1.4) }
+      yazi(e, '430', [xd + 1, (y0 + D) / 2, h + 100], :yan, 46.0)
       yazi(e, 'Kablo kesiği 100 × 25 mm', [W / 2, yo, h + 215], :on, 26.0)
       yazi(e, 'Arkalık üstünde 30 mm kablo boşluğu', [W / 2, yo, h + 170], :on, 26.0)
       d
@@ -915,6 +961,9 @@ module OzcanKurulum
 
       @vida16h = havsa_vida_tanimi
       @cvida = vida_tanimi('Çektirme Vidası (açılı)', 4, 2.5, 2.5, 14)
+      @ufvida = vida_tanimi('Ufik Sıkma Vidası', 3.6, 1.5, 1.8, 8)
+      @ufik = ufik_tanimi
+      @ufpim = ufik_pim_tanimi
       @kvida = vida_tanimi('Kulp Vidası M4x40', 3.8, 2.3, 2, 40)
       @disi = disi_tanimi
       @erkek = erkek_tanimi
@@ -998,7 +1047,8 @@ module OzcanKurulum
       end
       ek.(@kulp, CEKMECE.size, 1400, 70, "Kulp (#{CEKMECE.size})", [[0, 0, 1], [1, 0, 0], 0])
       ek.(@kvida, 2 * CEKMECE.size, 2250, 25, "Kulp Vidası M4x40 (#{2 * CEKMECE.size})", [[0, 1, 0], [0, 0, 1], 4])
-      ek.(@civi, 8, 3100, 14, "Çivi (#{CIVILER.size + DIP_CIVILER.size})", [[0, 1, 0], [0, 0, 1], 3])
+      ek.(@civi, 8, 3100, 14, "Çivi (#{DIP_CIVILER.size})", [[0, 1, 0], [0, 0, 1], 3])
+      ek.(@ufik, 12, 3700, 32, "Ufik + Vidası (#{UFIKLER.size})", [[1, 0, 0], [0, 0, 1], 11.5])
     end
 
     def stil
@@ -1029,14 +1079,14 @@ module OzcanKurulum
 
     def sahneler
       tanim = [
-        ['0 Kutu İçeriği', [], :liste, 'Paneller ve fabrikada takılı bağlantı elemanları; kulplar, vidaları ve çiviler ayrı.'],
-        ['1 Sol Yan + Alt Tabla', %i[sol_yan alt_tabla], 1, 'Alt tablayı sol yandaki 2 şeffaf çektirmeye geçirip vidaları sıkın.'],
-        ['2 Sağ Yan', %i[sag_yan], 2, 'Sağ yanı alt tabladaki 2 çektirmeye oturtup vidaları sıkın.'],
-        ['3 Baza', %i[baza], 3, 'Bazayı alt tablanın altına önden yerleştirin; 2 çektirme vidasını arkadan sıkın.'],
-        ['4 Üst Tabla', %i[ust_tabla], 4, 'Üst tablayı yanların üstüne oturtun; 4 çektirme vidasını sıkın.'],
-        ['5 Arkalık', %i[arkalik], 5, 'Arkalığı arkaya yerleştirip çivileri çakın.'],
+        ['0 Kutu İçeriği', [], :liste, 'Paneller ve fabrikada takılı ufik pimleri ve raylar; ufikler, kulplar, vidaları ve çiviler ayrı.'],
+        ['1 Sol Yan + Alt Tabla', %i[sol_yan alt_tabla], 1, 'Alt tablayı sol yanın pimlerine geçirin; 2 ufiği bastırıp vidalarını sıkın.'],
+        ['2 Sağ Yan', %i[sag_yan], 2, 'Sağ yanı alt tablanın ucuna geçirin; 2 ufiği sıkın.'],
+        ['3 Arkalık', %i[arkalik], 5, 'Arkalığı yukarıdan yanların ve alt tablanın kanalına indirin (üstte 30 mm kablo boşluğu).'],
+        ['4 Baza', %i[baza], 3, 'Bazayı alttan alt tablanın pimlerine oturtun; 2 ufiği arkadan sıkın.'],
+        ['5 Üst Tabla', %i[ust_tabla], 4, 'Üst tablayı yanların üstüne indirin; 4 ufiği sıkın.'],
         ['6-10 Üst Çekmece', CEKMECE_SIRA.select { |k| k.to_s.start_with?('c1') }, :c_ray,
-         'Yanları minifix bulonlarıyla öne ve arkaya geçirin, eksantrikleri yarım tur çevirin, dibi çakın, kulpu takın, raylara oturtup itin.'],
+         'Yanların ufik pimlerini öne ve arkaya geçirin, 4 ufiği sıkın, dibi çakın, kulpu takın, raylara oturtup itin.'],
         ['11 Alt Çekmece', CEKMECE_SIRA.reject { |k| k.to_s.start_with?('c1') }, :hepsi, 'Alt çekmeceyi aynı şekilde kurup raylara itin.'],
         ['12 Kablo Geçişi', %i[kablo], :kablo, 'Lamba ve şarj kablosunu üst tablanın arka kesiğinden arkalığın üstündeki boşluğa sarkıtıp prize takın.'],
         ['13 Bitmiş Ürün', [], :bitti, 'Kurulum tamamlandı.']
@@ -1226,7 +1276,28 @@ module OzcanKurulum
       (0...n).map { |i| [k, bas.map { |v| v * (n - i) / n.to_f }, bas.map { |v| v * (n - i - 1) / n.to_f }] }
     end
 
-    def kam_idleri(c) %w[on_sol on_sag arka_sol arka_sag].map { |p| "#{c}_kam_#{p}" } end
+    def kam_idleri(c) %w[on_sol on_sag arka_sol arka_sag].map { |p| "#{c}_uf_#{p}" } end
+
+    # Demonte parçayı gevşek konumda gösterir (tornavida gelmeden önce).
+    def goster(ids)
+      @cz.an { |s, _| ids.each { |id| s[:v][id] = { adv: 1.0, ang: 0.0 } } }
+    end
+
+    # Elle takılan parçalar (ufik gövdesi): görünür olur, yerine itilir.
+    def elle_tak(ids, sure = 0.9)
+      goster(ids)
+      @cz.bekle(0.3)
+      @cz.olay(sure) { |s, u| ids.each { |id| s[:v][id] = { adv: 1 - u, ang: 0.0 } } }
+    end
+
+    # Ufik: gövdeler cebe bastırılır, vidaları sıkılınca pimin başını kavrayıp son milimetreyi çeker.
+    def ufik_tak(ids, kam, cekler: [], bak: nil)
+      elle_tak(ids)
+      vidalar = ids.map { |i| "#{i}_v" }
+      goster(vidalar)
+      @cz.bekle(0.2)
+      sirayla_sik(vidalar, kam, cekler: cekler, tur: 2, bak: bak)
+    end
     def dip_civileri(c) (1..DIP_CIVI.size).map { |i| "#{c}_civi_#{i}" } end
 
     # Kulp önden oturur; iki kulp vidası kutunun içinden gelip sıkılır.
@@ -1240,15 +1311,15 @@ module OzcanKurulum
       end
     end
 
-    # Üst çekmece önde, her işlem ayrı adım olarak kurulur (6-10): yanlar minifix bulonlarıyla ön ve
-    # arkanın uçlarındaki deliklere geçer; eksantrikler yarım tur çevrilip bulonları çeker; dip alttan
+    # Üst çekmece önde, her işlem ayrı adım olarak kurulur (6-10): yanların ufik pimleri ön ve
+    # arkanın uçlarındaki deliklere geçer; ufikler bastırılıp vidaları sıkılır; dip alttan
     # çakılır; kulp takılır; çekmece raylara oturtulup içeri itilir.
     def cekmece_kur(c)
       z = @cz
       s0 = [0, -650, 0]
       ad = CEKMECE[c][:ad]
 
-      z.baslik("6 · #{ad}: yanları ön ve arka panele geçirin — yanlardaki minifix bulonları uçlardaki deliklere girer")
+      z.baslik("6 · #{ad}: yanları ön ve arka panele geçirin — yanlardaki ufik pimleri uçlardaki deliklere girer")
       z.kamera(1.2, KAM[:c_yan])
       z.an do |s, _|
         s[:p][:"#{c}_on"] = { vis: true, off: s0 }
@@ -1265,9 +1336,9 @@ module OzcanKurulum
       z.kamera(1.0, KAM[:c_kam])
       z.bekle(0.4)
 
-      z.baslik('7 · Dört minifix eksantriğini tornavidayla yarım tur saat yönünde çevirip sıkın')
+      z.baslik('7 · Dört ufiği cebine bastırıp vidalarını sıkın')
       # ilk eksantriğe kutunun içinden, arkadan-yukarıdan bak (ön görüşü kapatmasın)
-      sirayla_sik(kam_idleri(c), KAM[:c_kam], tur: 0.5, bak: [0.3, 1, 0.8])
+      ufik_tak(kam_idleri(c), KAM[:c_kam], bak: [0.3, 1, 0.8])
       z.kamera(0.8, KAM[:c_kam])
       z.bekle(0.5)
 
@@ -1315,7 +1386,9 @@ module OzcanKurulum
           s[:p][:"#{c}_sag"] = { vis: true, off: lerp3([160, -650, 0], s0, u) }
         end
       end
-      z.olay(0.6, false) { |s, u| cler.each { |c| kam_idleri(c).each { |id| s[:v][id] = { adv: 1 - u, ang: 180.0 * u } } } }
+      z.olay(0.6, false) do |s, u|
+        cler.each { |c| kam_idleri(c).each { |id| s[:v][id] = { adv: 1 - u, ang: 0.0 }; s[:v]["#{id}_v"] = { adv: 1 - u, ang: 720.0 * u } } }
+      end
       z.olay(1.0) { |s, u| cler.each { |c| s[:p][:"#{c}_dip"] = { vis: true, off: lerp3([0, -650, -160], s0, u) } } }
       z.an { |s, _| cler.each { |c| dip_civileri(c).each { |id| s[:v][id] = { adv: 1.0, ang: 0.0 } } } }
       z.olay(0.6, false) { |s, u| cler.each { |c| dip_civileri(c).each { |id| s[:v][id] = { adv: 1 - u, ang: 0.0 } } } }
@@ -1331,11 +1404,11 @@ module OzcanKurulum
     def cizelge
       @cz = z = Cizelge.new
       z.an { |s, _| DEMONTE.each { |id| s[:v][id] = { gizli: true } } } # takılana kadar görünmesin
-      z.baslik('Kutu içeriği — bağlantı elemanları panellere takılı gelir; kulplar, vidaları ve çiviler ayrı')
+      z.baslik('Kutu içeriği — ufik pimleri ve raylar takılı; ufikler, kulplar, vidaları ve çiviler ayrı')
       z.kamera(0, KAM[:liste])
       z.bekle(3.5)
 
-      z.baslik('1 · Alt tablayı sol yandaki iki şeffaf çektirmeye geçirin, vidaları sıkın')
+      z.baslik('1 · Alt tablayı sol yanın pimlerine geçirin; iki ufiği bastırıp vidalarını sıkın')
       z.an do |s, _|
         s[:liste] = false
         s[:p][:sol_yan][:vis] = true
@@ -1343,42 +1416,35 @@ module OzcanKurulum
       end
       z.kamera(1.2, KAM[1])
       hareket(:alt_tabla, [500, 0, 0], [2, 0, 0], 2.0)
-      sirayla_sik(%w[on arka].map { |y| "alt_sol_#{y}" }, KAM[1], cekler: cek_listesi(:alt_tabla, [2, 0, 0], 2))
+      ufik_tak(UF[:alt_sol], KAM[1], cekler: cek_listesi(:alt_tabla, [2, 0, 0], 2), bak: [0.35, -0.8, 1])
       z.kamera(0.8, KAM[1])
       z.bekle(0.3)
 
-      z.baslik('2 · Sağ yanı alt tabladaki çektirmelere oturtun, vidaları sıkın')
+      z.baslik('2 · Sağ yanı alt tablanın ucuna geçirin; iki ufiği bastırıp vidalarını sıkın')
       z.kamera(1.2, KAM[2])
       hareket(:sag_yan, [500, 0, 0], [2, 0, 0], 2.0)
-      sirayla_sik(%w[on arka].map { |y| "alt_sag_#{y}" }, KAM[2], cekler: cek_listesi(:sag_yan, [2, 0, 0], 2))
+      ufik_tak(UF[:alt_sag], KAM[2], cekler: cek_listesi(:sag_yan, [2, 0, 0], 2), bak: [-0.35, -0.8, 1])
       z.kamera(0.8, KAM[2])
       z.bekle(0.3)
 
-      z.baslik('3 · Bazayı alt tablanın altına önden yerleştirin, çektirme vidalarını arkadan sıkın')
+      z.baslik('3 · Arkalığı yukarıdan yanların ve alt tablanın kanalına indirin — üstte 30 mm kablo boşluğu kalır')
+      z.kamera(1.2, KAM[5])
+      hareket(:arkalik, [0, 0, 500], [0, 0, 0], 2.2)
+      z.bekle(0.4)
+
+      z.baslik('4 · Bazayı alttan alt tablanın pimlerine oturtun; iki ufiği arkadan bastırıp vidalarını sıkın')
       z.kamera(1.2, KAM[3])
-      hareket(:baza, [0, -400, 0], [0, -2, 0], 1.6)
-      ids = BAZA_X.each_index.map { |i| "baza_#{i + 1}" }
-      sirayla_sik(ids, KAM[3], cekler: cek_listesi(:baza, [0, -2, 0], ids.size), bak: [0.3, 1, -0.05])
+      hareket(:baza, [0, -400, -150], [0, 0, -150], 1.4)
+      hareket(:baza, [0, 0, -150], [0, 0, -2], 0.8)
+      ufik_tak(UF[:baza], KAM[3], cekler: cek_listesi(:baza, [0, 0, -2], 2), bak: [0.3, 0.8, -0.5])
       z.kamera(0.8, KAM[3])
       z.bekle(0.3)
 
-      z.baslik('4 · Üst tablayı yanların üstüne oturtun, dört çektirme vidasını sıkın')
+      z.baslik('5 · Üst tablayı yanların üstüne indirin; dört ufiği bastırıp vidalarını sıkın')
       z.kamera(1.2, KAM[4])
       hareket(:ust_tabla, [0, 0, 300], [0, 0, 2], 2.0)
-      ids = %w[sol sag].flat_map { |t| %w[on arka].map { |y| "ust_#{t}_#{y}" } }
-      sirayla_sik(ids, KAM[4], cekler: cek_listesi(:ust_tabla, [0, 0, 2], ids.size))
+      ufik_tak(UF[:ust], KAM[4], cekler: cek_listesi(:ust_tabla, [0, 0, 2], UF[:ust].size), bak: [0.3, -1, 0.15])
       z.kamera(0.8, KAM[4])
-      z.bekle(0.3)
-
-      z.baslik('5 · Arkalığı arkaya yerleştirip çivileri çekiçle çakın')
-      z.kamera(1.2, KAM[5])
-      hareket(:arkalik, [0, 450, 0], [0, 0, 0], 2.0)
-      z.an { |s, _| CIVILER.each { |id| s[:v][id] = { adv: 1.0, ang: 0.0 } } }
-      z.bekle(0.3)
-      yakin_kamera(CIVILER.first, yon: [1.0, 0.75, 0.45])
-      civi_cak(CIVILER.first)
-      z.kamera(0.8, KAM[5])
-      CIVILER.drop(1).each { |id| civi_cak(id) }
       z.bekle(0.3)
 
       cekmece_kur(:c1) # adım 6-10 (üst çekmece)
