@@ -350,6 +350,12 @@ yarım ay parmak oyuklu kulpsuz önler, Ø31 yuvarlak ağız, baştan sona yarı
 
 ### Kahve köşesi dolabı (`kurulum/kahve_kosesi.rb`)
 
+**21.11.2026 güncellemesi:** çektirmeler ufikle değişti; 18 mm kumtaşı alt ve üst arkalık yanların (arka kenardan
+10 mm içeride, 18 mm genişlik × 8 mm), alt tablanın ve üst tablanın kanalına geçer (arkalık vidaları yok, yanların arka
+sığlaşması kalktı). Tezgah arkalığın önünde biter, iki arkalık tezgahın arkasında birleşir. Sıra: ayaklar → sol yan + alt
+tabla → tezgah → alt arkalık ve üst arkalık (sağdan kanallara) → sağ yan → üst tabla → ön kuşak (alttan, tablanın
+pimlerine) → raflar → kapaklar → klapa → kulplar → kancalar.
+
 Müşterinin gösterdiği kahve istasyonundan üretim tarzımıza uyarlandı: 80 × 175 cm, alt dolap derinliği 40,
 üst bölme 26 cm; kumtaşı gövde, gömme beyaz önler, altın çubuk kulplar, dışa eğik konik meşe ayaklar
 (çevrilerek takılır). `OzcanKurulum::KahveKosesi.kur / oynat / kumanda / kaydet`.
