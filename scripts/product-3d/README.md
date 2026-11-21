@@ -348,6 +348,20 @@ yarım ay parmak oyuklu kulpsuz önler, Ø31 yuvarlak ağız, baştan sona yarı
   kum kabı → tasma askıları.
 - Tanıtım görselleri kurulum görsellerinin yanında `Tanıtım` klasöründe (betik: her modülün `TANITIM` listesi).
 
+### Patili Konsol v2 — klasik beyaz, revizyon 21.11.2026 (`kurulum/patili_konsol_v2.rb`)
+
+`output/imagegen/claude-patili-konsol-revizyon.txt` talimatıyla klasik Patili Konsol'un yeni sürümü. Kod
+`patili_konsol_modern.rb`'nin ufik/kanal hâlinden, klasik gövde düzeniyle üretilir. Üretim betiği scratchpad'de:
+`patili_v2_uret.py`. Modül `OzcanKurulum::PatiliKonsolV2`.
+
+- Dış ölçü 113 × 62,5 (tabla 63,5) × 70 cm.
+- Kum bölmesi: tepsi alanı 482 × 554, yükseklik 455 mm. Kum çekmecesi raylı (550 mm); önü 5 yarıklı, menteşeli değil.
+- Uyku bölmesi: 530 × 592 × 400 mm; kemer 480 × 280.
+- Sağ yanda Ø210 giriş, alt kenarı iç tabandan 150 mm yukarıda.
+- Askılar yok. Minder yerine oval kedi yatağı (440 × 520, yumuşak yüzeyli mesh).
+- Çıktılar `çıktılar/Patili Konsol v2 (2026-11-21)/`: SKP, 8 referans görsel (duvar ve zemin önünde),
+  `Olculer_ve_notlar.md`.
+
 ### Kahve köşesi dolabı (`kurulum/kahve_kosesi.rb`)
 
 **21.11.2026 güncellemesi:** çektirmeler ufikle değişti; 18 mm kumtaşı alt ve üst arkalık yanların (arka kenardan
