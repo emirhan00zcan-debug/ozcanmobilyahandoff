@@ -398,6 +398,19 @@ saran, arkası açık asma kabin, 70 × 41,8 × 120 cm. `OzcanKurulum::KoraKombi
 - Adımlar: kavelalar → sol yan → sol minifiksler → sağ yan → minifiks kapakları → ray → asma → L köşebentler →
   raf pimleri + arka şerit → kapaklar → kulplar (11).
 
+### Selva petek kaplama 100 (`kurulum/selva_petek_kaplama.rb`)
+
+Tarif B (research_notes/Urun firsatlari 2026-11-21/tarif-B-selva-petek-kaplama.txt): 100 × 24 × 85 cm, beyaz gövde,
+Safir Meşe üst tabla, beyaz MDF ön panelde 22 CNC "çıta" yarığı (18 × 650, bej MDF kenar) ve parmak oyuğu.
+`OzcanKurulum::SelvaPetekKaplama.kur / oynat / kumanda / kaydet`. Selva 80 / 120 yalnız genişlik (G, kuşak, panel).
+
+- Ön panel sökülür: altta 2 raf pimine oturur, yanlardaki 4 mıknatıslı tutucu tutar; parmak oyuğundan çekilir.
+- Yanların arka-alt köşesinde 20 × 100 süpürgelik kesiği; arka kuşaktan duvara 2 vida; yanların altında keçe.
+- Üst tabla minifiks + kavelayla: bulonlar tablanın altında, eksantrikler yanların iç yüzünde tablanın 36 mm altında
+  (tarifteki "gövde tablanın alt yüzünde" düzeni dik bulonla kurulamaz). Arka kuşak 5 şeffaf açılı çektirmeyle.
+- Yer tutucu PKKP 600 × 800 petek (vanalar, purjör) duvar, süpürgelik ve pencereyle birlikte görünür.
+- Adımlar: kavelalar → sol yan → sağ yan → arka kuşak → keçeler → duvara sabitleme → raf pimleri + ön panel (7).
+
 **Kamera:** Vida sıkılırken kamera otomatik olarak o vidaya yaklaşır (tornavida ve vida
 başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` sırasında **K**
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan

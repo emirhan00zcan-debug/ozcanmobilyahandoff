@@ -1102,7 +1102,7 @@ module OzcanKurulum
       @liste_tag = @m.layers[LISTE_TAG]
       @arac_tag = @m.layers[ARAC_TAG]
       @duvar_tag = @m.layers[DUVAR_TAG]
-      @kombi_tag = @m.layers[KOMBI_TAG]
+      @ek_tag0 = @m.layers[KOMBI_TAG]
       cizelge
       true
     end
@@ -1432,7 +1432,7 @@ module OzcanKurulum
     def uygula(s)
       @liste_tag.visible = s[:liste] if @liste_tag.visible? != s[:liste]
       @duvar_tag.visible = s[:duvar] if @duvar_tag.visible? != s[:duvar]
-      @kombi_tag.visible = s[:duvar] if @kombi_tag.visible? != s[:duvar]
+      @ek_tag0.visible = s[:duvar] if @ek_tag0.visible? != s[:duvar]
       rinv = KAPILAR.map do |k|
         c = @taban_tr[k]
         [k, c.inverse * kapi_R(k, s[:kapi][k]).inverse * c]
