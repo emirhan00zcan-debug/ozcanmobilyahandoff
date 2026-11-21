@@ -386,6 +386,8 @@ kullanıcı onayı 28.10.2026). Duvara asılan 45 × 14,8 × 125 cm dolap; kapal
 
 ### Kora kombi kabini (`kurulum/kora_kombi_kabini.rb`)
 
+**İptal (21.11.2026):** kullanıcı bu ürünü üretmeyecek (yarık/boya işçiliği); model yalnız arşiv.
+
 Tarif A1 (research_notes/Urun firsatlari 2026-11-21/tarif-A-kora-kombi-kabini.txt): duvardaki kombinin etrafını
 saran, arkası açık asma kabin, 70 × 41,8 × 120 cm. `OzcanKurulum::KoraKombiKabini.kur / oynat / kumanda / kaydet`.
 
@@ -399,6 +401,8 @@ saran, arkası açık asma kabin, 70 × 41,8 × 120 cm. `OzcanKurulum::KoraKombi
   raf pimleri + arka şerit → kapaklar → kulplar (11).
 
 ### Selva petek kaplama 100 (`kurulum/selva_petek_kaplama.rb`)
+
+**İptal (21.11.2026):** kullanıcı bu ürünü üretmeyecek (yarık/boya işçiliği); model yalnız arşiv.
 
 Tarif B (research_notes/Urun firsatlari 2026-11-21/tarif-B-selva-petek-kaplama.txt): 100 × 24 × 85 cm, beyaz gövde,
 Safir Meşe üst tabla, beyaz MDF ön panelde 22 CNC "çıta" yarığı (18 × 650, bej MDF kenar) ve parmak oyuğu.
@@ -428,3 +432,19 @@ başı birlikte görünür), adım bitince genel görünüşe döner. `kumanda` 
 serbest kamerayı açar/kapatır: fareyle istenen açıya çevrilir, oynatma o açıdan
 sürer (konsoldan `serbest_kamera(true/false)`). Video ve önizleme her zaman oynatma
 kamerasıyla çekilir.
+
+### Liva TV ünitesi (`kurulum/liva_tv_unitesi.rb`)
+
+Tarif F (research_notes/Urun firsatlari 2026-11-21/tarif-F-liva-tv-unitesi.txt): modül 90 × 43 × 50 cm, iki modül yan
+yana 180 cm set. `liva_konsol.rb`'nin ortak bölümlerinden `tv/uret_tv.py` ile üretildi (geometri, hırdavat, motor).
+`OzcanKurulum::LivaTv.kur / oynat / kumanda / kaydet`.
+
+- **21.11.2026 bağlantı kuralı:** çektirme yok; MDF'de minifiks, suntada **ufik** (CNC'de panel yüzüne açılan anahtar
+  deliği biçimli cebe bastırılan beyaz plastik bağlantı; vidası sıkılınca karşı paneldeki çelik pimi kavrar, cep uçtan
+  36 mm); arkalıklı her şeyde arkalık kanala geçmeli.
+- Ufik pimleri tablaların uçlarına yatay girdiği için sıra: ayaklar → orta dikme → iç üst tabla → sol yan → arkalık
+  (sağdan kanala) → sağ yan → meşe tabla (alttan 6 vida) → raf → menteşe tabanları (seçilen yana) → kapak → kablo kapakları.
+- Kapak düz beyaz sunta, kulpsuz bas-aç (itici iç üst tablanın altında, kapakta pul). İki yanda menteşe ve raf pimi
+  delikleri, set için Ø5 birleştirme delikleri; arkalıkta iki Ø60 kablo deliği + kapak.
+- Tanıtım katmanları: duvar-zemin, cihazlar (modem, uydu alıcısı, oyun konsolu), süs, TV 55"/32" yer tutucu, ölçüler;
+  set görselinde ikinci modül birincinin aynası olarak geçici kopyalanır.
